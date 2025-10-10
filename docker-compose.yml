@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/schema_registry
+      - SPRING_DATASOURCE_USERNAME=schema_user
+      - SPRING_DATASOURCE_PASSWORD=schema_password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
+      - LOGGING_LEVEL_RU_VEGOROV=INFO
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - schema-registry-network
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=schema_registry
+      - POSTGRES_USER=schema_user
+      - POSTGRES_PASSWORD=schema_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/main/resources/db/migration:/docker-entrypoint-initdb.d
+    networks:
+      - schema-registry-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U schema_user -d schema_registry"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  schema-registry-network:
+    driver: bridge
