@@ -135,6 +135,142 @@ mvn clean package
 mvn spring-boot:run
 ```
 
+### Database Diagnostics
+
+The project includes comprehensive database diagnostic tools via Makefile targets for monitoring, troubleshooting, and maintaining the PostgreSQL database. These tools help with performance monitoring, data analysis, and maintenance operations.
+
+#### Basic Diagnostics
+```bash
+# Database status and connection info
+make db-status
+
+# Table sizes and operation counts
+make db-tables
+
+# Database and table size breakdown
+make db-size
+```
+
+#### Schema Registry Diagnostics
+```bash
+# Schema counts by subject with version stats
+make db-schemas-count
+
+# Recently created schemas
+make db-schemas-recent
+
+# Schema subjects overview
+make db-schemas-subjects
+
+# Version distribution across subjects
+make db-schemas-versions
+```
+
+#### Consumer & Transformation Diagnostics
+```bash
+# List consumers with template status
+make db-consumers-list
+
+# Recently active consumers
+make db-consumers-active
+
+# Consumer registration statistics
+make db-consumers-stats
+
+# List transformation templates
+make db-templates-list
+
+# Template engine distribution
+make db-templates-engines
+
+# Recently updated templates
+make db-templates-recent
+```
+
+#### Performance & Health Monitoring
+```bash
+# Table indexes with usage statistics
+make db-indexes
+
+# Check for active database locks
+make db-locks
+
+# Active database connections
+make db-connections
+```
+
+#### Maintenance Operations
+```bash
+# Run VACUUM ANALYZE for optimization
+make db-vacuum-analyze
+
+# Reindex all tables (use with caution)
+make db-reindex
+
+# Remove test data (subjects/consumers starting with 'test-')
+make db-cleanup-test-data
+```
+
+#### Advanced Diagnostics
+```bash
+# Analyze schema evolution patterns
+make db-schema-evolution
+
+# Compatibility settings distribution
+make db-compatibility-checks
+
+# Find orphaned records
+make db-orphaned-data
+
+# Export current schema structure
+make db-export-schema
+
+# Create database backup
+make db-backup
+
+# Show current database activity
+make db-activity
+```
+
+#### Usage Examples
+
+**Monitor Database Health:**
+```bash
+# Quick health check
+make db-status
+
+# Check for performance issues
+make db-indexes
+make db-locks
+```
+
+**Analyze Schema Usage:**
+```bash
+# See most active subjects
+make db-schemas-count
+
+# Check compatibility distribution
+make db-compatibility-checks
+```
+
+**Consumer Analytics:**
+```bash
+# Consumer adoption statistics
+make db-consumers-stats
+
+# Template usage overview
+make db-templates-engines
+```
+
+**Maintenance Tasks:**
+```bash
+# Regular optimization
+make db-vacuum-analyze
+
+# Clean up test data after development
+make db-cleanup-test-data
+```
+
 ### Project Structure
 
 ```
