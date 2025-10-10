@@ -1,4 +1,4 @@
-package ru.vegorov.schemaregistry.schemaregistry;
+package ru.vegorov.schemaregistry;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
