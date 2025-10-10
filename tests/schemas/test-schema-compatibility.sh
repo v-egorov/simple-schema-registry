@@ -41,7 +41,7 @@ compatible_schema='{
 }'
 
 response=$(post_request "/api/schemas/test-compatibility/compat" "{
-    \"schema\": $compatible_schema
+    \"newSchema\": $compatible_schema
 }")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
@@ -65,7 +65,7 @@ incompatible_schema='{
 }'
 
 response=$(post_request "/api/schemas/test-compatibility/compat" "{
-    \"schema\": $incompatible_schema
+    \"newSchema\": $incompatible_schema
 }")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
@@ -90,11 +90,13 @@ fi
 echo
 echo "Test 3: Check compatibility for non-existent subject"
 response=$(post_request "/api/schemas/non-existent-subject/compat" "{
-    \"schema\": $base_schema
+    \"newSchema\": $base_schema
 }")
 http_code=$(echo "$response" | tail -n1)
+response_body=$(echo "$response" | head -n -1)
 
-assert_response "$http_code" 404 "Should return 404 for non-existent subject"
+assert_response "$http_code" 200 "Should return 200 for non-existent subject (always compatible)"
+assert_json_field "$response_body" "compatible" true
 
 # Test 4: Check compatibility with invalid JSON schema
 echo
@@ -105,7 +107,7 @@ invalid_schema='{
 }'
 
 response=$(post_request "/api/schemas/test-compatibility/compat" "{
-    \"schema\": $invalid_schema
+    \"newSchema\": $invalid_schema
 }")
 http_code=$(echo "$response" | tail -n1)
 
@@ -125,7 +127,7 @@ fi
 echo
 echo "Test 5: Check compatibility with empty schema"
 response=$(post_request "/api/schemas/test-compatibility/compat" "{
-    \"schema\": {}
+    \"newSchema\": {}
 }")
 http_code=$(echo "$response" | tail -n1)
 
@@ -144,7 +146,7 @@ fi
 echo
 echo "Test 6: Verify compatibility response structure"
 response=$(post_request "/api/schemas/test-compatibility/compat" "{
-    \"schema\": $compatible_schema
+    \"newSchema\": $compatible_schema
 }")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
@@ -193,7 +195,7 @@ forward_test_schema='{
 }'
 
 response=$(post_request "/api/schemas/test-forward-compat/compat" "{
-    \"schema\": $forward_test_schema
+    \"newSchema\": $forward_test_schema
 }")
 http_code=$(echo "$response" | tail -n1)
 

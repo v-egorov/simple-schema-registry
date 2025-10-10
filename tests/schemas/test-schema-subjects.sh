@@ -45,7 +45,7 @@ http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 200 "Should successfully retrieve schema subjects"
-assert_contains "$response_body" '[' "Should return JSON array"
+assert_contains "$response_body" "test-user-subject" "Should return subjects array"
 
 # Test 2: Verify our test subjects are included
 echo
