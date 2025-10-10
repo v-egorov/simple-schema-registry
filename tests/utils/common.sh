@@ -101,6 +101,24 @@ assert_contains() {
     fi
 }
 
+assert_not_contains() {
+    local haystack="$1"
+    local needle="$2"
+    local message="$3"
+
+    ((TESTS_RUN++))
+
+    if echo "$haystack" | grep -q "$needle"; then
+        log_error "$message (needle '$needle' should not be found in haystack)"
+        ((TESTS_FAILED++))
+        return 1
+    else
+        log_success "$message"
+        ((TESTS_PASSED++))
+        return 0
+    fi
+}
+
 assert_not_empty() {
     local value="$1"
     local message="$2"
@@ -218,8 +236,11 @@ create_test_template() {
     local template="$2"
     local engine="${3:-JSLT}"
 
+    # Escape quotes in template for JSON
+    local escaped_template=$(echo "$template" | sed 's/"/\\"/g')
+
     local response=$(post_request "/api/transform/templates/$consumer_id" "{
-        \"template\": \"$template\",
+        \"expression\": \"$escaped_template\",
         \"engine\": \"$engine\"
     }")
 
