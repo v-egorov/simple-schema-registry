@@ -8,12 +8,17 @@ source "$(dirname "$0")/../utils/common.sh"
 echo "Running Consumer List Tests"
 echo "==========================="
 
-# Setup: Create some test consumers
+# Setup: Create some test consumers with unique IDs
 echo
 echo "Setup: Creating test consumers..."
-create_test_consumer "test-list-consumer-1" "List Test Consumer 1" "First consumer for list testing"
-create_test_consumer "test-list-consumer-2" "List Test Consumer 2" "Second consumer for list testing"
-create_test_consumer "test-list-consumer-3" "List Test Consumer 3" "Third consumer for list testing"
+TIMESTAMP=$(date +%s)
+create_test_consumer "test-list-consumer-1-$TIMESTAMP" "List Test Consumer 1" "First consumer for list testing"
+create_test_consumer "test-list-consumer-2-$TIMESTAMP" "List Test Consumer 2" "Second consumer for list testing"
+create_test_consumer "test-list-consumer-3-$TIMESTAMP" "List Test Consumer 3" "Third consumer for list testing"
+
+CONSUMER_1="test-list-consumer-1-$TIMESTAMP"
+CONSUMER_2="test-list-consumer-2-$TIMESTAMP"
+CONSUMER_3="test-list-consumer-3-$TIMESTAMP"
 
 # Test 1: List all consumers
 echo
@@ -23,16 +28,23 @@ http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 200 "Consumer list should be accessible"
-assert_contains "$response_body" '[' "Should return JSON array"
+# Check if response starts with [ (JSON array)
+if echo "$response_body" | grep -q '^\s*\['; then
+    log_success "Should return JSON array"
+    ((TESTS_PASSED++))
+else
+    log_error "Should return JSON array (response doesn't start with [)"
+    ((TESTS_FAILED++))
+fi
 assert_contains "$response_body" '"consumerId"' "Should contain consumer objects"
 assert_contains "$response_body" '"name"' "Should contain consumer names"
 
 # Test 2: Verify our test consumers are in the list
 echo
 echo "Test 2: Verify test consumers are listed"
-assert_contains "$response_body" '"test-list-consumer-1"' "Should contain first test consumer"
-assert_contains "$response_body" '"test-list-consumer-2"' "Should contain second test consumer"
-assert_contains "$response_body" '"test-list-consumer-3"' "Should contain third test consumer"
+assert_contains "$response_body" "\"$CONSUMER_1\"" "Should contain first test consumer"
+assert_contains "$response_body" "\"$CONSUMER_2\"" "Should contain second test consumer"
+assert_contains "$response_body" "\"$CONSUMER_3\"" "Should contain third test consumer"
 
 # Test 3: Check response structure
 echo
@@ -65,17 +77,18 @@ else
     ((TESTS_FAILED++))
 fi
 
-# Test 5: List consumers after adding more
+# Test 5: List consumers after adding another
 echo
 echo "Test 5: List consumers after adding another"
-create_test_consumer "test-list-consumer-4" "List Test Consumer 4" "Fourth consumer for list testing"
+CONSUMER_4="test-list-consumer-4-$TIMESTAMP"
+create_test_consumer "$CONSUMER_4" "List Test Consumer 4" "Fourth consumer for list testing"
 
 response=$(get_request "/api/consumers")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 200 "Consumer list should still work after adding more"
-assert_contains "$response_body" '"test-list-consumer-4"' "Should contain newly added consumer"
+assert_contains "$response_body" "\"$CONSUMER_4\"" "Should contain newly added consumer"
 
 # Test 6: Check for optional description field
 echo

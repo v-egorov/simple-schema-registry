@@ -8,19 +8,24 @@ source "$(dirname "$0")/../utils/common.sh"
 echo "Running Consumer Registration Tests"
 echo "===================================="
 
+# Generate unique consumer IDs to avoid conflicts from previous test runs
+TIMESTAMP=$(date +%s)
+CONSUMER_1="test-mobile-app-$TIMESTAMP"
+CONSUMER_2="test-minimal-$TIMESTAMP"
+
 # Test 1: Register valid consumer
 echo
 echo "Test 1: Register valid consumer"
-response=$(post_request "/api/consumers" '{
-    "consumerId": "test-mobile-app",
-    "name": "Test Mobile App",
-    "description": "Test consumer for mobile applications"
-}')
+response=$(post_request "/api/consumers" "{
+    \"consumerId\": \"$CONSUMER_1\",
+    \"name\": \"Test Mobile App\",
+    \"description\": \"Test consumer for mobile applications\"
+}")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 201 "Consumer registration should succeed"
-assert_json_field "$response_body" "consumerId" "test-mobile-app"
+assert_json_field "$response_body" "consumerId" "$CONSUMER_1"
 assert_json_field "$response_body" "name" "Test Mobile App"
 assert_json_field "$response_body" "description" "Test consumer for mobile applications"
 assert_contains "$response_body" '"createdAt"' "Should contain createdAt timestamp"
@@ -29,39 +34,30 @@ assert_contains "$response_body" '"updatedAt"' "Should contain updatedAt timesta
 # Test 2: Register consumer with minimal data
 echo
 echo "Test 2: Register consumer with minimal required data"
-response=$(post_request "/api/consumers" '{
-    "consumerId": "test-minimal",
-    "name": "Minimal Consumer"
-}')
+response=$(post_request "/api/consumers" "{
+    \"consumerId\": \"$CONSUMER_2\",
+    \"name\": \"Minimal Consumer\"
+}")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 201 "Minimal consumer registration should succeed"
-assert_json_field "$response_body" "consumerId" "test-minimal"
+assert_json_field "$response_body" "consumerId" "$CONSUMER_2"
 assert_json_field "$response_body" "name" "Minimal Consumer"
 
 # Test 3: Try to register duplicate consumer (should fail)
 echo
 echo "Test 3: Attempt duplicate consumer registration"
-response=$(post_request "/api/consumers" '{
-    "consumerId": "test-mobile-app",
-    "name": "Duplicate Mobile App",
-    "description": "This should fail"
-}')
+response=$(post_request "/api/consumers" "{
+    \"consumerId\": \"$CONSUMER_1\",
+    \"name\": \"Duplicate Mobile App\",
+    \"description\": \"This should fail\"
+}")
 http_code=$(echo "$response" | tail -n1)
+response_body=$(echo "$response" | head -n -1)
 
-# Note: Current API might not prevent duplicates, so this could succeed
-# This test documents expected behavior - adjust based on actual API behavior
-if [ "$http_code" -eq 201 ]; then
-    log_warning "API allows duplicate consumer registration (may be intended behavior)"
-    ((TESTS_PASSED++))
-elif [ "$http_code" -eq 409 ]; then
-    log_success "API correctly prevents duplicate consumer registration"
-    ((TESTS_PASSED++))
-else
-    log_error "Unexpected response for duplicate consumer: HTTP $http_code"
-    ((TESTS_FAILED++))
-fi
+assert_response "$http_code" 400 "API should prevent duplicate consumer registration"
+assert_contains "$response_body" "already exists" "Should provide descriptive error message"
 
 # Test 4: Register consumer with invalid data (missing required field)
 echo
