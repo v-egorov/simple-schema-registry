@@ -293,6 +293,7 @@ src/
 ## Documentation
 
 - [Schema Evolution Workflow](docs/schema-evolution-workflow.md) - Complete guide to schema evolution with examples
+- [Transformation Extension Plan](docs/transformation-extension-plan.md) - Router and Pipeline engines design and implementation
 - [API Reference](docs/api-reference.md) - Detailed API documentation with examples
 - [Architecture](docs/architecture.md) - System design and components
 - [Getting Started](docs/getting-started.md) - Development setup guide
