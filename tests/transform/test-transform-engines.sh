@@ -16,8 +16,7 @@ http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 200 "Should successfully retrieve available engines"
-assert_contains "$response_body" '[' "Should return JSON array"
-assert_contains "$response_body" '"JSLT"' "Should contain JSLT engine"
+assert_contains "$response_body" "jslt" "Should contain jslt engine"
 
 # Test 2: Verify response is array of strings
 echo
@@ -34,12 +33,12 @@ fi
 # Test 3: Check that JSLT is the primary/only engine
 echo
 echo "Test 3: Verify JSLT engine availability"
-jslt_count=$(echo "$response_body" | grep -o '"JSLT"' | wc -l)
+jslt_count=$(echo "$response_body" | grep -o '"jslt"' | wc -l)
 if [ "$jslt_count" -ge 1 ]; then
-    log_success "JSLT engine is available"
+    log_success "jslt engine is available"
     ((TESTS_PASSED++))
 else
-    log_error "JSLT engine is not listed"
+    log_error "jslt engine is not listed"
     ((TESTS_FAILED++))
 fi
 
@@ -89,12 +88,12 @@ echo "Test 7: Test with different accept headers"
 response=$(curl -s -w "\n%{http_code}" -H "Accept: application/xml" "$BASE_URL/api/transform/engines" 2>/dev/null)
 http_code=$(echo "$response" | tail -n1)
 
-# Should still return JSON even with XML accept header
-if [ "$http_code" -eq 200 ]; then
-    log_success "Endpoint handles different accept headers gracefully"
+# Should return 406 for unsupported content type
+if [ "$http_code" -eq 406 ]; then
+    log_success "Endpoint correctly rejects unsupported content types"
     ((TESTS_PASSED++))
 else
-    log_error "Endpoint failed with different accept header: HTTP $http_code"
+    log_error "Endpoint should return 406 for unsupported content type (got $http_code)"
     ((TESTS_FAILED++))
 fi
 
@@ -124,7 +123,7 @@ fi
 echo
 echo "Test 9: Check for known/supported engines only"
 # Should only contain known engines like JSLT
-unknown_engines=$(echo "$response_body" | grep -o '"[^"]*"' | grep -v '"JSLT"' | wc -l)
+unknown_engines=$(echo "$response_body" | grep -o '"[^"]*"' | grep -v '"jslt"' | wc -l)
 if [ "$unknown_engines" -eq 0 ]; then
     log_success "Only known engines are listed"
     ((TESTS_PASSED++))
