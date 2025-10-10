@@ -11,20 +11,20 @@ help: ## Show this help message
 
 # Build targets
 build: ## Build the application JAR
-	./mvnw clean package -DskipTests
+	mvn clean package -DskipTests
 
 build-docker: ## Build Docker image
 	docker-compose build
 
 # Test targets
 test: ## Run all tests
-	./mvnw test
+	mvn test
 
 test-unit: ## Run unit tests only
-	./mvnw test -Dtest="*Test"
+	mvn test -Dtest="*Test"
 
 test-integration: ## Run integration tests only
-	./mvnw test -Dtest="*IT"
+	mvn test -Dtest="*IT"
 
 # Docker Compose targets
 up: ## Start all services (app + database)
@@ -51,23 +51,23 @@ logs-db: ## Show logs from database service only
 
 # Database targets
 db-migrate: ## Run database migrations
-	./mvnw flyway:migrate
+	mvn flyway:migrate
 
 db-clean: ## Clean database (drop all objects)
-	./mvnw flyway:clean
+	mvn flyway:clean
 
 db-info: ## Show database migration info
-	./mvnw flyway:info
+	mvn flyway:info
 
 db-seed: ## Seed database with sample data (if implemented)
 	@echo "Database seeding not yet implemented"
 
 # Development targets
 run: ## Run the application locally (requires PostgreSQL running)
-	./mvnw spring-boot:run
+	mvn spring-boot:run
 
 run-dev: ## Run in development mode with live reload
-	./mvnw spring-boot:run -Dspring-boot.run.fork=false
+	mvn spring-boot:run -Dspring-boot.run.fork=false
 
 shell: ## Open shell in running app container
 	docker-compose exec app sh
@@ -77,7 +77,7 @@ shell-db: ## Open PostgreSQL shell
 
 # Cleanup targets
 clean: ## Clean build artifacts
-	./mvnw clean
+	mvn clean
 	docker-compose down -v
 
 clean-all: ## Clean everything including Docker images
