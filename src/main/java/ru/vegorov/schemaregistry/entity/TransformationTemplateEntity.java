@@ -24,9 +24,13 @@ public class TransformationTemplateEntity {
     @Column(nullable = false)
     private String engine = "jslt";
 
-    @NotNull
-    @Column(name = "template_expression", nullable = false, columnDefinition = "TEXT")
+    // For JSLT engine - simple expression (nullable for router/pipeline)
+    @Column(name = "template_expression", columnDefinition = "TEXT")
     private String templateExpression;
+
+    // For router/pipeline engines - JSON configuration
+    @Column(name = "configuration", columnDefinition = "TEXT")
+    private String configuration;
 
     @Column(length = 1000)
     private String description;
@@ -79,6 +83,14 @@ public class TransformationTemplateEntity {
 
     public void setTemplateExpression(String templateExpression) {
         this.templateExpression = templateExpression;
+    }
+
+    public String getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(String configuration) {
+        this.configuration = configuration;
     }
 
     public String getDescription() {

@@ -8,6 +8,7 @@ public class TransformationTemplateResponse {
     private String consumerId;
     private String engine;
     private String expression;
+    private String configuration;
     private String description;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -16,12 +17,13 @@ public class TransformationTemplateResponse {
     public TransformationTemplateResponse() {}
 
     public TransformationTemplateResponse(Long id, String consumerId, String engine,
-                                        String expression, String description,
+                                        String expression, String configuration, String description,
                                         LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.consumerId = consumerId;
         this.engine = engine;
         this.expression = expression;
+        this.configuration = configuration;
         this.description = description;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -58,6 +60,14 @@ public class TransformationTemplateResponse {
 
     public void setExpression(String expression) {
         this.expression = expression;
+    }
+
+    public String getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(String configuration) {
+        this.configuration = configuration;
     }
 
     public String getDescription() {
