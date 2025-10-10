@@ -257,6 +257,7 @@ Transform canonical JSON data for a specific consumer using their transformation
 
 **Endpoint**: `POST /api/transform/{consumerId}`
 
+#### JSLT Engine Example
 **Request Body**:
 ```json
 {
@@ -283,6 +284,95 @@ Transform canonical JSON data for a specific consumer using their transformation
 }
 ```
 
+#### Router Engine Example
+**Request Body** (User Data):
+```json
+{
+  "canonicalJson": {
+    "type": "user",
+    "id": 12345,
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "department": "engineering"
+  }
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "transformedJson": {
+    "user_id": 12345,
+    "full_name": "John Doe",
+    "email": "john.doe@example.com",
+    "department": "engineering",
+    "normalized_type": "user"
+  }
+}
+```
+
+**Request Body** (Product Data):
+```json
+{
+  "canonicalJson": {
+    "type": "product",
+    "id": 67890,
+    "name": "Wireless Headphones",
+    "category": "electronics",
+    "price": 199.99,
+    "inStock": true
+  }
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "transformedJson": {
+    "product_id": 67890,
+    "product_name": "Wireless Headphones",
+    "category": "electronics",
+    "price_usd": 199.99,
+    "availability": "in_stock",
+    "enriched_category": "electronics"
+  }
+}
+```
+
+#### Pipeline Engine Example
+**Request Body**:
+```json
+{
+  "canonicalJson": {
+    "type": "user",
+    "id": 12345,
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "registrationDate": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "transformedJson": {
+    "type": "user",
+    "id": 12345,
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "registrationDate": "2024-01-15T10:30:00Z",
+    "validated": true,
+    "normalized": true,
+    "enriched": true,
+    "timestamp": "2024-01-15T10:35:00Z"
+  }
+}
+```
+
 ### Get Transformation Template
 Retrieve the transformation template for a consumer.
 
@@ -304,22 +394,123 @@ Create or update a transformation template for a consumer.
 
 **Endpoint**: `POST /api/transform/templates/{consumerId}`
 
+#### JSLT Engine Example
 **Request Body**:
 ```json
 {
-  "template": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
-  "engine": "JSLT"
+  "engine": "jslt",
+  "expression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
+  "description": "Simple field mapping for mobile app"
 }
 ```
 
 **Response** (200 OK):
 ```json
 {
+  "id": 1,
   "consumerId": "mobile-app",
-  "template": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
-  "engine": "JSLT",
+  "engine": "jslt",
+  "expression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
+  "configuration": null,
+  "description": "Simple field mapping for mobile app",
   "createdAt": "2024-01-15T10:35:00",
   "updatedAt": "2024-01-15T10:35:00"
+}
+```
+
+#### Router Engine Example
+**Request Body**:
+```json
+{
+  "engine": "router",
+  "routerConfig": {
+    "type": "router",
+    "routes": [
+      {
+        "condition": "$.type == 'user'",
+        "transformationId": "user-normalization-v1",
+        "description": "Normalize user data"
+      },
+      {
+        "condition": "$.type == 'product'",
+        "transformationId": "product-enrichment-v1",
+        "description": "Enrich product data"
+      }
+    ],
+    "defaultTransformationId": "generic-transformation-v1",
+    "validation": {
+      "inputSchema": "canonical-data-schema-v1",
+      "outputSchema": "consumer-data-schema-v1"
+    }
+  },
+  "description": "Content-based routing for different data types"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "id": 2,
+  "consumerId": "multi-tenant-app",
+  "engine": "router",
+  "expression": "{\"type\":\"router\",\"routes\":[{\"condition\":\"$.type == 'user'\",\"transformationId\":\"user-normalization-v1\",\"description\":\"Normalize user data\"},{\"condition\":\"$.type == 'product'\",\"transformationId\":\"product-enrichment-v1\",\"description\":\"Enrich product data\"}],\"defaultTransformationId\":\"generic-transformation-v1\",\"validation\":{\"inputSchema\":\"canonical-data-schema-v1\",\"outputSchema\":\"consumer-data-schema-v1\"}}",
+  "configuration": "{\"type\":\"router\",\"routes\":[{\"condition\":\"$.type == 'user'\",\"transformationId\":\"user-normalization-v1\",\"description\":\"Normalize user data\"},{\"condition\":\"$.type == 'product'\",\"transformationId\":\"product-enrichment-v1\",\"description\":\"Enrich product data\"}],\"defaultTransformationId\":\"generic-transformation-v1\",\"validation\":{\"inputSchema\":\"canonical-data-schema-v1\",\"outputSchema\":\"consumer-data-schema-v1\"}}",
+  "description": "Content-based routing for different data types",
+  "createdAt": "2024-01-15T10:40:00",
+  "updatedAt": "2024-01-15T10:40:00"
+}
+```
+
+#### Pipeline Engine Example
+**Request Body**:
+```json
+{
+  "engine": "pipeline",
+  "pipelineConfig": {
+    "type": "pipeline",
+    "steps": [
+      {
+        "name": "validate-input",
+        "transformationId": "input-validation-v1",
+        "continueOnError": false,
+        "description": "Validate input data structure"
+      },
+      {
+        "name": "normalize-data",
+        "transformationId": "data-normalization-v1",
+        "continueOnError": false,
+        "description": "Normalize data format"
+      },
+      {
+        "name": "enrich-data",
+        "transformationId": "data-enrichment-v1",
+        "continueOnError": true,
+        "description": "Add computed fields"
+      }
+    ],
+    "validation": {
+      "finalSchema": "enriched-data-schema-v1",
+      "intermediateSchemas": {
+        "after-step-1": "validated-data-schema-v1",
+        "after-step-2": "normalized-data-schema-v1"
+      }
+    }
+  },
+  "description": "Multi-step data processing pipeline"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "id": 3,
+  "consumerId": "analytics-platform",
+  "engine": "pipeline",
+  "expression": "{\"type\":\"pipeline\",\"steps\":[{\"name\":\"validate-input\",\"transformationId\":\"input-validation-v1\",\"continueOnError\":false,\"description\":\"Validate input data structure\"},{\"name\":\"normalize-data\",\"transformationId\":\"data-normalization-v1\",\"continueOnError\":false,\"description\":\"Normalize data format\"},{\"name\":\"enrich-data\",\"transformationId\":\"data-enrichment-v1\",\"continueOnError\":true,\"description\":\"Add computed fields\"}],\"validation\":{\"finalSchema\":\"enriched-data-schema-v1\",\"intermediateSchemas\":{\"after-step-1\":\"validated-data-schema-v1\",\"after-step-2\":\"normalized-data-schema-v1\"}}}",
+  "configuration": "{\"type\":\"pipeline\",\"steps\":[{\"name\":\"validate-input\",\"transformationId\":\"input-validation-v1\",\"continueOnError\":false,\"description\":\"Validate input data structure\"},{\"name\":\"normalize-data\",\"transformationId\":\"data-normalization-v1\",\"continueOnError\":false,\"description\":\"Normalize data format\"},{\"name\":\"enrich-data\",\"transformationId\":\"data-enrichment-v1\",\"continueOnError\":true,\"description\":\"Add computed fields\"}],\"validation\":{\"finalSchema\":\"enriched-data-schema-v1\",\"intermediateSchemas\":{\"after-step-1\":\"validated-data-schema-v1\",\"after-step-2\":\"normalized-data-schema-v1\"}}}",
+  "description": "Multi-step data processing pipeline",
+  "createdAt": "2024-01-15T10:45:00",
+  "updatedAt": "2024-01-15T10:45:00"
 }
 ```
 
@@ -331,7 +522,9 @@ Get a list of supported transformation engines.
 **Response** (200 OK):
 ```json
 [
-  "JSLT"
+  "jslt",
+  "router",
+  "pipeline"
 ]
 ```
 
@@ -408,8 +601,50 @@ The following compatibility types are supported:
 
 ## Transformation Engines
 
-Currently supported transformation engines:
+The service supports multiple transformation engines for different use cases:
 
-- **JSLT**: JSON Schema Language for Transformations - A powerful, declarative language for transforming JSON data.
+### JSLT Engine (`jslt`)
+- **Purpose**: Simple JSON-to-JSON transformations using JSLT expressions
+- **Use Case**: Field mapping, data normalization, simple transformations
+- **Configuration**: Single JSLT expression string
+- **Example**: `{ "user_id": .id, "full_name": (.firstName + " " + .lastName) }`
+
+### Router Engine (`router`)
+- **Purpose**: Intelligent routing based on input data characteristics
+- **Use Case**: Multi-tenant applications, content-based routing, conditional processing
+- **Configuration**: JSON object with routing rules and conditions
+- **Features**:
+  - JSON path-based condition evaluation
+  - Multiple routing rules with priorities
+  - Default fallback transformation
+  - Schema validation support
+
+### Pipeline Engine (`pipeline`)
+- **Purpose**: Sequential execution of multiple transformations
+- **Use Case**: Complex multi-step processing, data enrichment workflows
+- **Configuration**: JSON object with ordered transformation steps
+- **Features**:
+  - Configurable error handling per step
+  - Result accumulation across steps
+  - Intermediate schema validation
+  - Step-by-step processing control
+
+### Engine Selection Guide
+
+| Use Case | Recommended Engine | Reason |
+|----------|-------------------|---------|
+| Simple field mapping | `jslt` | Most efficient for basic transformations |
+| Multi-tenant data routing | `router` | Routes different data types to appropriate handlers |
+| Complex data processing | `pipeline` | Supports multi-step workflows with error handling |
+| Conditional transformations | `router` | Evaluates conditions to select transformation paths |
+
+### Configuration Validation
+
+All engines include comprehensive configuration validation:
+
+- **JSON Schema Validation**: Router and pipeline configurations are validated against predefined schemas
+- **Expression Validation**: JSLT expressions are compiled and validated before storage
+- **Structural Validation**: Ensures required fields and proper data types
+- **Runtime Safety**: Prevents invalid configurations from being deployed
 
 For more information about JSLT syntax, visit: https://github.com/schibsted/jslt

@@ -5,12 +5,14 @@ A comprehensive Spring Boot application for managing JSON schemas and transformi
 ## Features
 
 - **Schema Registry**: Store, version, and manage JSON schemas with automatic compatibility checking
-- **JSON Transformation**: Transform canonical JSON data into consumer-specific formats using JSLT templates
+- **Advanced JSON Transformation**: Transform data using multiple engines - JSLT, Router, and Pipeline
+- **Router Engine**: Intelligent routing based on data characteristics and conditional logic
+- **Pipeline Engine**: Sequential multi-step transformations with error handling and validation
 - **Multi-Consumer Support**: Handle different data format requirements for various applications (mobile, web, analytics)
 - **RESTful API**: Complete REST API with OpenAPI 3.0 documentation and Swagger UI
 - **Database Persistence**: PostgreSQL with Flyway migrations for reliable schema management
 - **Docker Support**: Containerized deployment with Docker Compose
-- **Extensible Design**: Pluggable transformation engines (currently supports JSLT)
+- **Extensible Design**: Pluggable transformation engines with JSON Schema validation
 
 ## Technology Stack
 
@@ -292,11 +294,12 @@ src/
 
 ## Documentation
 
-- [Schema Evolution Workflow](docs/schema-evolution-workflow.md) - Complete guide to schema evolution with examples
-- [Transformation Extension Plan](docs/transformation-extension-plan.md) - Router and Pipeline engines design and implementation
-- [API Reference](docs/api-reference.md) - Detailed API documentation with examples
+- [Getting Started](docs/getting-started.md) - Quick start guide with examples
+- [Advanced Transformations](docs/advanced-transformations.md) - Router and Pipeline engines implementation guide
+- [API Reference](docs/api-reference.md) - Complete API documentation with examples
 - [Architecture](docs/architecture.md) - System design and components
-- [Getting Started](docs/getting-started.md) - Development setup guide
+- [Transformation Extension Plan](docs/transformation-extension-plan.md) - Router and Pipeline engines design
+- [Schema Evolution Workflow](docs/schema-evolution-workflow.md) - Schema evolution with examples
 - [Deployment](docs/deployment.md) - Production deployment instructions
 - [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
 

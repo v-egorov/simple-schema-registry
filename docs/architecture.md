@@ -111,7 +111,8 @@ CREATE TABLE transformation_templates (
     id BIGSERIAL PRIMARY KEY,
     consumer_id VARCHAR(255) NOT NULL,
     engine VARCHAR(50) NOT NULL DEFAULT 'jslt',
-    template_expression TEXT NOT NULL,
+    template_expression TEXT,  -- Nullable for router/pipeline engines
+    configuration TEXT,        -- JSON configuration for router/pipeline engines
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -133,24 +134,71 @@ CREATE TABLE transformation_templates (
 ```java
 public interface TransformationEngine {
     String getName();
-    Map<String, Object> transform(String template, Map<String, Object> input) throws TransformationException;
+    Map<String, Object> transform(Map<String, Object> inputJson, String expression) throws TransformationException;
+    boolean validateExpression(String expression);
 }
 ```
 
-### Current Implementations
+### Available Transformation Engines
 
-- **JSLT Engine**: Uses the JSLT (JSON Schema Language for Transformations) library
-  - Declarative transformation language
-  - JSON-to-JSON transformations
-  - High performance with compiled templates
+#### 1. JSLT Engine
+- **Implementation**: `JsltTransformationEngine`
+- **Purpose**: Simple JSON-to-JSON transformations using JSLT expressions
+- **Use Case**: Declarative transformations, data normalization, field mapping
+- **Example Expression**: `{ "user_id": .id, "full_name": (.firstName + " " + .lastName) }`
+
+#### 2. Router Engine
+- **Implementation**: `RouterTransformationEngine`
+- **Purpose**: Intelligent routing of transformations based on input data characteristics
+- **Use Case**: Conditional processing, multi-tenant data handling, content-based routing
+- **Configuration**: JSON-based routing rules with conditions and transformation mappings
+
+#### 3. Pipeline Engine
+- **Implementation**: `PipelineTransformationEngine`
+- **Purpose**: Sequential execution of multiple transformations
+- **Use Case**: Complex multi-step processing, data enrichment workflows, validation chains
+- **Configuration**: Ordered list of transformation steps with error handling options
+
+### Engine Architecture Details
+
+#### Router Engine Architecture
+```
+Input JSON → Condition Evaluation → Route Selection → JSLT Transformation → Output JSON
+```
+
+**Key Components**:
+- **ConditionEvaluator**: Evaluates JSON path expressions against input data
+- **RouteSelector**: Selects appropriate transformation based on first matching condition
+- **RouterTransformationEngine**: Main coordinator with fallback to default transformation
+
+#### Pipeline Engine Architecture
+```
+Input JSON → Step 1 → Step 2 → ... → Step N → Output JSON
+```
+
+**Key Components**:
+- **PipelineStep**: Individual transformation step with error handling configuration
+- **PipelineExecutor**: Manages step execution and result accumulation
+- **PipelineTransformationEngine**: Coordinator with configurable error propagation
+
+### Configuration Validation
+
+All transformation engines include configuration validation:
+
+- **JSON Schema Validation**: Router and pipeline configurations are validated against JSON schemas
+- **Structural Validation**: Ensures required fields and proper data types
+- **Expression Validation**: Validates transformation expressions before execution
+- **Error Reporting**: Detailed validation errors for debugging configuration issues
 
 ### Extensibility
 
 The engine abstraction allows for easy addition of new transformation engines:
 
 1. Implement the `TransformationEngine` interface
-2. Register the engine in the service layer
-3. Add engine name to the available engines list
+2. Add configuration validation if needed
+3. Register the engine as a Spring bean
+4. Add engine name to the service's available engines list
+5. Update database schema if configuration storage is required
 
 ## Configuration Management
 
