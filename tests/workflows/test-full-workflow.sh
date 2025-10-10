@@ -8,8 +8,10 @@ source "$(dirname "$0")/../utils/common.sh"
 echo "Running Full Workflow Integration Test"
 echo "======================================"
 
-WORKFLOW_CONSUMER="workflow-test-consumer"
-WORKFLOW_SUBJECT="workflow-test-user"
+# Generate unique identifiers to avoid conflicts
+timestamp=$(date +%s)
+WORKFLOW_CONSUMER="workflow-test-consumer-$timestamp"
+WORKFLOW_SUBJECT="workflow-test-user-$timestamp"
 
 echo
 echo "=== Phase 1: Consumer Registration ==="
@@ -65,10 +67,12 @@ echo
 echo "=== Phase 3: Template Creation ==="
 echo "Creating transformation template for consumer: $WORKFLOW_CONSUMER"
 
-template='. | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}'
+template='{"id": .userId, "name": .fullName, "email": .emailAddress, "registered": .registrationDate, "status": .accountStatus}'
+# Escape quotes in template for JSON
+escaped_template=$(echo "$template" | sed 's/"/\\"/g')
 
 response=$(post_request "/api/transform/templates/$WORKFLOW_CONSUMER" "{
-    \"template\": \"$template\",
+    \"expression\": \"$escaped_template\",
     \"engine\": \"JSLT\"
 }")
 http_code=$(echo "$response" | tail -n1)
@@ -76,7 +80,8 @@ response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 200 "Template creation should succeed"
 assert_json_field "$response_body" "consumerId" "$WORKFLOW_CONSUMER"
-assert_json_field "$response_body" "template" "$template"
+assert_contains "$response_body" '"expression"' "Should contain expression field"
+assert_contains "$response_body" '.userId' "Should contain userId reference"
 assert_json_field "$response_body" "engine" "JSLT"
 
 echo "✓ Transformation template created successfully"

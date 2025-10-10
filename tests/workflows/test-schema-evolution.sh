@@ -8,8 +8,10 @@ source "$(dirname "$0")/../utils/common.sh"
 echo "Running Schema Evolution Workflow Test"
 echo "======================================"
 
-EVOLUTION_SUBJECT="evolution-test-user"
-EVOLUTION_CONSUMER="evolution-test-consumer"
+# Generate unique identifiers
+timestamp=$(date +%s)
+EVOLUTION_SUBJECT="evolution-test-user-$timestamp"
+EVOLUTION_CONSUMER="evolution-test-consumer-$timestamp"
 
 echo
 echo "=== Phase 1: Initial Setup ==="
@@ -58,7 +60,7 @@ v2_schema='{
 
 # Check compatibility first
 compat_response=$(post_request "/api/schemas/$EVOLUTION_SUBJECT/compat" "{
-    \"schema\": $v2_schema
+    \"newSchema\": $v2_schema
 }")
 compat_http_code=$(echo "$compat_response" | tail -n1)
 compat_body=$(echo "$compat_response" | head -n -1)
@@ -83,13 +85,15 @@ echo "=== Phase 3: Template Evolution ==="
 echo "Updating transformation template to handle new field"
 
 # Create initial template
-initial_template='. | {id: .id, name: .name}'
+initial_template='{"id": .id, "name": .name}'
 create_test_template "$EVOLUTION_CONSUMER" "$initial_template"
 
 # Update template for v2
-v2_template='. | {id: .id, name: .name, email: .email}'
+v2_template='{"id": .id, "name": .name, "email": .email}'
+# Escape quotes for JSON
+escaped_v2_template=$(echo "$v2_template" | sed 's/"/\\"/g')
 response=$(post_request "/api/transform/templates/$EVOLUTION_CONSUMER" "{
-    \"template\": \"$v2_template\",
+    \"expression\": \"$escaped_v2_template\",
     \"engine\": \"JSLT\"
 }")
 http_code=$(echo "$response" | tail -n1)
@@ -186,7 +190,7 @@ incompatible_schema='{
 
 # Check compatibility
 compat_response=$(post_request "/api/schemas/$EVOLUTION_SUBJECT/compat" "{
-    \"schema\": $incompatible_schema
+    \"newSchema\": $incompatible_schema
 }")
 compat_http_code=$(echo "$compat_response" | tail -n1)
 compat_body=$(echo "$compat_response" | head -n -1)
