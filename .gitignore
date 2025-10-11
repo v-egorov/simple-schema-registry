@@ -92,3 +92,6 @@ node_modules/
 *.tmp
 *.swp
 *.swo
+
+schema_export*
+db_backup*.sql
