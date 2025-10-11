@@ -80,6 +80,7 @@ logs/
 # Database
 *.db
 *.sqlite
+postgres-data/
 
 # Test coverage
 coverage/
