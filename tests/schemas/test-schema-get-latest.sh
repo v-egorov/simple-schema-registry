@@ -11,6 +11,8 @@ echo "========================================"
 # Setup: Create test schema with multiple versions
 echo
 echo "Setup: Creating test schema with multiple versions..."
+timestamp=$(date +%s)
+subject1="test-latest-version-$timestamp"
 
 schema_v1='{
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -22,7 +24,7 @@ schema_v1='{
     "required": ["id"]
 }'
 
-create_test_schema "test-latest-version" "$schema_v1"
+create_test_schema "$subject1" "$schema_v1"
 
 # Create version 2
 schema_v2='{
@@ -37,7 +39,7 @@ schema_v2='{
 }'
 
 response=$(post_request "/api/schemas" "{
-    \"subject\": \"test-latest-version\",
+    \"subject\": \"$subject1\",
     \"schema\": $schema_v2,
     \"compatibility\": \"BACKWARD\",
     \"description\": \"Version 2 with email\"
@@ -58,7 +60,7 @@ schema_v3='{
 }'
 
 response=$(post_request "/api/schemas" "{
-    \"subject\": \"test-latest-version\",
+    \"subject\": \"$subject1\",
     \"schema\": $schema_v3,
     \"compatibility\": \"BACKWARD\",
     \"description\": \"Version 3 with phone\"
@@ -68,12 +70,12 @@ assert_response "$(echo "$response" | tail -n1)" 201 "Version 3 creation should 
 # Test 1: Get latest version
 echo
 echo "Test 1: Get latest version"
-response=$(get_request "/api/schemas/test-latest-version/latest")
+response=$(get_request "/api/schemas/$subject1/latest")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 200 "Should successfully retrieve latest version"
-assert_json_field "$response_body" "subject" "test-latest-version"
+assert_json_field "$response_body" "subject" "$subject1"
 assert_json_field "$response_body" "version" 3
 assert_contains "$response_body" '"phone"' "Should contain phone field from v3"
 
@@ -81,7 +83,7 @@ assert_contains "$response_body" '"phone"' "Should contain phone field from v3"
 echo
 echo "Test 2: Verify it's the latest version"
 # Get all versions and check the highest version number
-all_versions=$(get_request "/api/schemas/test-latest-version" | head -n -1)
+all_versions=$(get_request "/api/schemas/$subject1" | head -n -1)
 latest_from_all=$(echo "$all_versions" | grep -o '"version":[0-9]*' | sed 's/"version"://g' | sort -n | tail -1)
 latest_from_endpoint=$(echo "$response_body" | grep -o '"version":[0-9]*' | sed 's/"version"://g')
 
@@ -96,6 +98,7 @@ fi
 # Test 3: Get latest for subject with only one version
 echo
 echo "Test 3: Get latest for single version subject"
+subject3="test-single-version-$timestamp"
 single_schema='{
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
@@ -103,14 +106,14 @@ single_schema='{
     "required": ["productId"]
 }'
 
-create_test_schema "test-single-version" "$single_schema"
+create_test_schema "$subject3" "$single_schema"
 
-response=$(get_request "/api/schemas/test-single-version/latest")
+response=$(get_request "/api/schemas/$subject3/latest")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 200 "Should retrieve latest for single version"
-assert_json_field "$response_body" "subject" "test-single-version"
+assert_json_field "$response_body" "subject" "$subject3"
 assert_json_field "$response_body" "version" 1
 
 # Test 4: Try to get latest for non-existent subject
@@ -138,7 +141,7 @@ schema_v4='{
 }'
 
 response=$(post_request "/api/schemas" "{
-    \"subject\": \"test-latest-version\",
+    \"subject\": \"$subject1\",
     \"schema\": $schema_v4,
     \"compatibility\": \"BACKWARD\",
     \"description\": \"Version 4 with address\"
@@ -146,7 +149,7 @@ response=$(post_request "/api/schemas" "{
 assert_response "$(echo "$response" | tail -n1)" 201 "Version 4 creation should succeed"
 
 # Now get latest again
-response=$(get_request "/api/schemas/test-latest-version/latest")
+response=$(get_request "/api/schemas/$subject1/latest")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
@@ -157,8 +160,8 @@ assert_contains "$response_body" '"address"' "Should contain address field from 
 # Test 6: Compare with specific version endpoint
 echo
 echo "Test 6: Compare latest with specific version 4"
-specific_v4=$(get_request "/api/schemas/test-latest-version/4" | head -n -1)
-latest_response=$(get_request "/api/schemas/test-latest-version/latest" | head -n -1)
+specific_v4=$(get_request "/api/schemas/$subject1/4" | head -n -1)
+latest_response=$(get_request "/api/schemas/$subject1/latest" | head -n -1)
 
 # They should be identical (except possibly timestamps)
 v4_version=$(echo "$specific_v4" | grep -o '"version":[0-9]*')
