@@ -196,7 +196,7 @@ curl -X POST http://localhost:8080/api/consumers/templates/mobile-app \
   -H "Content-Type: application/json" \
   -d '{
     "engine": "jslt",
-    "expression": ". | {id: .id, name: .name, email: .email}",
+    "expression": ". | {\"id\": .id, \"name\": .name, \"email\": .email}",
     "description": "Simple field mapping for mobile app"
   }'
 ```
@@ -280,7 +280,7 @@ curl -X POST http://localhost:8080/api/consumers/templates/analytics-platform \
 **Note**: All transformation requests require a `subject` query parameter that matches one of the consumer's registered subjects.
 
 #### JSLT Engine Transformation
-Transform data using the simple JSLT template:
+Transform data using the simple JSLT template. This example shows how JSLT can filter fields - only `id`, `name`, and `email` are included in the output, while `internalId` and `createdAt` are removed:
 
 ```bash
 curl -X POST "http://localhost:8080/api/consumers/mobile-app/transform?subject=user-profile" \
@@ -307,6 +307,62 @@ Response:
   "subject": "user-profile"
 }
 ```
+
+**Note**: The transformation template `{"id": .id, "name": .name, "email": .email}` explicitly selects only the desired fields, effectively filtering out sensitive or unnecessary data like `internalId` and `createdAt`.
+
+#### JSLT Engine Transformation - Complex Object Filtering
+Transform data with nested objects, removing sensitive information from complex structures:
+
+```bash
+curl -X POST "http://localhost:8080/api/consumers/mobile-app/transform?subject=user-profile" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "canonicalJson": {
+      "userId": 123,
+      "personalInfo": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john@example.com",
+        "phone": "+1-555-0123",
+        "ssn": "123-45-6789"
+      },
+      "preferences": {
+        "theme": "dark",
+        "notifications": true,
+        "marketingEmails": false
+      },
+      "metadata": {
+        "createdAt": "2024-01-15T10:30:00Z",
+        "lastLogin": "2024-01-20T14:22:00Z",
+        "internalNotes": "VIP customer"
+      }
+    }
+  }'
+```
+
+Template: `{"userId": .userId, "personalInfo": {"firstName": .personalInfo.firstName, "lastName": .personalInfo.lastName, "email": .personalInfo.email}, "preferences": .preferences}`
+
+Response:
+```json
+{
+  "transformedJson": {
+    "userId": 123,
+    "personalInfo": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john@example.com"
+    },
+    "preferences": {
+      "theme": "dark",
+      "notifications": true,
+      "marketingEmails": false
+    }
+  },
+  "subject": "user-profile"
+}
+```
+
+**Note**: This example shows filtering within nested objects. The `personalInfo` object has `phone` and `ssn` (sensitive data) removed, and the entire `metadata` object is excluded from the output.
 
 #### Router Engine Transformation - User Data
 Transform user data using the router (routes to user-normalization-v1):
@@ -712,7 +768,7 @@ curl -X POST http://localhost:8080/api/consumers/templates/mobile-app \
   -H "Content-Type: application/json" \
   -d '{
     "engine": "jslt",
-    "expression": ". | {user_id: .id, full_name: (.firstName + \" \" + .lastName), email: .email, member_since: .registrationDate}",
+    "expression": ". | {\"user_id\": .id, \"full_name\": (.firstName + \" \" + .lastName), \"email\": .email, \"member_since\": .registrationDate}",
     "description": "Mobile-optimized user profile transformation"
   }'
 ```

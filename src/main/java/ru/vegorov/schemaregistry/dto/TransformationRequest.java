@@ -1,6 +1,5 @@
 package ru.vegorov.schemaregistry.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.Map;
@@ -10,7 +9,6 @@ public class TransformationRequest {
     @NotNull
     private Map<String, Object> canonicalJson;
 
-    @NotBlank
     private String subject;
 
     // Constructors
