@@ -143,12 +143,12 @@ make_request() {
     local data="$3"
 
     if [ -n "$data" ]; then
-        curl -s -w "\n%{http_code}" -X "$method" "$BASE_URL$url" \
+        curl -s -w "\n%{http_code}" --max-time 10 -X "$method" "$BASE_URL$url" \
             -H "$CONTENT_TYPE" \
             -H "$ACCEPT" \
             -d "$data"
     else
-        curl -s -w "\n%{http_code}" -X "$method" "$BASE_URL$url" \
+        curl -s -w "\n%{http_code}" --max-time 10 -X "$method" "$BASE_URL$url" \
             -H "$ACCEPT"
     fi
 }
@@ -252,6 +252,48 @@ create_test_template() {
         echo "$response_body"
     else
         log_error "Failed to create test template for consumer: $consumer_id (HTTP $http_code)"
+        echo ""
+    fi
+}
+
+create_router_template() {
+    local consumer_id="$1"
+    local router_config="$2"
+
+    local response=$(post_request "/api/transform/templates/$consumer_id" "{
+        \"engine\": \"router\",
+        \"routerConfig\": $router_config
+    }")
+
+    local http_code=$(echo "$response" | tail -n1)
+    local response_body=$(echo "$response" | head -n -1)
+
+    if [ "$http_code" -eq 200 ]; then
+        log_info "Created router template for consumer: $consumer_id"
+        echo "$response_body"
+    else
+        log_error "Failed to create router template for consumer: $consumer_id (HTTP $http_code)"
+        echo ""
+    fi
+}
+
+create_pipeline_template() {
+    local consumer_id="$1"
+    local pipeline_config="$2"
+
+    local response=$(post_request "/api/transform/templates/$consumer_id" "{
+        \"engine\": \"pipeline\",
+        \"pipelineConfig\": $pipeline_config
+    }")
+
+    local http_code=$(echo "$response" | tail -n1)
+    local response_body=$(echo "$response" | head -n -1)
+
+    if [ "$http_code" -eq 200 ]; then
+        log_info "Created pipeline template for consumer: $consumer_id"
+        echo "$response_body"
+    else
+        log_error "Failed to create pipeline template for consumer: $consumer_id (HTTP $http_code)"
         echo ""
     fi
 }
