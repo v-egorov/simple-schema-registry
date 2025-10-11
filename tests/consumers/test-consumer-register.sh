@@ -56,7 +56,7 @@ response=$(post_request "/api/consumers" "{
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
-assert_response "$http_code" 400 "API should prevent duplicate consumer registration"
+assert_response "$http_code" 409 "API should prevent duplicate consumer registration"
 assert_contains "$response_body" "already exists" "Should provide descriptive error message"
 
 # Test 4: Register consumer with invalid data (missing required field)

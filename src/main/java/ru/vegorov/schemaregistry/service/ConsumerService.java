@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.vegorov.schemaregistry.dto.ConsumerRegistrationRequest;
 import ru.vegorov.schemaregistry.dto.ConsumerResponse;
 import ru.vegorov.schemaregistry.entity.ConsumerEntity;
+import ru.vegorov.schemaregistry.exception.ConflictException;
 import ru.vegorov.schemaregistry.exception.ResourceNotFoundException;
 import ru.vegorov.schemaregistry.repository.ConsumerRepository;
 
@@ -26,7 +27,7 @@ public class ConsumerService {
      */
     public ConsumerResponse registerConsumer(ConsumerRegistrationRequest request) {
         if (consumerRepository.existsByConsumerId(request.getConsumerId())) {
-            throw new IllegalArgumentException(
+            throw new ConflictException(
                 String.format("Consumer with ID '%s' already exists", request.getConsumerId()));
         }
 

@@ -60,7 +60,7 @@ v2_schema='{
 
 # Check compatibility first
 compat_response=$(post_request "/api/schemas/$EVOLUTION_SUBJECT/compat" "{
-    \"newSchema\": $v2_schema
+    \"schema\": $v2_schema
 }")
 compat_http_code=$(echo "$compat_response" | tail -n1)
 compat_body=$(echo "$compat_response" | head -n -1)
@@ -190,7 +190,7 @@ incompatible_schema='{
 
 # Check compatibility
 compat_response=$(post_request "/api/schemas/$EVOLUTION_SUBJECT/compat" "{
-    \"newSchema\": $incompatible_schema
+    \"schema\": $incompatible_schema
 }")
 compat_http_code=$(echo "$compat_response" | tail -n1)
 compat_body=$(echo "$compat_response" | head -n -1)

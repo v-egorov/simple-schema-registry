@@ -41,7 +41,7 @@ compatible_schema='{
 }'
 
 response=$(post_request "/api/schemas/test-compatibility/compat" "{
-    \"newSchema\": $compatible_schema
+    \"schema\": $compatible_schema
 }")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
@@ -65,7 +65,7 @@ incompatible_schema='{
 }'
 
 response=$(post_request "/api/schemas/test-compatibility/compat" "{
-    \"newSchema\": $incompatible_schema
+    \"schema\": $incompatible_schema
 }")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
@@ -90,7 +90,7 @@ fi
 echo
 echo "Test 3: Check compatibility for non-existent subject"
 response=$(post_request "/api/schemas/non-existent-subject/compat" "{
-    \"newSchema\": $base_schema
+    \"schema\": $base_schema
 }")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
@@ -107,7 +107,7 @@ invalid_schema='{
 }'
 
 response=$(post_request "/api/schemas/test-compatibility/compat" "{
-    \"newSchema\": $invalid_schema
+    \"schema\": $invalid_schema
 }")
 http_code=$(echo "$response" | tail -n1)
 
@@ -127,7 +127,7 @@ fi
 echo
 echo "Test 5: Check compatibility with empty schema"
 response=$(post_request "/api/schemas/test-compatibility/compat" "{
-    \"newSchema\": {}
+    \"schema\": {}
 }")
 http_code=$(echo "$response" | tail -n1)
 
@@ -146,7 +146,7 @@ fi
 echo
 echo "Test 6: Verify compatibility response structure"
 response=$(post_request "/api/schemas/test-compatibility/compat" "{
-    \"newSchema\": $compatible_schema
+    \"schema\": $compatible_schema
 }")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
@@ -195,7 +195,7 @@ forward_test_schema='{
 }'
 
 response=$(post_request "/api/schemas/test-forward-compat/compat" "{
-    \"newSchema\": $forward_test_schema
+    \"schema\": $forward_test_schema
 }")
 http_code=$(echo "$response" | tail -n1)
 

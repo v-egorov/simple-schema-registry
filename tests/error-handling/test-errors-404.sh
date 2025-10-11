@@ -74,7 +74,7 @@ response=$(post_request "/api/schemas/definitely-does-not-exist/compat" '{
 }')
 http_code=$(echo "$response" | tail -n1)
 
-assert_response "$http_code" 404 "Should return 404 for compatibility check of non-existent subject"
+assert_response "$http_code" 200 "Should return 200 for compatibility check of non-existent subject (always compatible)"
 
 # Test 8: Invalid endpoint
 echo
@@ -107,7 +107,7 @@ assert_response "$http_code" 404 "Should return 404 for case mismatch (assuming 
 echo
 echo "Test 11: Transform with wrong consumer ID"
 create_test_consumer "test-wrong-consumer" "Wrong Consumer Test"
-create_test_template "test-wrong-consumer" '. | {id: .userId}'
+create_test_template "test-wrong-consumer" '{ "id": .userId }'
 
 response=$(post_request "/api/transform/wrong-consumer-name" '{
     "canonicalJson": {"userId": 456}

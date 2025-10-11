@@ -7,21 +7,21 @@ import java.util.Map;
 public class CompatibilityCheckRequest {
 
     @NotNull
-    private Map<String, Object> newSchema;
+    private Map<String, Object> schema;
 
     // Constructors
     public CompatibilityCheckRequest() {}
 
-    public CompatibilityCheckRequest(Map<String, Object> newSchema) {
-        this.newSchema = newSchema;
+    public CompatibilityCheckRequest(Map<String, Object> schema) {
+        this.schema = schema;
     }
 
     // Getters and Setters
-    public Map<String, Object> getNewSchema() {
-        return newSchema;
+    public Map<String, Object> getSchema() {
+        return schema;
     }
 
-    public void setNewSchema(Map<String, Object> newSchema) {
-        this.newSchema = newSchema;
+    public void setSchema(Map<String, Object> schema) {
+        this.schema = schema;
     }
 }

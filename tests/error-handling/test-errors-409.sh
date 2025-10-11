@@ -131,11 +131,11 @@ echo "Test 4: Template update scenarios"
 create_test_consumer "test-template-conflict" "Template Conflict Consumer"
 
 # Create initial template
-create_test_template "test-template-conflict" '. | {id: .userId, name: .fullName}'
+create_test_template "test-template-conflict" '{ "id": .userId, "name": .fullName }'
 
 # Update template - this should work (not a conflict)
 response=$(post_request "/api/transform/templates/test-template-conflict" '{
-    "template": ". | {id: .userId, name: .fullName, email: .emailAddress}",
+    "expression": "{ \"id\": .userId, \"name\": .fullName, \"email\": .emailAddress }",
     "engine": "JSLT"
 }')
 http_code=$(echo "$response" | tail -n1)

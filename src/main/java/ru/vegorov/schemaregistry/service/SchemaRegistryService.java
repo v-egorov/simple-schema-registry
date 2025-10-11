@@ -98,7 +98,7 @@ public class SchemaRegistryService {
         // For now, implement basic compatibility checking
         // In a real implementation, this would use proper JSON Schema compatibility algorithms
         boolean compatible = checkSchemaCompatibility(latestSchema.getSchemaJson(),
-                                                    request.getNewSchema(), compatibilityMode);
+                                                     request.getSchema(), compatibilityMode);
 
         String message = compatible ? "Schema is compatible" : "Schema is not compatible";
 

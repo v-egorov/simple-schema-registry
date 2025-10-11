@@ -90,7 +90,7 @@ assert_contains() {
 
     ((TESTS_RUN++))
 
-    if echo "$haystack" | grep -q "$needle"; then
+    if echo "$haystack" | grep -F -q "$needle"; then
         log_success "$message"
         ((TESTS_PASSED++))
         return 0
