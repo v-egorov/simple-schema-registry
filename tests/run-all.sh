@@ -126,16 +126,6 @@ parse_args() {
 run_test_script() {
     local script_path="$1"
     local script_name=$(basename "$script_path" .sh)
-
-    if [ ! -f "$script_path" ]; then
-        log_error "Test script not found: $script_path"
-        return 1
-    fi
-
-    log_suite "Running $script_name"
-
-    # Capture test output
-    local output
     local start_time=$(date +%s)
 
     if [ "$VERBOSE" = true ]; then
@@ -172,7 +162,7 @@ run_test_suite() {
 
     log_header "$suite_name Tests"
 
-    local suite_tests_run=0
+    local test_run=0
     local suite_tests_passed=0
     local suite_tests_failed=0
 
@@ -181,33 +171,73 @@ run_test_suite() {
         return 0
     fi
 
-    local script_count=$(find "$suite_dir" -name "$script_pattern" -type f | wc -l)
+    # Define script execution order for each suite
+    local scripts=()
+    if [ "$script_pattern" != "*.sh" ]; then
+        # Specific script requested (e.g., for quick mode)
+        scripts=("$script_pattern")
+    else
+        case "$suite_name" in
+            "Health")
+                scripts=("test-health.sh" "test-actuator.sh")
+                ;;
+            "Consumers")
+                scripts=("test-consumer-register.sh" "test-consumer-get.sh" "test-consumer-list.sh")
+                ;;
+            "Schemas")
+                scripts=("test-schema-register.sh" "test-schema-get-specific.sh" "test-schema-get-latest.sh" "test-schema-get-all.sh" "test-schema-subjects.sh" "test-schema-compatibility.sh")
+                ;;
+            "Transform")
+                scripts=("test-transform-template-create.sh" "test-transform-template-get.sh" "test-transform-data.sh" "test-transform-engines.sh" "test-transform-router.sh" "test-transform-pipeline.sh")
+                ;;
+            "Workflows")
+                scripts=("test-full-workflow.sh" "test-schema-evolution.sh")
+                ;;
+            "Error Handling")
+                scripts=("test-errors-400.sh" "test-errors-404.sh" "test-errors-409.sh")
+                ;;
+            *)
+                # Fallback: use all scripts in alphabetical order
+                for script in "$suite_dir"/*.sh; do
+                    if [ -f "$script" ]; then
+                        scripts+=("$(basename "$script")")
+                    fi
+                done
+                ;;
+        esac
+    fi
+    log_info "Scripts array: ${scripts[*]}"
+    local script_count=${#scripts[@]}
     if [ "$script_count" -eq 0 ]; then
-        log_warning "No test scripts found in $suite_dir"
+        log_warning "No test scripts found in $suite_name"
         return 0
     fi
 
     log_info "Found $script_count test scripts in $suite_name"
 
-    for script in "$suite_dir"/*.sh; do
-        if [ -f "$script" ]; then
-            if run_test_script "$script"; then
-                ((suite_tests_passed++))
+    for script_name in "${scripts[@]}"; do
+        local script_path="$suite_dir/$script_name"
+        log_info "Checking $script_path"
+        if [ -f "$script_path" ]; then
+            if run_test_script "$script_path"; then
+                suite_tests_passed=$((suite_tests_passed + 1))
             else
-                ((suite_tests_failed++))
+                suite_tests_failed=$((suite_tests_failed + 1))
             fi
-            ((suite_tests_run++))
+            test_run=$((test_run + 1))
+        else
+            log_warning "Script not found: $script_path"
         fi
     done
 
     # Store suite results
-    SUITE_RESULTS+=("$suite_name:$suite_tests_run:$suite_tests_passed:$suite_tests_failed")
+    SUITE_RESULTS+=("$suite_name:$test_run:$suite_tests_passed:$suite_tests_failed")
 
-    TOTAL_TESTS_RUN=$((TOTAL_TESTS_RUN + suite_tests_run))
+    TOTAL_TESTS_RUN=$((TOTAL_TESTS_RUN + test_run))
     TOTAL_TESTS_PASSED=$((TOTAL_TESTS_PASSED + suite_tests_passed))
     TOTAL_TESTS_FAILED=$((TOTAL_TESTS_FAILED + suite_tests_failed))
 
-    log_info "$suite_name: $suite_tests_run tests, $suite_tests_passed passed, $suite_tests_failed failed"
+    log_info "$suite_name: $test_run tests, $suite_tests_passed passed, $suite_tests_failed failed"
 }
 
 # Generate JUnit XML report
