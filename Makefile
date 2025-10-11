@@ -54,13 +54,13 @@ logs-db: ## Show logs from database service only
 
 # Database targets
 db-migrate: ## Run database migrations
-	mvn flyway:migrate
+	mvn flyway:migrate -Dspring.datasource.url=jdbc:postgresql://localhost:5432/schema_registry -Dspring.datasource.username=schema_user -Dspring.datasource.password=schema_password
 
 db-clean: ## Clean database (drop all objects)
-	mvn flyway:clean
+	mvn flyway:clean -Dspring.datasource.url=jdbc:postgresql://localhost:5432/schema_registry -Dspring.datasource.username=schema_user -Dspring.datasource.password=schema_password
 
 db-info: ## Show database migration info
-	mvn flyway:info
+	mvn flyway:info -Dspring.datasource.url=jdbc:postgresql://localhost:5432/schema_registry -Dspring.datasource.username=schema_user -Dspring.datasource.password=schema_password
 
 db-seed: ## Seed database with sample data (if implemented)
 	@echo "Database seeding not yet implemented"

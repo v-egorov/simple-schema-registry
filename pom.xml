@@ -169,6 +169,7 @@
                     <url>${spring.datasource.url}</url>
                     <user>${spring.datasource.username}</user>
                     <password>${spring.datasource.password}</password>
+                    <cleanDisabled>false</cleanDisabled>
                 </configuration>
                 <dependencies>
                     <dependency>
