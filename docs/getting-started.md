@@ -106,13 +106,23 @@ For development with your own PostgreSQL instance:
    curl http://localhost:8080/actuator/health
    ```
 
+## Multi-Subject Consumer Support
+
+This service supports consumers that can subscribe to multiple subjects. When registering a consumer, specify the subjects they will consume. All transformation requests must include a `subject` parameter to indicate which subject the data belongs to.
+
+### Key Features:
+- **Multi-Subject Registration**: Consumers can register for multiple subjects
+- **Subject-Specific Transformations**: Each transformation request specifies the subject
+- **Subject Validation**: The service validates that consumers are registered for requested subjects
+- **Semver Schema Versioning**: Schema versions follow semantic versioning (x.y.z format)
+
 ## First API Calls
 
 Let's test the service with some basic API calls using curl.
 
 ### 1. Register a Consumer
 
-First, register a consumer application:
+First, register a consumer application with the subjects it will consume:
 
 ```bash
 curl -X POST http://localhost:8080/api/consumers \
@@ -120,16 +130,19 @@ curl -X POST http://localhost:8080/api/consumers \
   -d '{
     "consumerId": "mobile-app",
     "name": "Mobile Application",
-    "description": "iOS and Android mobile app"
+    "description": "iOS and Android mobile app",
+    "subjects": ["user-profile", "product-catalog"]
   }'
 ```
 
 Response:
 ```json
 {
+  "id": 1,
   "consumerId": "mobile-app",
   "name": "Mobile Application",
   "description": "iOS and Android mobile app",
+  "subjects": ["user-profile", "product-catalog"],
   "createdAt": "2024-01-15T10:30:00",
   "updatedAt": "2024-01-15T10:30:00"
 }
@@ -164,7 +177,7 @@ Response:
 {
   "id": 1,
   "subject": "user-profile",
-  "version": 1,
+  "version": "1.0.0",
   "schema": {...},
   "compatibility": "BACKWARD",
   "description": "User profile schema",
@@ -179,7 +192,7 @@ Response:
 Create a simple transformation template for the mobile app:
 
 ```bash
-curl -X POST http://localhost:8080/api/transform/templates/mobile-app \
+curl -X POST http://localhost:8080/api/consumers/templates/mobile-app \
   -H "Content-Type: application/json" \
   -d '{
     "engine": "jslt",
@@ -192,7 +205,7 @@ curl -X POST http://localhost:8080/api/transform/templates/mobile-app \
 Create a router template that routes different data types:
 
 ```bash
-curl -X POST http://localhost:8080/api/transform/templates/multi-tenant-app \
+curl -X POST http://localhost:8080/api/consumers/templates/multi-tenant-app \
   -H "Content-Type: application/json" \
   -d '{
     "engine": "router",
@@ -224,7 +237,7 @@ curl -X POST http://localhost:8080/api/transform/templates/multi-tenant-app \
 Create a pipeline template for multi-step processing:
 
 ```bash
-curl -X POST http://localhost:8080/api/transform/templates/analytics-platform \
+curl -X POST http://localhost:8080/api/consumers/templates/analytics-platform \
   -H "Content-Type: application/json" \
   -d '{
     "engine": "pipeline",
@@ -264,11 +277,13 @@ curl -X POST http://localhost:8080/api/transform/templates/analytics-platform \
 
 ### 4. Transform Data with Different Engines
 
+**Note**: All transformation requests require a `subject` query parameter that matches one of the consumer's registered subjects.
+
 #### JSLT Engine Transformation
 Transform data using the simple JSLT template:
 
 ```bash
-curl -X POST http://localhost:8080/api/transform/mobile-app \
+curl -X POST "http://localhost:8080/api/consumers/mobile-app/transform?subject=user-profile" \
   -H "Content-Type: application/json" \
   -d '{
     "canonicalJson": {
@@ -288,7 +303,8 @@ Response:
     "id": 123,
     "name": "John Doe",
     "email": "john@example.com"
-  }
+  },
+  "subject": "user-profile"
 }
 ```
 
@@ -296,7 +312,7 @@ Response:
 Transform user data using the router (routes to user-normalization-v1):
 
 ```bash
-curl -X POST http://localhost:8080/api/transform/multi-tenant-app \
+curl -X POST "http://localhost:8080/api/consumers/multi-tenant-app/transform?subject=user-profile" \
   -H "Content-Type: application/json" \
   -d '{
     "canonicalJson": {
@@ -327,7 +343,7 @@ Response:
 Transform product data using the router (routes to product-enrichment-v1):
 
 ```bash
-curl -X POST http://localhost:8080/api/transform/multi-tenant-app \
+curl -X POST "http://localhost:8080/api/consumers/multi-tenant-app/transform?subject=product-catalog" \
   -H "Content-Type: application/json" \
   -d '{
     "canonicalJson": {
@@ -359,7 +375,7 @@ Response:
 Transform data through the multi-step pipeline:
 
 ```bash
-curl -X POST http://localhost:8080/api/transform/analytics-platform \
+curl -X POST "http://localhost:8080/api/consumers/analytics-platform/transform?subject=user-profile" \
   -H "Content-Type: application/json" \
   -d '{
     "canonicalJson": {
@@ -387,7 +403,8 @@ Response:
     "normalized": true,
     "enriched": true,
     "timestamp": "2024-01-15T10:35:00Z"
-  }
+  },
+  "subject": "user-profile"
 }
 ```
 
@@ -617,7 +634,8 @@ curl -X POST http://localhost:8080/api/consumers \
   -d '{
     "consumerId": "mobile-app",
     "name": "Mobile Shopping App",
-    "description": "iOS and Android e-commerce app"
+    "description": "iOS and Android e-commerce app",
+    "subjects": ["user-profile", "product-catalog", "order-data"]
   }'
 
 # Web dashboard consumer
@@ -626,7 +644,8 @@ curl -X POST http://localhost:8080/api/consumers \
   -d '{
     "consumerId": "web-dashboard",
     "name": "Admin Dashboard",
-    "description": "Internal admin dashboard"
+    "description": "Internal admin dashboard",
+    "subjects": ["user-profile", "product-catalog", "order-data", "analytics-data"]
   }'
 
 # Analytics platform consumer
@@ -635,7 +654,8 @@ curl -X POST http://localhost:8080/api/consumers \
   -d '{
     "consumerId": "analytics-platform",
     "name": "Analytics Platform",
-    "description": "Data analytics and reporting platform"
+    "description": "Data analytics and reporting platform",
+    "subjects": ["user-profile", "product-catalog", "order-data"]
   }'
 ```
 
@@ -688,7 +708,7 @@ curl -X POST http://localhost:8080/api/schemas \
 
 **Mobile App Template (JSLT)**:
 ```bash
-curl -X POST http://localhost:8080/api/transform/templates/mobile-app \
+curl -X POST http://localhost:8080/api/consumers/templates/mobile-app \
   -H "Content-Type: application/json" \
   -d '{
     "engine": "jslt",
@@ -699,7 +719,7 @@ curl -X POST http://localhost:8080/api/transform/templates/mobile-app \
 
 **Web Dashboard Template (Router)**:
 ```bash
-curl -X POST http://localhost:8080/api/transform/templates/web-dashboard \
+curl -X POST http://localhost:8080/api/consumers/templates/web-dashboard \
   -H "Content-Type: application/json" \
   -d '{
     "engine": "router",
@@ -734,7 +754,7 @@ curl -X POST http://localhost:8080/api/transform/templates/web-dashboard \
 
 **Analytics Platform Template (Pipeline)**:
 ```bash
-curl -X POST http://localhost:8080/api/transform/templates/analytics-platform \
+curl -X POST http://localhost:8080/api/consumers/templates/analytics-platform \
   -H "Content-Type: application/json" \
   -d '{
     "engine": "pipeline",
@@ -783,7 +803,7 @@ curl -X POST http://localhost:8080/api/transform/templates/analytics-platform \
 
 **Mobile App User Data**:
 ```bash
-curl -X POST http://localhost:8080/api/transform/mobile-app \
+curl -X POST "http://localhost:8080/api/consumers/mobile-app/transform?subject=user-profile" \
   -H "Content-Type: application/json" \
   -d '{
     "canonicalJson": {
@@ -799,7 +819,7 @@ curl -X POST http://localhost:8080/api/transform/mobile-app \
 
 **Web Dashboard Product Data**:
 ```bash
-curl -X POST http://localhost:8080/api/transform/web-dashboard \
+curl -X POST "http://localhost:8080/api/consumers/web-dashboard/transform?subject=product-catalog" \
   -H "Content-Type: application/json" \
   -d '{
     "canonicalJson": {
@@ -817,7 +837,7 @@ curl -X POST http://localhost:8080/api/transform/web-dashboard \
 
 **Analytics Platform Processing**:
 ```bash
-curl -X POST http://localhost:8080/api/transform/analytics-platform \
+curl -X POST "http://localhost:8080/api/consumers/analytics-platform/transform?subject=user-profile" \
   -H "Content-Type: application/json" \
   -d '{
     "canonicalJson": {
@@ -887,7 +907,7 @@ class TransformationEngineTest {
 make test-integration
 
 # Test specific transformation scenarios
-curl -X POST http://localhost:8080/api/transform/test-consumer \
+curl -X POST "http://localhost:8080/api/consumers/test-consumer/transform?subject=test-subject" \
   -H "Content-Type: application/json" \
   -d @test-data.json
 ```
