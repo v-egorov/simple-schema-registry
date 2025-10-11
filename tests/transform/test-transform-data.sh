@@ -45,8 +45,7 @@ echo
 echo "Test 2: Transform data for non-existent consumer"
 response=$(post_request "/api/transform/non-existent-consumer" '{
     "canonicalJson": {
-        "userId": 456,
-        "fullName": "Jane Smith"
+        "userId": 123
     }
 }')
 http_code=$(echo "$response" | tail -n1)
@@ -88,7 +87,7 @@ fi
 # Test 5: Transform with missing canonicalJson field
 echo
 echo "Test 5: Transform with missing canonicalJson field"
-response=$(post_request "/api/transform/test-transform-consumer" '{
+response=$(post_request "/api/transform/$consumer_id" '{
     "data": {"userId": 999}
 }')
 http_code=$(echo "$response" | tail -n1)
@@ -98,7 +97,7 @@ assert_response "$http_code" 400 "Should reject request without canonicalJson fi
 # Test 6: Transform with empty canonicalJson
 echo
 echo "Test 6: Transform with empty canonicalJson"
-response=$(post_request "/api/transform/test-transform-consumer" '{
+response=$(post_request "/api/transform/$consumer_id" '{
     "canonicalJson": {}
 }')
 http_code=$(echo "$response" | tail -n1)
@@ -137,7 +136,7 @@ assert_contains "$response_body" '"email":"alice@example.com"' "Should contain c
 echo
 echo "Test 8: Test transformation with invalid template"
 # Try to create a consumer with invalid JSLT template
-invalid_template='{invalid_syntax .userId}'
+invalid_template='{invalid json'
 invalid_consumer="test-invalid-template-$timestamp"
 create_test_consumer "$invalid_consumer" "Invalid Template Consumer"
 

@@ -87,10 +87,13 @@ fi
 echo
 echo "Test 4: Create template with missing template field"
 response=$(post_request "/api/transform/templates/$consumer_id" "{
-    \"engine\": \"JSLT\"
+    \"engine\": \"JSLT\",
+    \"expression\": null
 }")
 http_code=$(echo "$response" | tail -n1)
+response_body=$(echo "$response" | head -n -1)
 
+echo "Response: $response_body"
 assert_response "$http_code" 400 "Should reject template creation without template field"
 
 # Test 5: Create template with invalid engine

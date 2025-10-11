@@ -273,6 +273,7 @@ create_router_template() {
         echo "$response_body"
     else
         log_error "Failed to create router template for consumer: $consumer_id (HTTP $http_code)"
+        log_error "Response: $response_body"
         echo ""
     fi
 }
