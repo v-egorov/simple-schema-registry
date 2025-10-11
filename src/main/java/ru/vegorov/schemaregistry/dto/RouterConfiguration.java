@@ -13,7 +13,6 @@ public class RouterConfiguration {
     @NotNull
     private String type = "router";
 
-    @NotEmpty
     @Valid
     private List<Route> routes;
 

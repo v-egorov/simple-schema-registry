@@ -51,12 +51,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TransformationException.class)
     public ResponseEntity<ErrorResponse> handleTransformation(TransformationException ex) {
         ErrorResponse error = new ErrorResponse(
-            HttpStatus.BAD_REQUEST.value(),
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
             "Transformation Error",
             ex.getMessage(),
             LocalDateTime.now()
         );
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

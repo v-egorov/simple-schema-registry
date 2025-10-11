@@ -21,9 +21,8 @@ class RouterTransformationEngineTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        JsltTransformationEngine jsltEngine = new JsltTransformationEngine(objectMapper);
         configValidator = new ConfigurationValidator(objectMapper);
-        routerEngine = new RouterTransformationEngine(objectMapper, jsltEngine, configValidator);
+        routerEngine = new RouterTransformationEngine(objectMapper, configValidator);
     }
 
     @Test

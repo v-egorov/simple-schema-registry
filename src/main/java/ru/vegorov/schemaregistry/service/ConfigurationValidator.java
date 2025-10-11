@@ -75,7 +75,6 @@ public class ConfigurationValidator {
                     },
                     "routes": {
                         "type": "array",
-                        "minItems": 1,
                         "items": {
                             "type": "object",
                             "properties": {

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 import ru.vegorov.schemaregistry.dto.RouterConfiguration;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -17,13 +18,11 @@ import java.util.Map;
 public class RouterTransformationEngine implements TransformationEngine {
 
     private final ObjectMapper objectMapper;
-    private final JsltTransformationEngine jsltEngine;
     private final ConfigurationValidator configValidator;
 
-    public RouterTransformationEngine(ObjectMapper objectMapper, JsltTransformationEngine jsltEngine,
-                                    ConfigurationValidator configValidator) {
+    public RouterTransformationEngine(ObjectMapper objectMapper,
+                                     ConfigurationValidator configValidator) {
         this.objectMapper = objectMapper;
-        this.jsltEngine = jsltEngine;
         this.configValidator = configValidator;
     }
 
@@ -50,13 +49,8 @@ public class RouterTransformationEngine implements TransformationEngine {
                 throw new TransformationException("No matching route found for input data");
             }
 
-            // For now, assume transformationId maps to a JSLT expression
-            // In a full implementation, this would look up the transformation from a registry
-            // For this prototype, we'll use a simple mapping
-            String transformationExpression = getTransformationExpression(selectedTransformationId);
-
-            // Apply the selected transformation using JSLT engine
-            return jsltEngine.transform(inputJson, transformationExpression);
+            // Apply the selected transformation using hardcoded Java logic
+            return applyTransformation(selectedTransformationId, inputJson);
 
         } catch (Exception e) {
             throw new TransformationException("Router transformation failed: " + e.getMessage(), e);
@@ -110,7 +104,8 @@ public class RouterTransformationEngine implements TransformationEngine {
             String expectedValue = parts[1].trim();
 
             // Remove quotes from expected value if present
-            if (expectedValue.startsWith("'") && expectedValue.endsWith("'")) {
+            if ((expectedValue.startsWith("'") && expectedValue.endsWith("'")) ||
+                (expectedValue.startsWith("\"") && expectedValue.endsWith("\""))) {
                 expectedValue = expectedValue.substring(1, expectedValue.length() - 1);
             }
 
@@ -154,21 +149,42 @@ public class RouterTransformationEngine implements TransformationEngine {
     }
 
     /**
-     * Get transformation expression by ID
-     * This is a placeholder - in a real implementation, this would look up
-     * transformations from a registry or database
+     * Apply transformation by ID using hardcoded Java logic
+     * This implements edge case transformations that require custom logic
      */
-    private String getTransformationExpression(String transformationId) throws TransformationException {
-        // Placeholder implementation - map known transformation IDs to expressions
+    private Map<String, Object> applyTransformation(String transformationId, Map<String, Object> input) throws TransformationException {
         switch (transformationId) {
             case "user-normalization-v1":
-                return "{ \"normalized_type\": .type, \"user_id\": .id, \"name\": .name }";
+                return applyUserNormalization(input);
             case "electronics-enrichment-v1":
-                return "{ \"product_type\": .type, \"electronics_category\": .category, \"price\": .price, \"specs\": .specifications }";
+                return applyElectronicsEnrichment(input);
             case "generic-transformation-v1":
-                return "{ \"data\": . }"; // Pass-through transformation
+                return applyGenericTransformation(input);
             default:
                 throw new TransformationException("Unknown transformation ID: " + transformationId);
         }
+    }
+
+    private Map<String, Object> applyUserNormalization(Map<String, Object> input) {
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("normalized_type", input.get("type"));
+        result.put("user_id", input.get("id"));
+        result.put("name", input.get("name"));
+        return result;
+    }
+
+    private Map<String, Object> applyElectronicsEnrichment(Map<String, Object> input) {
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("product_type", input.get("type"));
+        result.put("electronics_category", input.get("category"));
+        result.put("price", input.get("price"));
+        result.put("specs", input.get("specifications"));
+        return result;
+    }
+
+    private Map<String, Object> applyGenericTransformation(Map<String, Object> input) {
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("data", input);
+        return result;
     }
 }
