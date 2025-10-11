@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   app:
@@ -29,7 +29,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./src/main/resources/db/migration:/docker-entrypoint-initdb.d
+      # - ./src/main/resources/db/migration:/docker-entrypoint-initdb.d
     networks:
       - schema-registry-network
     restart: unless-stopped
@@ -45,3 +45,4 @@ volumes:
 networks:
   schema-registry-network:
     driver: bridge
+
