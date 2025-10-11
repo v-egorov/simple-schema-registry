@@ -174,11 +174,12 @@ fi
 echo
 echo "Test 9: Create template with special characters in consumer ID"
 # First create a consumer with special characters in ID
-create_test_consumer "test-template-create-special" "Consumer with special characters"
+special_consumer_id="test-template-create-special-$timestamp"
+create_test_consumer "$special_consumer_id" "Consumer with special characters"
 special_template='{"result": .data}'
 # Escape quotes in special template for JSON
 escaped_special_template=$(echo "$special_template" | sed 's/"/\\"/g')
-response=$(post_request "/api/transform/templates/test-template-create-special" "{
+response=$(post_request "/api/transform/templates/$special_consumer_id" "{
     \"expression\": \"$escaped_special_template\",
     \"engine\": \"JSLT\"
 }")

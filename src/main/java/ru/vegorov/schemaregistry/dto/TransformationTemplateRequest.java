@@ -11,6 +11,7 @@ public class TransformationTemplateRequest {
     private String engine = "jslt";
 
     // For JSLT engine - simple expression
+    @NotBlank
     private String expression;
 
     // For router/pipeline engines - configuration object
