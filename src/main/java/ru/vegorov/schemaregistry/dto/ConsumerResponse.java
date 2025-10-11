@@ -1,6 +1,7 @@
 package ru.vegorov.schemaregistry.dto;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 public class ConsumerResponse {
 
@@ -10,18 +11,20 @@ public class ConsumerResponse {
     private String description;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Set<String> subjects;
 
     // Constructors
     public ConsumerResponse() {}
 
     public ConsumerResponse(Long id, String consumerId, String name, String description,
-                           LocalDateTime createdAt, LocalDateTime updatedAt) {
+                            LocalDateTime createdAt, LocalDateTime updatedAt, Set<String> subjects) {
         this.id = id;
         this.consumerId = consumerId;
         this.name = name;
         this.description = description;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.subjects = subjects;
     }
 
     // Getters and Setters
@@ -71,5 +74,13 @@ public class ConsumerResponse {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Set<String> getSubjects() {
+        return subjects;
+    }
+
+    public void setSubjects(Set<String> subjects) {
+        this.subjects = subjects;
     }
 }

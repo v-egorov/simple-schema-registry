@@ -43,10 +43,15 @@ public class TransformationService {
     }
 
     /**
-     * Transform JSON data for a specific consumer
+     * Transform JSON data for a specific consumer and subject
      */
     public TransformationResponse transform(String consumerId, TransformationRequest request)
         throws TransformationException {
+
+        String subject = request.getSubject();
+
+        // Validate consumer is registered for the subject
+        consumerService.validateConsumerSubject(consumerId, subject);
 
         // Get transformation template for the consumer
         TransformationTemplateEntity template = templateRepository.findByConsumerId(consumerId)
@@ -62,7 +67,7 @@ public class TransformationService {
             template.getTemplateExpression()
         );
 
-        return new TransformationResponse(transformedJson);
+        return new TransformationResponse(transformedJson, subject);
     }
 
     /**

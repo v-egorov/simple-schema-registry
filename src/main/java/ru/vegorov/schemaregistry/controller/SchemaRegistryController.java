@@ -46,7 +46,7 @@ public class SchemaRegistryController {
     @Operation(summary = "Get specific schema version", description = "Retrieve a specific version of a schema")
     public ResponseEntity<SchemaResponse> getSchema(
             @Parameter(description = "Schema subject") @PathVariable String subject,
-            @Parameter(description = "Schema version") @PathVariable Integer version) {
+            @Parameter(description = "Schema version") @PathVariable String version) {
         SchemaResponse response = schemaService.getSchema(subject, version);
         return ResponseEntity.ok(response);
     }
@@ -59,12 +59,11 @@ public class SchemaRegistryController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/{subject}/compat")
+    @PostMapping("/compat")
     @Operation(summary = "Check schema compatibility", description = "Check if a new schema is compatible with existing versions")
     public ResponseEntity<CompatibilityCheckResponse> checkCompatibility(
-            @Parameter(description = "Schema subject") @PathVariable String subject,
             @Valid @RequestBody CompatibilityCheckRequest request) {
-        CompatibilityCheckResponse response = schemaService.checkCompatibility(subject, request);
+        CompatibilityCheckResponse response = schemaService.checkCompatibility(request);
         return ResponseEntity.ok(response);
     }
 

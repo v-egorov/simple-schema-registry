@@ -20,7 +20,7 @@ public interface SchemaRepository extends JpaRepository<SchemaEntity, Long> {
     /**
      * Find a specific schema version for a subject
      */
-    Optional<SchemaEntity> findBySubjectAndVersion(String subject, Integer version);
+    Optional<SchemaEntity> findBySubjectAndVersion(String subject, String version);
 
     /**
      * Find the latest version of a schema for a subject
@@ -35,7 +35,7 @@ public interface SchemaRepository extends JpaRepository<SchemaEntity, Long> {
     /**
      * Check if a specific version exists for a subject
      */
-    boolean existsBySubjectAndVersion(String subject, Integer version);
+    boolean existsBySubjectAndVersion(String subject, String version);
 
     /**
      * Get all unique subjects
@@ -44,8 +44,7 @@ public interface SchemaRepository extends JpaRepository<SchemaEntity, Long> {
     List<String> findAllSubjects();
 
     /**
-     * Find the maximum version for a subject
+     * Find the latest schema for a subject by creation time
      */
-    @Query("SELECT MAX(s.version) FROM SchemaEntity s WHERE s.subject = :subject")
-    Optional<Integer> findMaxVersionBySubject(@Param("subject") String subject);
+    Optional<SchemaEntity> findFirstBySubjectOrderByCreatedAtDesc(String subject);
 }

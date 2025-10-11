@@ -7,7 +7,7 @@ public class SchemaResponse {
 
     private Long id;
     private String subject;
-    private Integer version;
+    private String version;
     private Map<String, Object> schema;
     private String compatibility;
     private String description;
@@ -17,9 +17,9 @@ public class SchemaResponse {
     // Constructors
     public SchemaResponse() {}
 
-    public SchemaResponse(Long id, String subject, Integer version, Map<String, Object> schema,
-                         String compatibility, String description, LocalDateTime createdAt,
-                         LocalDateTime updatedAt) {
+    public SchemaResponse(Long id, String subject, String version, Map<String, Object> schema,
+                          String compatibility, String description, LocalDateTime createdAt,
+                          LocalDateTime updatedAt) {
         this.id = id;
         this.subject = subject;
         this.version = version;
@@ -47,11 +47,11 @@ public class SchemaResponse {
         this.subject = subject;
     }
 
-    public Integer getVersion() {
+    public String getVersion() {
         return version;
     }
 
-    public void setVersion(Integer version) {
+    public void setVersion(String version) {
         this.version = version;
     }
 

@@ -189,11 +189,13 @@ create_test_consumer() {
     local consumer_id="$1"
     local name="$2"
     local description="${3:-Test consumer}"
+    local subjects="${4:-[\"test-subject\"]}"
 
     local response=$(post_request "/api/consumers" "{
         \"consumerId\": \"$consumer_id\",
         \"name\": \"$name\",
-        \"description\": \"$description\"
+        \"description\": \"$description\",
+        \"subjects\": $subjects
     }")
 
     local http_code=$(echo "$response" | tail -n1)
@@ -239,7 +241,7 @@ create_test_template() {
     # Escape quotes in template for JSON
     local escaped_template=$(echo "$template" | sed 's/"/\\"/g')
 
-    local response=$(post_request "/api/transform/templates/$consumer_id" "{
+    local response=$(post_request "/api/consumers/templates/$consumer_id" "{
         \"expression\": \"$escaped_template\",
         \"engine\": \"$engine\"
     }")
@@ -260,7 +262,7 @@ create_router_template() {
     local consumer_id="$1"
     local router_config="$2"
 
-    local response=$(post_request "/api/transform/templates/$consumer_id" "{
+    local response=$(post_request "/api/consumers/templates/$consumer_id" "{
         \"engine\": \"router\",
         \"routerConfig\": $router_config
     }")
@@ -282,7 +284,7 @@ create_pipeline_template() {
     local consumer_id="$1"
     local pipeline_config="$2"
 
-    local response=$(post_request "/api/transform/templates/$consumer_id" "{
+    local response=$(post_request "/api/consumers/templates/$consumer_id" "{
         \"engine\": \"pipeline\",
         \"pipelineConfig\": $pipeline_config
     }")

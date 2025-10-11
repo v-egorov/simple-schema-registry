@@ -27,7 +27,7 @@ public class SchemaEntity {
 
     @NotNull
     @Column(nullable = false)
-    private Integer version;
+    private String version;
 
     @NotNull
     @JdbcTypeCode(SqlTypes.JSON)
@@ -50,8 +50,8 @@ public class SchemaEntity {
     // Constructors
     public SchemaEntity() {}
 
-    public SchemaEntity(String subject, Integer version, Map<String, Object> schemaJson,
-                       String compatibility, String description) {
+    public SchemaEntity(String subject, String version, Map<String, Object> schemaJson,
+                        String compatibility, String description) {
         this.subject = subject;
         this.version = version;
         this.schemaJson = schemaJson;
@@ -76,11 +76,11 @@ public class SchemaEntity {
         this.subject = subject;
     }
 
-    public Integer getVersion() {
+    public String getVersion() {
         return version;
     }
 
-    public void setVersion(Integer version) {
+    public void setVersion(String version) {
         this.version = version;
     }
 

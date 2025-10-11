@@ -43,10 +43,10 @@ class SchemaRegistryServiceTest {
         SchemaEntity savedEntity = new SchemaEntity();
         savedEntity.setId(1L);
         savedEntity.setSubject("test-subject");
-        savedEntity.setVersion(1);
+        savedEntity.setVersion("1.0.0");
         savedEntity.setSchemaJson(schemaJson);
 
-        when(schemaRepository.findMaxVersionBySubject("test-subject")).thenReturn(Optional.empty());
+        when(schemaRepository.findBySubjectOrderByVersionDesc("test-subject")).thenReturn(java.util.Collections.emptyList());
         when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
 
         // When
@@ -55,6 +55,6 @@ class SchemaRegistryServiceTest {
         // Then
         assertThat(response).isNotNull();
         assertThat(response.getSubject()).isEqualTo("test-subject");
-        assertThat(response.getVersion()).isEqualTo(1);
+        assertThat(response.getVersion()).isEqualTo("1.0.0");
     }
 }

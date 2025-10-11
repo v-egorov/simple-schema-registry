@@ -32,7 +32,7 @@ public class SchemaRegistryService {
         String subject = request.getSubject();
 
         // Get the next version number
-        Integer nextVersion = getNextVersion(subject);
+        String nextVersion = getNextVersion(subject);
 
         // Create new schema entity
         SchemaEntity schemaEntity = new SchemaEntity(
@@ -62,10 +62,10 @@ public class SchemaRegistryService {
      * Get a specific schema version
      */
     @Transactional(readOnly = true)
-    public SchemaResponse getSchema(String subject, Integer version) {
+    public SchemaResponse getSchema(String subject, String version) {
         SchemaEntity entity = schemaRepository.findBySubjectAndVersion(subject, version)
             .orElseThrow(() -> new ResourceNotFoundException(
-                String.format("Schema not found: subject=%s, version=%d", subject, version)));
+                String.format("Schema not found: subject=%s, version=%s", subject, version)));
         return mapToResponse(entity);
     }
 
@@ -84,7 +84,8 @@ public class SchemaRegistryService {
      * Check compatibility of a new schema against the latest version
      */
     @Transactional(readOnly = true)
-    public CompatibilityCheckResponse checkCompatibility(String subject, CompatibilityCheckRequest request) {
+    public CompatibilityCheckResponse checkCompatibility(CompatibilityCheckRequest request) {
+        String subject = request.getSubject();
         Optional<SchemaEntity> latestSchemaOpt = schemaRepository.findFirstBySubjectOrderByVersionDesc(subject);
 
         if (latestSchemaOpt.isEmpty()) {
@@ -115,10 +116,46 @@ public class SchemaRegistryService {
 
     /**
      * Get the next version number for a subject
+     * TODO - we may need to be able to specify version explicitly
      */
-    private Integer getNextVersion(String subject) {
-        Optional<Integer> maxVersion = schemaRepository.findMaxVersionBySubject(subject);
-        return maxVersion.orElse(0) + 1;
+    private String getNextVersion(String subject) {
+        List<SchemaEntity> schemas = schemaRepository.findBySubjectOrderByVersionDesc(subject);
+        if (schemas.isEmpty()) {
+            return "1.0.0";
+        }
+        // Find the highest version by semver comparison
+        String maxVersion = schemas.stream()
+            .map(SchemaEntity::getVersion)
+            .max(this::compareSemver)
+            .orElse("1.0.0");
+        // Increment patch version
+        return incrementPatchVersion(maxVersion);
+    }
+
+    /**
+     * Compare two semver strings
+     */
+    private int compareSemver(String v1, String v2) {
+        String[] parts1 = v1.split("\\.");
+        String[] parts2 = v2.split("\\.");
+        for (int i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+            int p1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+            int p2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+            if (p1 != p2) return Integer.compare(p1, p2);
+        }
+        return 0;
+    }
+
+    /**
+     * Increment patch version of semver string
+     */
+    private String incrementPatchVersion(String version) {
+        String[] parts = version.split("\\.");
+        if (parts.length < 3) {
+            return version + ".1";
+        }
+        int patch = Integer.parseInt(parts[2]) + 1;
+        return parts[0] + "." + parts[1] + "." + patch;
     }
 
     /**

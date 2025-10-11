@@ -17,7 +17,7 @@ import ru.vegorov.schemaregistry.service.TransformationService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/transform")
+@RequestMapping("/api/consumers")
 @Validated
 @Tag(name = "JSON Transformation", description = "JSON data transformation for different consumers")
 public class TransformationController {
@@ -28,11 +28,14 @@ public class TransformationController {
         this.transformationService = transformationService;
     }
 
-    @PostMapping("/{consumerId}")
-    @Operation(summary = "Transform JSON data", description = "Transform canonical JSON data for a specific consumer")
+    @PostMapping("/{consumerId}/transform")
+    @Operation(summary = "Transform JSON data", description = "Transform canonical JSON data for a specific consumer and subject")
     public ResponseEntity<TransformationResponse> transform(
             @Parameter(description = "Consumer ID") @PathVariable String consumerId,
+            @Parameter(description = "Subject") @RequestParam("subject") String subject,
             @Valid @RequestBody TransformationRequest request) throws TransformationException {
+        // Set subject in request
+        request.setSubject(subject);
         TransformationResponse response = transformationService.transform(consumerId, request);
         return ResponseEntity.ok(response);
     }

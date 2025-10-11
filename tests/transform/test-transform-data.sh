@@ -21,7 +21,7 @@ create_test_template "$consumer_id" "$template"
 # Test 1: Transform valid JSON data
 echo
 echo "Test 1: Transform valid JSON data"
-response=$(post_request "/api/transform/$consumer_id" '{
+response=$(post_request "/api/consumers/$consumer_id/transform?subject=test-subject" '{
     "canonicalJson": {
         "userId": 123,
         "fullName": "John Doe",
@@ -43,7 +43,7 @@ assert_not_contains "$response_body" '"userId"' "Should not contain original use
 # Test 2: Transform data for non-existent consumer
 echo
 echo "Test 2: Transform data for non-existent consumer"
-response=$(post_request "/api/transform/non-existent-consumer" '{
+response=$(post_request "/api/consumers/non-existent-consumer/transform?subject=test-subject" '{
     "canonicalJson": {
         "userId": 123
     }
@@ -58,7 +58,7 @@ echo "Test 3: Transform data for consumer without template"
 no_template_consumer="test-no-template-$timestamp"
 create_test_consumer "$no_template_consumer" "Consumer Without Template"
 
-response=$(post_request "/api/transform/$no_template_consumer" '{
+response=$(post_request "/api/consumers/$no_template_consumer/transform?subject=test-subject" '{
     "canonicalJson": {
         "userId": 789,
         "fullName": "Bob Wilson"
@@ -71,7 +71,7 @@ assert_response "$http_code" 404 "Should return 404 for consumer without templat
 # Test 4: Transform with invalid JSON
 echo
 echo "Test 4: Transform with invalid JSON in canonicalJson"
-response=$(post_request "/api/transform/test-transform-consumer" '{
+response=$(post_request "/api/consumers/test-transform-consumer/transform?subject=test-subject" '{
     "canonicalJson": "not an object"
 }')
 http_code=$(echo "$response" | tail -n1)
@@ -87,7 +87,7 @@ fi
 # Test 5: Transform with missing canonicalJson field
 echo
 echo "Test 5: Transform with missing canonicalJson field"
-response=$(post_request "/api/transform/$consumer_id" '{
+response=$(post_request "/api/consumers/$consumer_id/transform?subject=test-subject" '{
     "data": {"userId": 999}
 }')
 http_code=$(echo "$response" | tail -n1)
@@ -97,7 +97,7 @@ assert_response "$http_code" 400 "Should reject request without canonicalJson fi
 # Test 6: Transform with empty canonicalJson
 echo
 echo "Test 6: Transform with empty canonicalJson"
-response=$(post_request "/api/transform/$consumer_id" '{
+response=$(post_request "/api/consumers/$consumer_id/transform?subject=test-subject" '{
     "canonicalJson": {}
 }')
 http_code=$(echo "$response" | tail -n1)
@@ -114,7 +114,7 @@ complex_consumer="test-complex-consumer-$timestamp"
 create_test_consumer "$complex_consumer" "Complex Consumer"
 create_test_template "$complex_consumer" "$complex_template"
 
-response=$(post_request "/api/transform/$complex_consumer" '{
+response=$(post_request "/api/consumers/$complex_consumer/transform?subject=test-subject" '{
     "canonicalJson": {
         "userId": 1001,
         "fullName": "Alice Johnson",

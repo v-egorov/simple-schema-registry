@@ -93,6 +93,13 @@
             <version>${json-schema-validator.version}</version>
         </dependency>
 
+        <!-- Semver for version management -->
+        <dependency>
+            <groupId>com.github.zafarkhaja</groupId>
+            <artifactId>java-semver</artifactId>
+            <version>0.9.0</version>
+        </dependency>
+
         <!-- OpenAPI Documentation -->
         <dependency>
             <groupId>org.springdoc</groupId>
