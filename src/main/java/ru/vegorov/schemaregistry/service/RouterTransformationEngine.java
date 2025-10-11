@@ -66,7 +66,12 @@ public class RouterTransformationEngine implements TransformationEngine {
             // Then validate the parsed configuration structure
             RouterConfiguration config = objectMapper.readValue(expression, RouterConfiguration.class);
 
-            // Additional validation logic can be added here if needed
+            // Additional validation: router must have at least one route or a default transformation
+            if ((config.getRoutes() == null || config.getRoutes().isEmpty()) &&
+                config.getDefaultTransformationId() == null) {
+                return false;
+            }
+
             return true;
         } catch (Exception e) {
             return false;

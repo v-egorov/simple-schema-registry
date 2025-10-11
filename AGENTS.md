@@ -24,4 +24,3 @@
 - **Error Handling**: Use custom exceptions, validate inputs with Jakarta Validation
 - **Formatting**: 4-space indentation, 120 char line limit, trailing newlines
 - **Documentation**: Use JavaDoc for public APIs, keep methods focused and small
-
