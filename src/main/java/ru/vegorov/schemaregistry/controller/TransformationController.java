@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.vegorov.schemaregistry.dto.TransformationRequest;
 import ru.vegorov.schemaregistry.dto.TransformationResponse;
@@ -17,6 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/transform")
+@Validated
 @Tag(name = "JSON Transformation", description = "JSON data transformation for different consumers")
 public class TransformationController {
 

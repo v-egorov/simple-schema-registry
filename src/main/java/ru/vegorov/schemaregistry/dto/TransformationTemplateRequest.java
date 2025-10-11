@@ -1,6 +1,7 @@
 package ru.vegorov.schemaregistry.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -11,11 +12,13 @@ public class TransformationTemplateRequest {
     private String engine = "jslt";
 
     // For JSLT engine - simple expression
-    @NotBlank
+    @NotNull
     private String expression;
 
     // For router/pipeline engines - configuration object
+    @Valid
     private RouterConfiguration routerConfig;
+    @Valid
     private PipelineConfiguration pipelineConfig;
 
     private String description;

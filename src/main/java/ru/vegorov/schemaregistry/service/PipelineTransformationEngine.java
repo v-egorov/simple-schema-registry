@@ -1,8 +1,12 @@
 package ru.vegorov.schemaregistry.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import ru.vegorov.schemaregistry.dto.PipelineConfiguration;
+import ru.vegorov.schemaregistry.service.ConfigurationValidator.ConfigurationValidationException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +20,8 @@ import java.util.Map;
  */
 @Component
 public class PipelineTransformationEngine implements TransformationEngine {
+
+    private static final Logger logger = LoggerFactory.getLogger(PipelineTransformationEngine.class);
 
     private final ObjectMapper objectMapper;
     private final JsltTransformationEngine jsltEngine;
@@ -90,7 +96,12 @@ public class PipelineTransformationEngine implements TransformationEngine {
 
             // Additional validation logic can be added here if needed
             return true;
-        } catch (Exception e) {
+        } catch (ConfigurationValidationException | JsonProcessingException e) {
+            // Expected validation failures - invalid config or JSON
+            return false;
+        } catch (RuntimeException e) {
+            // Unexpected runtime errors
+            logger.error("Unexpected error during pipeline expression validation", e);
             return false;
         }
     }

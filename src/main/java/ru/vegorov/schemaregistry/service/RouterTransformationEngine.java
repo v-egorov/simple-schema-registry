@@ -1,9 +1,13 @@
 package ru.vegorov.schemaregistry.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import ru.vegorov.schemaregistry.dto.RouterConfiguration;
+import ru.vegorov.schemaregistry.service.ConfigurationValidator.ConfigurationValidationException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +20,8 @@ import java.util.Map;
  */
 @Component
 public class RouterTransformationEngine implements TransformationEngine {
+
+    private static final Logger logger = LoggerFactory.getLogger(RouterTransformationEngine.class);
 
     private final ObjectMapper objectMapper;
     private final ConfigurationValidator configValidator;
@@ -73,7 +79,12 @@ public class RouterTransformationEngine implements TransformationEngine {
             }
 
             return true;
-        } catch (Exception e) {
+        } catch (ConfigurationValidationException | JsonProcessingException e) {
+            // Expected validation failures - invalid config or JSON
+            return false;
+        } catch (RuntimeException e) {
+            // Unexpected runtime errors
+            logger.error("Unexpected error during router expression validation", e);
             return false;
         }
     }

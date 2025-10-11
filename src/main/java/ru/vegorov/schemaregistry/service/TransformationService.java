@@ -91,15 +91,15 @@ public class TransformationService {
                 if (request.getRouterConfig() == null) {
                     throw new IllegalArgumentException("Router configuration is required for router engine");
                 }
-                expression = objectMapper.writeValueAsString(request.getRouterConfig());
-                configuration = expression; // Store config in both fields for now
+                configuration = objectMapper.writeValueAsString(request.getRouterConfig());
+                expression = configuration; // Use the same config as expression to satisfy validation
             } else if ("pipeline".equalsIgnoreCase(request.getEngine())) {
                 // For pipeline engine, serialize the pipeline configuration
                 if (request.getPipelineConfig() == null) {
                     throw new IllegalArgumentException("Pipeline configuration is required for pipeline engine");
                 }
-                expression = objectMapper.writeValueAsString(request.getPipelineConfig());
-                configuration = expression; // Store config in both fields for now
+                configuration = objectMapper.writeValueAsString(request.getPipelineConfig());
+                expression = configuration; // Use the same config as expression to satisfy validation
             } else {
                 throw new IllegalArgumentException("Unsupported engine: " + request.getEngine());
             }
@@ -110,7 +110,7 @@ public class TransformationService {
         // Validate the transformation expression/configuration
         TransformationEngine engine = getEngine(request.getEngine());
         if (!engine.validateExpression(expression)) {
-            throw new IllegalArgumentException("Invalid transformation configuration");
+            throw new ResourceNotFoundException("Invalid transformation configuration");
         }
 
         // Check if template already exists
