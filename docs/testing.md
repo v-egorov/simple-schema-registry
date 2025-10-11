@@ -115,6 +115,8 @@ For development and debugging, you can run specific test suites:
 ./tests/run-all.sh --consumers
 ./tests/run-all.sh --schemas
 ./tests/run-all.sh --transform
+./tests/run-all.sh --workflows
+./tests/run-all.sh --error-handling
 ```
 
 ### Verbose Output

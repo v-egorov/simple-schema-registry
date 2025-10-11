@@ -11,6 +11,13 @@ BASE_URL="${BASE_URL:-http://localhost:8080}"
 PARALLEL="${PARALLEL:-false}"
 JUNIT_REPORT="${JUNIT_REPORT:-false}"
 VERBOSE="${VERBOSE:-false}"
+HEALTH_ONLY="${HEALTH_ONLY:-false}"
+QUICK="${QUICK:-false}"
+CONSUMERS_ONLY="${CONSUMERS_ONLY:-false}"
+SCHEMAS_ONLY="${SCHEMAS_ONLY:-false}"
+TRANSFORM_ONLY="${TRANSFORM_ONLY:-false}"
+WORKFLOWS_ONLY="${WORKFLOWS_ONLY:-false}"
+ERROR_HANDLING_ONLY="${ERROR_HANDLING_ONLY:-false}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -66,6 +73,11 @@ usage() {
     echo "  -v, --verbose       Verbose output"
     echo "  --health-only       Run only health checks"
     echo "  --quick             Run only critical tests"
+    echo "  --consumers         Run only consumer tests"
+    echo "  --schemas           Run only schema tests"
+    echo "  --transform         Run only transformation tests"
+    echo "  --workflows         Run only workflow tests"
+    echo "  --error-handling    Run only error handling tests"
     echo ""
     echo "Environment variables:"
     echo "  BASE_URL            Same as --url"
@@ -79,6 +91,8 @@ usage() {
     echo "  $0 --parallel                        # Run tests in parallel"
     echo "  $0 --junit results.xml               # Generate JUnit report"
     echo "  $0 --health-only                     # Quick health check"
+    echo "  $0 --consumers                       # Test consumer functionality only"
+    echo "  $0 --schemas                         # Test schema functionality only"
 }
 
 # Parse command line arguments
@@ -111,6 +125,26 @@ parse_args() {
                 ;;
             --quick)
                 QUICK=true
+                shift
+                ;;
+            --consumers)
+                CONSUMERS_ONLY=true
+                shift
+                ;;
+            --schemas)
+                SCHEMAS_ONLY=true
+                shift
+                ;;
+            --transform)
+                TRANSFORM_ONLY=true
+                shift
+                ;;
+            --workflows)
+                WORKFLOWS_ONLY=true
+                shift
+                ;;
+            --error-handling)
+                ERROR_HANDLING_ONLY=true
                 shift
                 ;;
             *)
@@ -376,6 +410,16 @@ main() {
         run_test_suite "Consumers" "$SCRIPT_DIR/consumers" "test-consumer-register.sh"
         run_test_suite "Schemas" "$SCRIPT_DIR/schemas" "test-schema-register.sh"
         run_test_suite "Transform" "$SCRIPT_DIR/transform" "test-transform-data.sh"
+    elif [ "$CONSUMERS_ONLY" = true ]; then
+        run_test_suite "Consumers" "$SCRIPT_DIR/consumers"
+    elif [ "$SCHEMAS_ONLY" = true ]; then
+        run_test_suite "Schemas" "$SCRIPT_DIR/schemas"
+    elif [ "$TRANSFORM_ONLY" = true ]; then
+        run_test_suite "Transform" "$SCRIPT_DIR/transform"
+    elif [ "$WORKFLOWS_ONLY" = true ]; then
+        run_test_suite "Workflows" "$SCRIPT_DIR/workflows"
+    elif [ "$ERROR_HANDLING_ONLY" = true ]; then
+        run_test_suite "Error Handling" "$SCRIPT_DIR/error-handling"
     else
         # Run all test suites
         run_test_suite "Health" "$SCRIPT_DIR/health"
