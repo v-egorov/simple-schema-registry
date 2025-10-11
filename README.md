@@ -295,6 +295,7 @@ src/
 ## Documentation
 
 - [Getting Started](docs/getting-started.md) - Quick start guide with examples
+- [Testing Guide](docs/testing.md) - Comprehensive testing strategy and execution order
 - [Advanced Transformations](docs/advanced-transformations.md) - Router and Pipeline engines implementation guide
 - [API Reference](docs/api-reference.md) - Complete API documentation with examples
 - [Architecture](docs/architecture.md) - System design and components

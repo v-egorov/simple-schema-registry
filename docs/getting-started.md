@@ -395,15 +395,75 @@ Response:
 
 ### Running Tests
 
+The project includes comprehensive integration tests that validate the entire system. Tests are organized into suites with specific execution order due to dependencies.
+
+#### Test Execution Order
+
+Tests must be run in the following sequence to ensure proper setup and data dependencies:
+
+1. **Health Tests** - Basic service availability and health endpoints
+2. **Consumers Tests** - Consumer registration and management
+3. **Schemas Tests** - Schema registration, versioning, and compatibility
+4. **Transform Tests** - Data transformation templates and engines
+5. **Workflows Tests** - End-to-end workflow validation
+6. **Error Handling Tests** - Error conditions and edge cases
+
+#### Running All Tests
+
 ```bash
-# Run all tests
+# Run all tests in correct order
 make test
 
-# Run unit tests only
-make test-unit
+# Or use the test runner directly
+./tests/run-all.sh
+```
 
-# Run integration tests only
-make test-integration
+#### Running Individual Test Suites
+
+If you need to run specific test suites (not recommended for normal development), ensure prerequisites are met:
+
+```bash
+# Health checks only
+./tests/run-all.sh --health-only
+
+# Critical tests only (health + basic consumer/schema operations)
+./tests/run-all.sh --quick
+
+# Individual suites (ensure dependencies are satisfied)
+./tests/run-all.sh --health-only  # Run first
+./tests/run-all.sh --consumers    # Requires health
+./tests/run-all.sh --schemas      # Requires consumers
+./tests/run-all.sh --transform    # Requires schemas
+```
+
+#### Test Dependencies
+
+- **Health tests** have no dependencies
+- **Consumer tests** require the service to be healthy
+- **Schema tests** require consumers to exist for testing
+- **Transform tests** require schemas and consumers
+- **Workflow tests** require all previous components
+- **Error handling tests** require full system setup
+
+#### Test Data Management
+
+Tests use unique identifiers (timestamps) to avoid conflicts between runs. Test data is persistent in the database, so:
+
+- Tests can be run multiple times safely
+- Each run creates fresh data with unique identifiers
+- No manual cleanup is required between test runs
+
+#### Debugging Test Failures
+
+```bash
+# Run with verbose output
+./tests/run-all.sh --verbose
+
+# Run specific failing test
+bash tests/schemas/test-schema-register.sh
+
+# Check service logs during test execution
+docker-compose logs -f app
 ```
 
 ### Building the Application

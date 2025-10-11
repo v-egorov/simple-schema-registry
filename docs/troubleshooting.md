@@ -450,6 +450,34 @@ curl http://localhost:8080/actuator/info
    - Reload window: Ctrl+Shift+P → "Developer: Reload Window"
    - Reinstall Java extensions
 
+### Test Execution Order Issues
+
+**Symptoms**: Tests fail when run individually or out of sequence.
+
+**Cause**: Integration tests have dependencies on each other.
+
+**Solution**: Always run tests in the correct order:
+
+```bash
+# Correct order for full test suite
+./tests/run-all.sh
+
+# Or run suites in dependency order:
+./tests/run-all.sh --health-only      # 1. Health checks
+./tests/run-all.sh --consumers        # 2. Consumer operations
+./tests/run-all.sh --schemas          # 3. Schema operations
+./tests/run-all.sh --transform        # 4. Transformations
+./tests/run-all.sh --workflows        # 5. End-to-end workflows
+./tests/run-all.sh --error-handling   # 6. Error conditions
+```
+
+**Dependencies**:
+- Consumer tests require health checks to pass
+- Schema tests require consumers to exist
+- Transform tests require schemas and consumers
+- Workflow tests require all components
+- Error handling tests require full system setup
+
 ### Test Failures
 
 **Common test issues**:
@@ -464,6 +492,21 @@ curl http://localhost:8080/actuator/info
    ```bash
    # Use random ports
    @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+   ```
+
+3. **Test data conflicts**:
+   ```bash
+   # Tests use timestamps for unique identifiers
+   # No manual cleanup needed between runs
+   # If conflicts persist, restart with clean database
+   make clean && make start
+   ```
+
+4. **Service not ready**:
+   ```bash
+   # Wait for health checks to pass
+   curl -f http://localhost:8080/actuator/health
+   sleep 30
    ```
 
 ## Common Error Messages

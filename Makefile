@@ -17,14 +17,17 @@ build-docker: ## Build Docker image
 	docker-compose build
 
 # Test targets
-test: ## Run all tests
+test: ## Run all tests (see docs/testing.md for execution order)
 	mvn test
 
 test-unit: ## Run unit tests only
 	mvn test -Dtest="*Test"
 
-test-integration: ## Run integration tests only
+test-integration: ## Run integration tests only (see docs/testing.md for details)
 	mvn test -Dtest="*IT"
+
+test-integration-manual: ## Run integration tests manually with proper ordering
+	./tests/run-all.sh
 
 # Docker Compose targets
 up: ## Start all services (app + database)
