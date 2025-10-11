@@ -12,7 +12,7 @@ public class TransformationTemplateRequest {
     private String engine = "jslt";
 
     // For JSLT engine - simple expression
-    @NotNull
+    // For router/pipeline engines, this is derived from configuration
     private String expression;
 
     // For router/pipeline engines - configuration object

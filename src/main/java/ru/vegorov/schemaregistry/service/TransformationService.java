@@ -85,6 +85,9 @@ public class TransformationService {
             if ("jslt".equalsIgnoreCase(request.getEngine())) {
                 // For JSLT engine, use the expression field
                 expression = request.getExpression();
+                if (expression == null || expression.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Expression is required for JSLT engine");
+                }
                 configuration = null;
             } else if ("router".equalsIgnoreCase(request.getEngine())) {
                 // For router engine, serialize the router configuration
@@ -110,7 +113,7 @@ public class TransformationService {
         // Validate the transformation expression/configuration
         TransformationEngine engine = getEngine(request.getEngine());
         if (!engine.validateExpression(expression)) {
-            throw new ResourceNotFoundException("Invalid transformation configuration");
+            throw new IllegalArgumentException("Invalid transformation configuration");
         }
 
         // Check if template already exists
