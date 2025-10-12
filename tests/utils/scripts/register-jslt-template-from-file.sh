@@ -49,14 +49,16 @@ log_info "Registering JSLT template from file: $JSLT_FILE"
 log_info "Consumer: $CONSUMER_ID"
 log_info "Description: $DESCRIPTION"
 
-# Construct JSON payload (escape quotes in JSLT content for JSON)
-ESCAPED_CONTENT=$(echo "$JSLT_CONTENT" | sed 's/"/\\"/g' | sed 's/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
-
-PAYLOAD="{
-    \"engine\": \"jslt\",
-    \"expression\": \"$ESCAPED_CONTENT\",
-    \"description\": \"$DESCRIPTION\"
-}"
+# Construct JSON payload using jq for proper escaping
+PAYLOAD=$(jq -n \
+    --arg engine "jslt" \
+    --arg expression "$JSLT_CONTENT" \
+    --arg description "$DESCRIPTION" \
+    '{
+        engine: $engine,
+        expression: $expression,
+        description: $description
+    }')
 
 # Make API call
 log_info "Sending template registration request..."
