@@ -1,0 +1,70 @@
+{
+  "publications": [
+    {
+      "id": "pub_2024_q4_tech",
+      "title": "Квартальный обзор технологического сектора",
+      "subtitle": "Анализ драйверов роста и рисков",
+      "summary": "Детальный анализ показателей технологических компаний в Q4 2024...",
+      "type": "quarterly_report",
+      "targetAudience": "institutional",
+      "status": "published",
+      "version": "1.0.0",
+      "language": "ru",
+      "authors": ["Петров П.П.", "Иванова А.С."],
+      "createdAt": "2024-10-01T09:00:00Z",
+      "updatedAt": "2024-10-12T11:24:00Z",
+      "publishedAt": "2024-10-10T14:00:00Z",
+      "metadata": {
+        "assetClasses": ["Equities"],
+        "sectors": ["Information Technology"],
+        "regions": ["US", "Global"],
+        "timeHorizon": "Medium-term",
+        "tags": ["tech", "growth", "AI"]
+      },
+      "chapters": [
+        {
+          "id": "ch_001",
+          "title": "Резюме",
+          "subtitle": "Ключевые выводы квартала",
+          "summary": "Основные тенденции и рекомендации...",
+          "order": 1,
+          "blocks": [
+            {
+              "id": "block_001",
+              "title": "Обзор рынка",
+              "subtitle": "Динамика FAANG",
+              "metadata": {
+                "companies": ["Apple", "Microsoft", "Amazon"],
+                "instruments": ["Stocks"]
+              },
+              "views": [
+                {
+                  "type": "text",
+                  "content": "<p>Технологические компании показали...</p>"
+                },
+                {
+                  "type": "table",
+                  "columns": [
+                    { "key": "company", "title": "Компания", "type": "string" },
+                    {
+                      "key": "price",
+                      "title": "Цена",
+                      "type": "number",
+                      "format": "currency"
+                    }
+                  ],
+                  "rows": [
+                    { "company": "Apple", "price": 175.5 },
+                    { "company": "Microsoft", "price": 380.2 }
+                  ],
+                  "caption": "Табл. 1. Текущие цены акций"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+

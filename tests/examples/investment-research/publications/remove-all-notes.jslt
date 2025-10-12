@@ -1,0 +1,55 @@
+{
+  "publications": [
+    for (.publications) {
+      "id": .id,
+      "title": .title,
+      "subtitle": .subtitle,
+      "summary": .summary,
+      "type": .type,
+      "targetAudience": .targetAudience,
+      "status": .status,
+      "version": .version,
+      "language": .language,
+      "authors": .authors,
+      "createdAt": .createdAt,
+      "updatedAt": .updatedAt,
+      "publishedAt": .publishedAt,
+      "metadata": .metadata,
+      "chapters": if (.chapters)
+        [for (.chapters) {
+          "id": .id,
+          "title": .title,
+          "subtitle": .subtitle,
+          "summary": .summary,
+          "order": .order,
+          "metadata": .metadata,
+          "createdAt": .createdAt,
+          "updatedAt": .updatedAt,
+          "authors": .authors,
+          "language": .language,
+          "blocks": if (.blocks)
+            [for (.blocks) {
+              "id": .id,
+              "title": .title,
+              "subtitle": .subtitle,
+              "summary": .summary,
+              "type": .type,
+              "metadata": .metadata,
+              "createdAt": .createdAt,
+              "updatedAt": .updatedAt,
+              "authors": .authors,
+              "language": .language,
+              "views": if (.views)
+                [for (.views) {
+                  "type": .type,
+                  "content": .content
+                }]
+                else []
+            }]
+            else []
+        }]
+        else []
+    }
+  ]
+}
+  

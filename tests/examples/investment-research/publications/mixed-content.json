@@ -1,0 +1,303 @@
+{
+  "publications": [
+    {
+      "id": "pub_2024_q4_tech_sector",
+      "title": "Технологический сектор: комплексный анализ Q4 2024",
+      "subtitle": "Драйверы роста, оценка мультипликаторов и инвестиционные возможности",
+      "summary": "Детальный анализ результатов технологических компаний в четвертом квартале 2024 года, включающий оценку финансовых показателей, динамику рыночной капитализации, сравнительный анализ мультипликаторов и прогнозы развития ключевых направлений.",
+      "type": "thematic_report",
+      "targetAudience": "institutional",
+      "status": "published",
+      "version": "2.1.0",
+      "language": "ru",
+      "authors": [
+        "Карпов Алексей Владимирович",
+        "Новикова Мария Александровна",
+        "Федоров Игорь Петрович"
+      ],
+      "createdAt": "2024-09-15T10:00:00Z",
+      "updatedAt": "2024-10-12T11:45:00Z",
+      "publishedAt": "2024-10-11T09:00:00Z",
+      "metadata": {
+        "assetClasses": ["Equities"],
+        "sectors": ["Information Technology"],
+        "regions": ["US", "Global"],
+        "riskProfile": "Aggressive",
+        "timeHorizon": "Medium-term",
+        "tags": [
+          "tech",
+          "growth",
+          "AI",
+          "semiconductors",
+          "cloud-computing",
+          "FAANG"
+        ]
+      },
+      "notes": [
+        {
+          "id": "note_pub_tech_001",
+          "author": "Главный аналитик",
+          "role": "lead-analyst",
+          "timestamp": "2024-10-10T18:30:00Z",
+          "status": "closed",
+          "text": "Финальная версия согласована с комплаенсом, готова к публикации"
+        }
+      ],
+      "chapters": [
+        {
+          "id": "ch_market_overview",
+          "title": "Обзор рынка",
+          "subtitle": "Динамика технологического сектора в Q4 2024",
+          "summary": "Общий анализ результатов технологического сектора, ключевые события квартала и макроэкономический контекст.",
+          "order": 0,
+          "metadata": {
+            "companies": [
+              "Apple",
+              "Microsoft",
+              "Alphabet",
+              "Amazon",
+              "Meta",
+              "NVIDIA",
+              "Tesla"
+            ],
+            "tags": ["market-overview", "performance"]
+          },
+          "blocks": [
+            {
+              "id": "block_sector_performance",
+              "title": "Результаты сектора",
+              "subtitle": "Ключевые показатели и динамика капитализации",
+              "type": "composite",
+              "metadata": {
+                "assetClasses": ["Equities"],
+                "instruments": ["Stocks"],
+                "tags": ["performance", "market-cap"]
+              },
+              "views": [
+                {
+                  "type": "text",
+                  "content": "<h3>Общая динамика</h3><p>Технологический сектор продемонстрировал впечатляющий рост в четвертом квартале 2024 года, опередив широкий рынок на 8.7 процентных пунктов. Индекс NASDAQ Composite вырос на 12.4% за квартал, в то время как S&P 500 прибавил всего 3.7%.</p><p>Совокупная рыночная капитализация семи крупнейших технологических компаний достигла $13.8 трлн, что составляет 28.5% от общей капитализации S&P 500.</p>"
+                },
+                {
+                  "type": "table",
+                  "caption": "Таблица 1. Динамика капитализации крупнейших технологических компаний в Q4 2024",
+                  "columns": [
+                    { "key": "company", "title": "Компания", "type": "string" },
+                    { "key": "ticker", "title": "Тикер", "type": "string" },
+                    {
+                      "key": "market_cap_start",
+                      "title": "Капитализация на 01.10 (млрд $)",
+                      "type": "number",
+                      "format": "currency"
+                    },
+                    {
+                      "key": "market_cap_end",
+                      "title": "Капитализация на 31.12 (млрд $)",
+                      "type": "number",
+                      "format": "currency"
+                    },
+                    {
+                      "key": "change_pct",
+                      "title": "Изменение (%)",
+                      "type": "number",
+                      "format": "percentage"
+                    },
+                    {
+                      "key": "pe_ratio",
+                      "title": "P/E (TTM)",
+                      "type": "number"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "company": "Apple Inc.",
+                      "ticker": "AAPL",
+                      "market_cap_start": 2847,
+                      "market_cap_end": 3124,
+                      "change_pct": 9.7,
+                      "pe_ratio": 31.2
+                    },
+                    {
+                      "company": "Microsoft Corporation",
+                      "ticker": "MSFT",
+                      "market_cap_start": 2912,
+                      "market_cap_end": 3287,
+                      "change_pct": 12.9,
+                      "pe_ratio": 35.8
+                    },
+                    {
+                      "company": "Alphabet Inc.",
+                      "ticker": "GOOGL",
+                      "market_cap_start": 1758,
+                      "market_cap_end": 1982,
+                      "change_pct": 12.7,
+                      "pe_ratio": 26.4
+                    },
+                    {
+                      "company": "Amazon.com Inc.",
+                      "ticker": "AMZN",
+                      "market_cap_start": 1687,
+                      "market_cap_end": 1891,
+                      "change_pct": 12.1,
+                      "pe_ratio": 45.3
+                    },
+                    {
+                      "company": "NVIDIA Corporation",
+                      "ticker": "NVDA",
+                      "market_cap_start": 1198,
+                      "market_cap_end": 1456,
+                      "change_pct": 21.5,
+                      "pe_ratio": 68.7
+                    },
+                    {
+                      "company": "Meta Platforms Inc.",
+                      "ticker": "META",
+                      "market_cap_start": 1012,
+                      "market_cap_end": 1158,
+                      "change_pct": 14.4,
+                      "pe_ratio": 28.9
+                    },
+                    {
+                      "company": "Tesla Inc.",
+                      "ticker": "TSLA",
+                      "market_cap_start": 789,
+                      "market_cap_end": 856,
+                      "change_pct": 8.5,
+                      "pe_ratio": 72.1
+                    }
+                  ]
+                },
+                {
+                  "type": "chart",
+                  "caption": "График 1. Динамика капитализации технологических компаний в Q4 2024 (млрд $)",
+                  "spec": {
+                    "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+                    "description": "Market cap growth of tech companies in Q4 2024",
+                    "data": {
+                      "values": [
+                        {
+                          "company": "Apple",
+                          "period": "Oct 1",
+                          "value": 2847
+                        },
+                        {
+                          "company": "Apple",
+                          "period": "Oct 31",
+                          "value": 2912
+                        },
+                        {
+                          "company": "Apple",
+                          "period": "Nov 30",
+                          "value": 3045
+                        },
+                        {
+                          "company": "Apple",
+                          "period": "Dec 31",
+                          "value": 3124
+                        },
+                        {
+                          "company": "Microsoft",
+                          "period": "Oct 1",
+                          "value": 2912
+                        },
+                        {
+                          "company": "Microsoft",
+                          "period": "Oct 31",
+                          "value": 3024
+                        },
+                        {
+                          "company": "Microsoft",
+                          "period": "Nov 30",
+                          "value": 3178
+                        },
+                        {
+                          "company": "Microsoft",
+                          "period": "Dec 31",
+                          "value": 3287
+                        },
+                        {
+                          "company": "NVIDIA",
+                          "period": "Oct 1",
+                          "value": 1198
+                        },
+                        {
+                          "company": "NVIDIA",
+                          "period": "Oct 31",
+                          "value": 1287
+                        },
+                        {
+                          "company": "NVIDIA",
+                          "period": "Nov 30",
+                          "value": 1389
+                        },
+                        {
+                          "company": "NVIDIA",
+                          "period": "Dec 31",
+                          "value": 1456
+                        },
+                        {
+                          "company": "Alphabet",
+                          "period": "Oct 1",
+                          "value": 1758
+                        },
+                        {
+                          "company": "Alphabet",
+                          "period": "Oct 31",
+                          "value": 1834
+                        },
+                        {
+                          "company": "Alphabet",
+                          "period": "Nov 30",
+                          "value": 1921
+                        },
+                        {
+                          "company": "Alphabet",
+                          "period": "Dec 31",
+                          "value": 1982
+                        }
+                      ]
+                    },
+                    "mark": {
+                      "type": "line",
+                      "point": true,
+                      "tooltip": true
+                    },
+                    "encoding": {
+                      "x": {
+                        "field": "period",
+                        "type": "ordinal",
+                        "title": "Период",
+                        "axis": { "labelAngle": -45 }
+                      },
+                      "y": {
+                        "field": "value",
+                        "type": "quantitative",
+                        "title": "Капитализация (млрд $)",
+                        "scale": { "domain": [1000, 3500] }
+                      },
+                      "color": {
+                        "field": "company",
+                        "type": "nominal",
+                        "title": "Компания"
+                      }
+                    },
+                    "width": 600,
+                    "height": 400
+                  }
+                },
+                {
+                  "type": "image",
+                  "mediaType": "image/png",
+                  "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAACVBMVEUAAAD///+l2Z/dAAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==",
+                  "alt": "Логотип технологического сектора",
+                  "caption": "Логотипы ведущих технологических компаний"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+

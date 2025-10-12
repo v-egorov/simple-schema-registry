@@ -1,0 +1,95 @@
+{
+  "publications": [
+    {
+      "id": "pub_001",
+      "title": "Пример публикации с примечаниями",
+      "subtitle": "Демонстрация примечаний на всех уровнях",
+      "summary": "Публикация с заметками на всех уровнях иерархии: publication, chapter, block, view.",
+      "type": "research_note",
+      "targetAudience": "internal",
+      "status": "draft",
+      "version": "0.1.0",
+      "language": "ru",
+      "authors": ["Автор А", "Редактор Б"],
+      "createdAt": "2025-10-12T10:00:00Z",
+      "updatedAt": "2025-10-12T12:00:00Z",
+      "publishedAt": null,
+      "metadata": {},
+      "notes": [
+        {
+          "id": "note_pub_001",
+          "author": "Редактор Б",
+          "role": "editor",
+          "timestamp": "2025-10-12T10:30:00Z",
+          "status": "open",
+          "text": "Необходимо проверить соответствие стандартам."
+        }
+      ],
+      "chapters": [
+        {
+          "id": "ch_001",
+          "title": "Глава 1 с примечаниями",
+          "subtitle": "Первый раздел",
+          "summary": "Описание первой главы.",
+          "order": 0,
+          "metadata": {},
+          "notes": [
+            {
+              "id": "note_ch_001",
+              "author": "Автор А",
+              "role": "author",
+              "timestamp": "2025-10-12T11:00:00Z",
+              "status": "open",
+              "text": "Добавить больше данных в этот раздел."
+            }
+          ],
+          "createdAt": "2025-10-12T10:05:00Z",
+          "updatedAt": "2025-10-12T11:30:00Z",
+          "authors": ["Автор А"],
+          "language": "ru",
+          "blocks": [
+            {
+              "id": "block_001",
+              "title": "Блок 1",
+              "subtitle": "Основной блок",
+              "summary": "Текстовый блок с примечаниями.",
+              "type": "textual",
+              "metadata": {},
+              "notes": [
+                {
+                  "id": "note_block_001",
+                  "author": "Редактор Б",
+                  "role": "editor",
+                  "timestamp": "2025-10-12T11:15:00Z",
+                  "status": "open",
+                  "text": "Проверить фактологические данные."
+                }
+              ],
+              "createdAt": "2025-10-12T10:10:00Z",
+              "updatedAt": "2025-10-12T11:45:00Z",
+              "authors": ["Автор А"],
+              "language": "ru",
+              "views": [
+                {
+                  "type": "text",
+                  "content": "Это пример текстового контента в блоке с примечанием.",
+                  "notes": [
+                    {
+                      "id": "note_view_001",
+                      "author": "Рецензент В",
+                      "role": "reviewer",
+                      "timestamp": "2025-10-12T11:20:00Z",
+                      "status": "open",
+                      "text": "Нужна формулировка более точная."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
