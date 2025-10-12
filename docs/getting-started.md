@@ -2,6 +2,37 @@
 
 This guide will help you get the JSON Schema Registry and Transformation Service up and running in your development environment.
 
+## Table of Contents
+
+- [Prerequisites](#prerequisites)
+- [Quick Start (5 minutes)](#quick-start-5-minutes)
+- [Detailed Setup](#detailed-setup)
+  - [Option 1: Docker Compose (Recommended)](#option-1-docker-compose-recommended)
+  - [Option 2: Local Development](#option-2-local-development)
+- [Multi-Subject Consumer Support](#multi-subject-consumer-support)
+- [First API Calls](#first-api-calls)
+  - [1. Register a Consumer](#1-register-a-consumer)
+  - [2. Register a Schema](#2-register-a-schema)
+  - [3. Create Transformation Templates](#3-create-transformation-templates)
+  - [4. Transform Data with Different Engines](#4-transform-data-with-different-engines)
+- [Curl Examples with Files](#curl-examples-with-files)
+  - [Prerequisites](#prerequisites-1)
+  - [Schema Registration from File](#schema-registration-from-file)
+  - [Data Transformation from File](#data-transformation-from-file)
+  - [JSLT Template Registration from File](#jslt-template-registration-from-file)
+  - [Advanced Examples](#advanced-examples)
+- [Development Workflow](#development-workflow)
+  - [Running Tests](#running-tests)
+  - [Building the Application](#building-the-application)
+  - [Database Operations](#database-operations)
+  - [Viewing Logs](#viewing-logs)
+- [IDE Setup](#ide-setup)
+- [Project Structure](#project-structure)
+- [Common Issues](#common-issues)
+- [Advanced Usage Examples](#advanced-usage-examples)
+- [Next Steps](#next-steps)
+- [Getting Help](#getting-help)
+
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:
@@ -466,7 +497,7 @@ Response:
 
 ## Curl Examples with Files
 
-For more advanced usage, you can work with separate JSON files for schemas and data payloads. These examples use `jq` to construct the API request payloads from files while maintaining the required JSON structure.
+For more advanced usage, you can work with separate files for schemas, data payloads, and JSLT transformation templates. These examples use `jq` to construct the API request payloads from files while maintaining the required JSON structure.
 
 ### Prerequisites
 
@@ -480,6 +511,50 @@ sudo apt-get install jq
 brew install jq
 
 # Or download from https://stedolan.github.io/jq/
+```
+
+### Helper Scripts Overview
+
+The project includes several helper scripts in `tests/utils/scripts/` for common operations:
+
+#### `register-schema-from-file.sh`
+Registers a JSON schema from a file with the Schema Registry.
+
+**Arguments:**
+- `schema_file`: Path to JSON schema file (must be valid JSON)
+- `subject`: Schema subject name (e.g., "user-profile")
+- `compatibility`: Schema compatibility mode ("BACKWARD", "FORWARD", "FULL", "NONE")
+- `description`: Optional human-readable description
+
+**Example:**
+```bash
+./tests/utils/scripts/register-schema-from-file.sh user-schema.json user-profile BACKWARD "User profile schema"
+```
+
+#### `register-jslt-template-from-file.sh`
+Registers a JSLT transformation template from a file for a consumer.
+
+**Arguments:**
+- `jslt_file`: Path to JSLT template file
+- `consumer_id`: Consumer ID to register the template for (consumer must already exist)
+- `description`: Optional description (default: "JSLT template from file")
+
+**Example:**
+```bash
+./tests/utils/scripts/register-jslt-template-from-file.sh remove-notes.jslt mobile-app "Remove notes from publications"
+```
+
+#### `transform-from-file.sh`
+Transforms JSON data from a file using a registered transformation template.
+
+**Arguments:**
+- `data_file`: Path to JSON data file to transform (must be valid JSON)
+- `consumer_id`: Consumer ID with registered transformation template
+- `subject`: Schema subject for the data (must match consumer's registered subjects)
+
+**Example:**
+```bash
+./tests/utils/scripts/transform-from-file.sh user-data.json mobile-app user-profile
 ```
 
 ### Schema Registration from File
@@ -522,6 +597,40 @@ curl -X POST http://localhost:8080/api/schemas \
   -d @-
 ```
 
+### JSLT Template Registration from File
+
+Save your JSLT transformation template to a file (e.g., `remove-notes.jslt`):
+
+```jslt
+{
+  "publications": [
+    .publications[]
+    | {
+        id: .id,
+        title: .title,
+        // notes field excluded
+        createdAt: .createdAt
+      }
+  ]
+}
+```
+
+Register the template using the helper script:
+
+```bash
+# Using the helper script
+./tests/utils/scripts/register-jslt-template-from-file.sh remove-notes.jslt mobile-app "Remove notes from publications"
+
+# Or manually with curl
+curl -X POST http://localhost:8080/api/consumers/templates/mobile-app \
+  -H "Content-Type: application/json" \
+  -d '{
+    "engine": "jslt",
+    "expression": "'"$(cat remove-notes.jslt)"'",
+    "description": "Remove notes from publications"
+  }'
+```
+
 ### Data Transformation from File
 
 Save your data payload to a file (e.g., `user-data.json`):
@@ -555,6 +664,16 @@ curl -X POST "http://localhost:8080/api/consumers/mobile-app/transform?subject=u
 
 ### Advanced Examples
 
+#### Complete Workflow: Register Template, Transform Data
+
+```bash
+# 1. Register JSLT template
+./tests/utils/scripts/register-jslt-template-from-file.sh remove-notes.jslt mobile-app "Remove notes from publications"
+
+# 2. Transform data using the registered template
+./tests/utils/scripts/transform-from-file.sh publication-data.json mobile-app publication-schema
+```
+
 #### Register Multiple Schemas
 
 ```bash
@@ -583,6 +702,10 @@ Add to your `Makefile`:
 register-schema:
 	./tests/utils/scripts/register-schema-from-file.sh $(SCHEMA_FILE) $(SUBJECT) $(COMPATIBILITY) "$(DESCRIPTION)"
 
+# Register JSLT template from file
+register-jslt-template:
+	./tests/utils/scripts/register-jslt-template-from-file.sh $(JSLT_FILE) $(CONSUMER) "$(DESCRIPTION)"
+
 # Transform data from file
 transform-data:
 	./tests/utils/scripts/transform-from-file.sh $(DATA_FILE) $(CONSUMER) $(SUBJECT)
@@ -592,6 +715,7 @@ Then use:
 
 ```bash
 make register-schema SCHEMA_FILE=user-schema.json SUBJECT=user-profile COMPATIBILITY=BACKWARD DESCRIPTION="User schema"
+make register-jslt-template JSLT_FILE=remove-notes.jslt CONSUMER=mobile-app DESCRIPTION="Remove notes"
 make transform-data DATA_FILE=user-data.json CONSUMER=mobile-app SUBJECT=user-profile
 ```
 
