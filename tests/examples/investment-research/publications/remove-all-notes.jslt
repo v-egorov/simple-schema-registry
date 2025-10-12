@@ -42,7 +42,14 @@
               "views": if (.views)
                 [for (.views) {
                   "type": .type,
-                  "content": .content
+                  "content": .content,
+                  "mediaType": .mediaType,
+                  "base64": .base64,
+                  "alt": .alt,
+                  "caption": .caption,
+                  "spec": .spec,
+                  "columns": .columns,
+                  "rows": .rows
                 }]
                 else []
             }]
