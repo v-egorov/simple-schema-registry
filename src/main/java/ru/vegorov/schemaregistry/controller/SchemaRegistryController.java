@@ -11,6 +11,8 @@ import ru.vegorov.schemaregistry.dto.CompatibilityCheckRequest;
 import ru.vegorov.schemaregistry.dto.CompatibilityCheckResponse;
 import ru.vegorov.schemaregistry.dto.SchemaRegistrationRequest;
 import ru.vegorov.schemaregistry.dto.SchemaResponse;
+import ru.vegorov.schemaregistry.dto.SchemaValidationRequest;
+import ru.vegorov.schemaregistry.dto.SchemaValidationResponse;
 import ru.vegorov.schemaregistry.service.SchemaRegistryService;
 
 import java.util.List;
@@ -72,5 +74,20 @@ public class SchemaRegistryController {
     public ResponseEntity<List<String>> getAllSubjects() {
         List<String> subjects = schemaService.getAllSubjects();
         return ResponseEntity.ok(subjects);
+    }
+
+    @PostMapping("/{subject}/validate")
+    @Operation(summary = "Validate JSON against schema", description = "Validate JSON data against the latest version of a schema or a specific version")
+    public ResponseEntity<SchemaValidationResponse> validateJson(
+            @Parameter(description = "Schema subject") @PathVariable String subject,
+            @Valid @RequestBody SchemaValidationRequest request) {
+
+        // Ensure the subject in path matches the request
+        if (!subject.equals(request.getSubject())) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        SchemaValidationResponse response = schemaService.validateJson(request);
+        return ResponseEntity.ok(response);
     }
 }

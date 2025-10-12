@@ -178,6 +178,50 @@ Retrieve all unique schema subjects.
 ]
 ```
 
+### Validate JSON Against Schema
+Validate JSON data against the latest version of a schema or a specific version.
+
+**Endpoint**: `POST /api/schemas/{subject}/validate`
+
+**Request Body**:
+```json
+{
+  "subject": "user-profile",
+  "jsonData": {
+    "id": 123,
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
+  "version": "1.0.0"  // Optional - if not provided, uses latest version
+}
+```
+
+**Response** (200 OK) - Valid:
+```json
+{
+  "valid": true,
+  "subject": "user-profile",
+  "schemaVersion": "1.0.0"
+}
+```
+
+**Response** (200 OK) - Invalid:
+```json
+{
+  "valid": false,
+  "subject": "user-profile",
+  "schemaVersion": "1.0.0",
+  "errors": [
+    "$.email: does not match the email pattern",
+    "$.name: is missing but it is required"
+  ]
+}
+```
+
+**Error Responses**:
+- `404 Not Found`: Schema subject not found
+- `400 Bad Request`: Invalid request format or subject mismatch
+
 ---
 
 ## Consumer Management API

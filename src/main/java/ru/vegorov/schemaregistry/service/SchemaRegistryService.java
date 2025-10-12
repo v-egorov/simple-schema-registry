@@ -1,11 +1,19 @@
 package ru.vegorov.schemaregistry.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.vegorov.schemaregistry.dto.CompatibilityCheckRequest;
 import ru.vegorov.schemaregistry.dto.CompatibilityCheckResponse;
 import ru.vegorov.schemaregistry.dto.SchemaRegistrationRequest;
 import ru.vegorov.schemaregistry.dto.SchemaResponse;
+import ru.vegorov.schemaregistry.dto.SchemaValidationRequest;
+import ru.vegorov.schemaregistry.dto.SchemaValidationResponse;
 import ru.vegorov.schemaregistry.entity.SchemaEntity;
 import ru.vegorov.schemaregistry.exception.ResourceNotFoundException;
 import ru.vegorov.schemaregistry.exception.SchemaValidationException;
@@ -13,6 +21,7 @@ import ru.vegorov.schemaregistry.repository.SchemaRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,9 +29,11 @@ import java.util.stream.Collectors;
 public class SchemaRegistryService {
 
     private final SchemaRepository schemaRepository;
+    private final ObjectMapper objectMapper;
 
-    public SchemaRegistryService(SchemaRepository schemaRepository) {
+    public SchemaRegistryService(SchemaRepository schemaRepository, ObjectMapper objectMapper) {
         this.schemaRepository = schemaRepository;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -112,6 +123,49 @@ public class SchemaRegistryService {
     @Transactional(readOnly = true)
     public List<String> getAllSubjects() {
         return schemaRepository.findAllSubjects();
+    }
+
+    /**
+     * Validate JSON data against a schema
+     */
+    @Transactional(readOnly = true)
+    public SchemaValidationResponse validateJson(SchemaValidationRequest request) {
+        String subject = request.getSubject();
+        JsonNode jsonData = request.getJsonData();
+
+        // Get the schema to validate against
+        SchemaEntity schemaEntity;
+        if (request.getVersion() != null) {
+            // Validate against specific version
+            schemaEntity = schemaRepository.findBySubjectAndVersion(subject, request.getVersion())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    String.format("Schema not found: subject=%s, version=%s", subject, request.getVersion())));
+        } else {
+            // Validate against latest version
+            schemaEntity = schemaRepository.findFirstBySubjectOrderByVersionDesc(subject)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    String.format("No schemas found for subject: %s", subject)));
+        }
+
+        // Perform validation
+        try {
+            String schemaJsonString = objectMapper.writeValueAsString(schemaEntity.getSchemaJson());
+            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
+            JsonSchema schema = factory.getSchema(schemaJsonString);
+
+            java.util.Set<ValidationMessage> validationMessages = schema.validate(jsonData);
+
+            if (validationMessages.isEmpty()) {
+                return new SchemaValidationResponse(true, subject, schemaEntity.getVersion());
+            } else {
+                List<String> errors = validationMessages.stream()
+                    .map(ValidationMessage::getMessage)
+                    .collect(Collectors.toList());
+                return new SchemaValidationResponse(false, subject, schemaEntity.getVersion(), errors);
+            }
+        } catch (Exception e) {
+            throw new SchemaValidationException("Failed to validate JSON against schema: " + e.getMessage());
+        }
     }
 
     /**
