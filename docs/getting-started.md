@@ -464,6 +464,137 @@ Response:
 }
 ```
 
+## Curl Examples with Files
+
+For more advanced usage, you can work with separate JSON files for schemas and data payloads. These examples use `jq` to construct the API request payloads from files while maintaining the required JSON structure.
+
+### Prerequisites
+
+Install `jq` for JSON processing:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install jq
+
+# macOS
+brew install jq
+
+# Or download from https://stedolan.github.io/jq/
+```
+
+### Schema Registration from File
+
+Save your JSON schema to a file (e.g., `user-schema.json`):
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "id": {"type": "integer"},
+    "name": {"type": "string"},
+    "email": {"type": "string", "format": "email"}
+  },
+  "required": ["id", "name"]
+}
+```
+
+Register the schema using the helper script:
+
+```bash
+# Using the helper script
+./tests/utils/scripts/register-schema-from-file.sh user-schema.json user-profile BACKWARD "User profile schema"
+
+# Or manually with curl and jq
+jq -n \
+  --arg subject "user-profile" \
+  --arg compatibility "BACKWARD" \
+  --arg description "User profile schema" \
+  --argjson schema "$(cat user-schema.json)" \
+  '{
+    subject: $subject,
+    schema: $schema,
+    compatibility: $compatibility,
+    description: $description
+  }' | \
+curl -X POST http://localhost:8080/api/schemas \
+  -H "Content-Type: application/json" \
+  -d @-
+```
+
+### Data Transformation from File
+
+Save your data payload to a file (e.g., `user-data.json`):
+
+```json
+{
+  "id": 123,
+  "name": "John Doe",
+  "email": "john@example.com",
+  "internalId": "abc-123",
+  "createdAt": "2024-01-15T10:30:00Z"
+}
+```
+
+Transform the data using the helper script:
+
+```bash
+# Using the helper script
+./tests/utils/scripts/transform-from-file.sh user-data.json mobile-app user-profile
+
+# Or manually with curl and jq
+jq -n \
+  --argjson canonicalJson "$(cat user-data.json)" \
+  '{
+    canonicalJson: $canonicalJson
+  }' | \
+curl -X POST "http://localhost:8080/api/consumers/mobile-app/transform?subject=user-profile" \
+  -H "Content-Type: application/json" \
+  -d @-
+```
+
+### Advanced Examples
+
+#### Register Multiple Schemas
+
+```bash
+# Product schema
+./tests/utils/scripts/register-schema-from-file.sh product-schema.json product-catalog FORWARD "Product catalog schema"
+
+# Order schema
+./tests/utils/scripts/register-schema-from-file.sh order-schema.json order-data BACKWARD "Order data schema"
+```
+
+#### Batch Transformations
+
+```bash
+# Transform multiple data files
+for data_file in data/user-*.json; do
+  ./tests/utils/scripts/transform-from-file.sh "$data_file" mobile-app user-profile
+done
+```
+
+#### Using with Make
+
+Add to your `Makefile`:
+
+```makefile
+# Register schema from file
+register-schema:
+	./tests/utils/scripts/register-schema-from-file.sh $(SCHEMA_FILE) $(SUBJECT) $(COMPATIBILITY) "$(DESCRIPTION)"
+
+# Transform data from file
+transform-data:
+	./tests/utils/scripts/transform-from-file.sh $(DATA_FILE) $(CONSUMER) $(SUBJECT)
+```
+
+Then use:
+
+```bash
+make register-schema SCHEMA_FILE=user-schema.json SUBJECT=user-profile COMPATIBILITY=BACKWARD DESCRIPTION="User schema"
+make transform-data DATA_FILE=user-data.json CONSUMER=mobile-app SUBJECT=user-profile
+```
+
 ## Development Workflow
 
 ### Running Tests
