@@ -28,6 +28,24 @@
 3. **Version Selection**: API can specify version or use active version
 4. **Schema Compatibility**: Transformations linked to specific schema versions
 
+### Important Constraint Correction
+
+**Issue Identified**: Initial design proposed `UNIQUE(consumer_id, subject, is_active)` which would only allow two records per consumer-subject pair (true/false). This was incorrect.
+
+**Solution**: Use partial unique indexes to ensure only one active version per consumer-subject pair while allowing multiple inactive versions:
+
+```sql
+-- For Option 1
+CREATE UNIQUE INDEX idx_transformation_templates_active_only
+ON transformation_templates(consumer_id, subject)
+WHERE is_active = TRUE;
+
+-- For Option 2
+CREATE UNIQUE INDEX idx_template_versions_active_only
+ON transformation_template_versions(template_id)
+WHERE is_active = TRUE;
+```
+
 ### Database Schema Changes
 
 #### Option 1: Subject-Consumer-Versioned Templates
@@ -51,8 +69,13 @@ CREATE TABLE transformation_templates (
 
     FOREIGN KEY (consumer_id) REFERENCES consumers(consumer_id) ON DELETE CASCADE,
     UNIQUE(consumer_id, subject, version),     -- Unique version per consumer+subject
-    UNIQUE(consumer_id, subject, is_active)    -- Only one active per consumer+subject
+    CHECK (is_active IN (TRUE, FALSE))         -- Boolean constraint
 );
+
+-- Partial index to ensure only one active version per consumer+subject
+CREATE UNIQUE INDEX idx_transformation_templates_active_only
+ON transformation_templates(consumer_id, subject)
+WHERE is_active = TRUE;
 
 -- Indexes
 CREATE INDEX idx_transformation_templates_consumer_subject ON transformation_templates(consumer_id, subject);
@@ -92,9 +115,14 @@ CREATE TABLE transformation_template_versions (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
 
     FOREIGN KEY (template_id) REFERENCES transformation_templates(id) ON DELETE CASCADE,
-    UNIQUE(template_id, version),
-    UNIQUE(template_id, is_active)
+    UNIQUE(template_id, version),              -- Unique version per template
+    CHECK (is_active IN (TRUE, FALSE))         -- Boolean constraint
 );
+
+-- Partial index to ensure only one active version per template
+CREATE UNIQUE INDEX idx_template_versions_active_only
+ON transformation_template_versions(template_id)
+WHERE is_active = TRUE;
 ```
 
 ## API Changes
@@ -215,9 +243,10 @@ public class TransformationVersionService {
 
 #### Phase 1: Schema Changes
 1. Create new table structure (Option 1 or 2)
-2. Migrate existing templates to new structure
-3. Set all migrated templates as active (version "1.0.0")
-4. Update foreign key references
+2. **Important**: Ensure partial unique indexes are created to allow only one active version per consumer-subject pair
+3. Migrate existing templates to new structure
+4. Set all migrated templates as active (version "1.0.0")
+5. Update foreign key references
 
 #### Phase 2: Data Migration
 1. For each existing consumer:
