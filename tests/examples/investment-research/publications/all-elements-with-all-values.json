@@ -1,0 +1,493 @@
+{
+    "publications": [
+      {
+        "id": "pub_full_example_001",
+        "title": "Полноценный пример публикации для тестирования",
+        "subtitle": "Включены все поля и минимум 2 элемента в массивах",
+        "summary": "Эта публикация создана для демонстрации всех полей схемы, с расширенными метаданными, примечаниями и полными данными.",
+        "type": "research_note",
+        "targetAudience": "institutional",
+        "status": "draft",
+        "version": "0.0.1",
+        "language": "ru",
+        "authors": ["Автор 1", "Автор 2"],
+        "createdAt": "2025-01-01T10:00:00Z",
+        "updatedAt": "2025-10-12T15:00:00Z",
+        "publishedAt": null,
+        "metadata": {
+          "assetClasses": ["Equities", "Bonds"],
+          "companies": ["Компания А", "Компания Б"],
+          "instruments": ["Stocks", "Bonds"],
+          "sectors": ["Information Technology", "Health Care"],
+          "regions": ["US", "Europe"],
+          "riskProfile": "Moderate",
+          "timeHorizon": "Long-term",
+          "tags": ["тест", "пример", "публикация"],
+          "additionalField": "Произвольное значение"
+        },
+        "notes": [
+          {
+            "id": "note_pub_1",
+            "author": "Редактор 1",
+            "role": "editor",
+            "timestamp": "2025-10-12T12:00:00Z",
+            "status": "open",
+            "text": "Первое примечание на уровне публикации."
+          },
+          {
+            "id": "note_pub_2",
+            "author": "Редактор 2",
+            "role": "reviewer",
+            "timestamp": "2025-10-12T12:30:00Z",
+            "status": "resolved",
+            "text": "Второе примечание с закрытым статусом."
+          }
+        ],
+        "chapters": [
+          {
+            "id": "ch_001",
+            "title": "Глава 1",
+            "subtitle": "Подзаголовок главы 1",
+            "summary": "Краткое содержание первой главы.",
+            "order": 0,
+            "metadata": {
+              "assetClasses": ["Equities"],
+              "companies": ["Компания А"],
+              "instruments": ["Stocks"],
+              "sectors": ["Information Technology"],
+              "regions": ["US"],
+              "riskProfile": "Moderate",
+              "timeHorizon": "Long-term",
+              "tags": ["глава1"]
+            },
+            "notes": [
+              {
+                "id": "note_ch_1_1",
+                "author": "Автор 1",
+                "role": "author",
+                "timestamp": "2025-10-12T13:00:00Z",
+                "status": "open",
+                "text": "Примечание к главе 1, первый элемент."
+              },
+              {
+                "id": "note_ch_1_2",
+                "author": "Редактор 1",
+                "role": "editor",
+                "timestamp": "2025-10-12T13:30:00Z",
+                "status": "open",
+                "text": "Второе примечание к главе 1."
+              }
+            ],
+            "createdAt": "2025-10-10T10:00:00Z",
+            "updatedAt": "2025-10-12T14:00:00Z",
+            "authors": ["Автор 1", "Автор 2"],
+            "language": "ru",
+            "blocks": [
+              {
+                "id": "block_001",
+                "title": "Блок 1",
+                "subtitle": "Подзаголовок блока 1",
+                "summary": "Краткое описание блока 1.",
+                "type": "textual",
+                "metadata": {
+                  "assetClasses": ["Equities"],
+                  "companies": ["Компания А"],
+                  "instruments": ["Stocks"],
+                  "sectors": ["Information Technology"],
+                  "regions": ["US"],
+                  "riskProfile": "Moderate",
+                  "timeHorizon": "Long-term",
+                  "tags": ["блок1"]
+                },
+                "notes": [
+                  {
+                    "id": "note_block_1_1",
+                    "author": "Автор 1",
+                    "role": "author",
+                    "timestamp": "2025-10-12T13:45:00Z",
+                    "status": "open",
+                    "text": "Первое примечание к блоку 1."
+                  },
+                  {
+                    "id": "note_block_1_2",
+                    "author": "Редактор 2",
+                    "role": "editor",
+                    "timestamp": "2025-10-12T14:00:00Z",
+                    "status": "open",
+                    "text": "Второе примечание к блоку 1."
+                  }
+                ],
+                "createdAt": "2025-10-11T10:00:00Z",
+                "updatedAt": "2025-10-12T14:15:00Z",
+                "authors": ["Автор 1"],
+                "language": "ru",
+                "views": [
+                  {
+                    "type": "text",
+                    "content": "Текстовый контент внутри блокa 1.",
+                    "notes": [
+                      {
+                        "id": "note_view_1_1",
+                        "author": "Рецензент А",
+                        "role": "reviewer",
+                        "timestamp": "2025-10-12T14:30:00Z",
+                        "status": "open",
+                        "text": "Примечание к текстовому view."
+                      },
+                      {
+                        "id": "note_view_1_2",
+                        "author": "Рецензент Б",
+                        "role": "reviewer",
+                        "timestamp": "2025-10-12T14:35:00Z",
+                        "status": "open",
+                        "text": "Второе примечание к текстовому view."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "image",
+                    "mediaType": "image/png",
+                    "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAACVBMVEUAAAD///+l2Z/dAAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==",
+                    "alt": "Минималистичное изображение",
+                    "caption": "Картинка в блоке 1",
+                    "notes": [
+                      {
+                        "id": "note_view_2_1",
+                        "author": "Рецензент В",
+                        "role": "reviewer",
+                        "timestamp": "2025-10-12T14:40:00Z",
+                        "status": "open",
+                        "text": "Уточнить источник изображения."
+                      },
+                      {
+                        "id": "note_view_2_2",
+                        "author": "Рецензент Г",
+                        "role": "reviewer",
+                        "timestamp": "2025-10-12T14:45:00Z",
+                        "status": "open",
+                        "text": "Проверить размер изображения."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "block_002",
+                "title": "Блок 2",
+                "subtitle": "Подзаголовок блока 2",
+                "summary": "Краткое описание блока 2.",
+                "type": "figure",
+                "metadata": {
+                  "assetClasses": ["Bonds"],
+                  "companies": ["Компания Б"],
+                  "instruments": ["Bonds"],
+                  "sectors": ["Health Care"],
+                  "regions": ["Europe"],
+                  "riskProfile": "Moderate",
+                  "timeHorizon": "Medium-term",
+                  "tags": ["блок2"]
+                },
+                "notes": [
+                  {
+                    "id": "note_block_2_1",
+                    "author": "Автор 2",
+                    "role": "author",
+                    "timestamp": "2025-10-12T14:50:00Z",
+                    "status": "open",
+                    "text": "Первое примечание к блоку 2."
+                  },
+                  {
+                    "id": "note_block_2_2",
+                    "author": "Редактор 1",
+                    "role": "editor",
+                    "timestamp": "2025-10-12T14:55:00Z",
+                    "status": "open",
+                    "text": "Второе примечание к блоку 2."
+                  }
+                ],
+                "createdAt": "2025-10-11T11:00:00Z",
+                "updatedAt": "2025-10-12T15:00:00Z",
+                "authors": ["Автор 2"],
+                "language": "ru",
+                "views": [
+                  {
+                    "type": "chart",
+                    "caption": "Пример Vega-Lite графика",
+                    "spec": {
+                      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+                      "description": "Пример линейного графика",
+                      "data": {
+                        "values": [
+                          { "x": 1, "y": 28 }, { "x": 2, "y": 43 },
+                          { "x": 3, "y": 81 }, { "x": 4, "y": 19 },
+                          { "x": 5, "y": 52 }
+                        ]
+                      },
+                      "mark": "line",
+                      "encoding": {
+                        "x": { "field": "x", "type": "quantitative" },
+                        "y": { "field": "y", "type": "quantitative" }
+                      }
+                    },
+                    "notes": [
+                      {
+                        "id": "note_view_3_1",
+                        "author": "Аналитик 1",
+                        "role": "analyst",
+                        "timestamp": "2025-10-12T15:05:00Z",
+                        "status": "open",
+                        "text": "Проверить данные для корректности."
+                      },
+                      {
+                        "id": "note_view_3_2",
+                        "author": "Аналитик 2",
+                        "role": "analyst",
+                        "timestamp": "2025-10-12T15:10:00Z",
+                        "status": "open",
+                        "text": "Добавить поясняющий комментарий."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "table",
+                    "caption": "Пример таблицы с финансовыми данными",
+                    "columns": [
+                      { "key": "metric", "title": "Показатель", "type": "string" },
+                      { "key": "value1", "title": "Значение 1", "type": "number" },
+                      { "key": "value2", "title": "Значение 2", "type": "number" }
+                    ],
+                    "rows": [
+                      { "metric": "Доходы", "value1": 100, "value2": 110 },
+                      { "metric": "Расходы", "value1": 80, "value2": 90 }
+                    ],
+                    "notes": [
+                      {
+                        "id": "note_view_4_1",
+                        "author": "Финансовый аналитик",
+                        "role": "analyst",
+                        "timestamp": "2025-10-12T15:15:00Z",
+                        "status": "open",
+                        "text": "Добавить данные за прошлый год."
+                      },
+                      {
+                        "id": "note_view_4_2",
+                        "author": "Финансовый аналитик",
+                        "role": "analyst",
+                        "timestamp": "2025-10-12T15:20:00Z",
+                        "status": "open",
+                        "text": "Проверить точность расчетов."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ch_002",
+            "title": "Глава 2",
+            "subtitle": "Подзаголовок главы 2",
+            "summary": "Описание второй главы с расширенным содержимым.",
+            "order": 1,
+            "metadata": {},
+            "notes": [
+              {
+                "id": "note_ch_2_1",
+                "author": "Автор 2",
+                "role": "author",
+                "timestamp": "2025-10-12T15:25:00Z",
+                "status": "resolved",
+                "text": "Примечание закрыто."
+              },
+              {
+                "id": "note_ch_2_2",
+                "author": "Редактор 2",
+                "role": "editor",
+                "timestamp": "2025-10-12T15:30:00Z",
+                "status": "open",
+                "text": "Ожидание комментариев."
+              }
+            ],
+            "createdAt": "2025-10-10T11:00:00Z",
+            "updatedAt": "2025-10-12T15:35:00Z",
+            "authors": ["Автор 1", "Автор 2"],
+            "language": "ru",
+            "blocks": [
+              {
+                "id": "block_003",
+                "title": "Блок 3",
+                "subtitle": "Подзаголовок блока 3",
+                "summary": "Третий блок с минимальным содержимым.",
+                "type": "custom",
+                "metadata": {},
+                "notes": [
+                  {
+                    "id": "note_block_3_1",
+                    "author": "Автор 1",
+                    "role": "author",
+                    "timestamp": "2025-10-12T15:40:00Z",
+                    "status": "open",
+                    "text": "Первое примечание в блоке 3."
+                  },
+                  {
+                    "id": "note_block_3_2",
+                    "author": "Редактор 1",
+                    "role": "editor",
+                    "timestamp": "2025-10-12T15:45:00Z",
+                    "status": "open",
+                    "text": "Второе примечание в блоке 3."
+                  }
+                ],
+                "createdAt": "2025-10-12T14:00:00Z",
+                "updatedAt": "2025-10-12T15:50:00Z",
+                "authors": ["Автор 2"],
+                "language": "ru",
+                "views": [
+                  {
+                    "type": "text",
+                    "content": "Самый простой текстовый вид внутри блока 3.",
+                    "notes": [
+                      {
+                        "id": "note_view_5_1",
+                        "author": "Рецензент 1",
+                        "role": "reviewer",
+                        "timestamp": "2025-10-12T15:55:00Z",
+                        "status": "open",
+                        "text": "Требуется доработать формулировки."
+                      },
+                      {
+                        "id": "note_view_5_2",
+                        "author": "Рецензент 2",
+                        "role": "reviewer",
+                        "timestamp": "2025-10-12T16:00:00Z",
+                        "status": "open",
+                        "text": "Добавить примеры."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "content": "Дополнительный текстовый контент.",
+                    "notes": [
+                      {
+                        "id": "note_view_6_1",
+                        "author": "Рецензент 3",
+                        "role": "reviewer",
+                        "timestamp": "2025-10-12T16:05:00Z",
+                        "status": "open",
+                        "text": "Проверить стилевые ошибки."
+                      },
+                      {
+                        "id": "note_view_6_2",
+                        "author": "Рецензент 4",
+                        "role": "reviewer",
+                        "timestamp": "2025-10-12T16:10:00Z",
+                        "status": "open",
+                        "text": "Уточнить данные по рынку."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "block_004",
+                "title": "Блок 4",
+                "subtitle": "Подзаголовок блока 4",
+                "summary": "Четвертый блок с дополнительными видами.",
+                "type": "composite",
+                "metadata": {},
+                "notes": [
+                  {
+                    "id": "note_block_4_1",
+                    "author": "Автор 1",
+                    "role": "author",
+                    "timestamp": "2025-10-12T16:15:00Z",
+                    "status": "open",
+                    "text": "Примечание блока 4 - первое."
+                  },
+                  {
+                    "id": "note_block_4_2",
+                    "author": "Редактор 2",
+                    "role": "editor",
+                    "timestamp": "2025-10-12T16:20:00Z",
+                    "status": "open",
+                    "text": "Примечание блока 4 - второе."
+                  }
+                ],
+                "createdAt": "2025-10-12T14:30:00Z",
+                "updatedAt": "2025-10-12T16:25:00Z",
+                "authors": ["Автор 1", "Автор 2"],
+                "language": "ru",
+                "views": [
+                  {
+                    "type": "chart",
+                    "caption": "Пример графика",
+                    "spec": {
+                      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+                      "description": "Пример столбчатого графика",
+                      "data": {
+                        "values": [
+                          { "category": "A", "value": 28 },
+                          { "category": "B", "value": 55 },
+                          { "category": "C", "value": 43 }
+                        ]
+                      },
+                      "mark": "bar",
+                      "encoding": {
+                        "x": { "field": "category", "type": "nominal" },
+                        "y": { "field": "value", "type": "quantitative" }
+                      }
+                    },
+                    "notes": [
+                      {
+                        "id": "note_view_7_1",
+                        "author": "Рецензент 1",
+                        "role": "reviewer",
+                        "timestamp": "2025-10-12T16:30:00Z",
+                        "status": "open",
+                        "text": "Проверить корректность данных для категории B."
+                      },
+                      {
+                        "id": "note_view_7_2",
+                        "author": "Рецензент 2",
+                        "role": "reviewer",
+                        "timestamp": "2025-10-12T16:35:00Z",
+                        "status": "open",
+                        "text": "Добавить пояснения к оси X."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "image",
+                    "mediaType": "image/jpeg",
+                    "base64": "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDABALD...\u003d",
+                    "alt": "Пример изображения",
+                    "caption": "Изображение для блока 4",
+                    "notes": [
+                      {
+                        "id": "note_view_8_1",
+                        "author": "Рецензент 3",
+                        "role": "reviewer",
+                        "timestamp": "2025-10-12T16:40:00Z",
+                        "status": "open",
+                        "text": "Проверить качество изображения."
+                      },
+                      {
+                        "id": "note_view_8_2",
+                        "author": "Рецензент 4",
+                        "role": "reviewer",
+                        "timestamp": "2025-10-12T16:45:00Z",
+                        "status": "open",
+                        "text": "Уточнить источник фотографии."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+  

@@ -25,6 +25,7 @@ The presentation layer handles HTTP requests and responses, providing RESTful AP
 - **TransformationController**: JSON data transformation operations
 
 **Key Features**:
+
 - Request validation using Jakarta Validation
 - OpenAPI annotations for automatic documentation
 - Global exception handling with consistent error responses
@@ -40,6 +41,7 @@ The service layer contains the core business logic:
 - **Transformation Engines**: Pluggable engines for different transformation languages
 
 **Key Features**:
+
 - Transaction management with Spring's `@Transactional`
 - Business rule validation
 - Engine abstraction for extensibility
@@ -72,11 +74,86 @@ JPA entities representing the domain model:
 
 ### Data Transformation Flow
 
+#### High-Level Flow
+
 1. Client sends transformation request with canonical JSON
 2. Controller validates request
 3. Service retrieves consumer's transformation template
 4. Appropriate transformation engine processes the data
 5. Transformed JSON is returned to client
+
+#### Detailed Sequence Diagram
+
+```
+Client Application                    TransformationController              TransformationService              TransformationEngine
+        |                                           |                              |                              |
+        |  POST /api/consumers/{consumerId}/transform?subject={subject}            |                              |
+        |  Content-Type: application/json                                          |                              |
+        |  Body: {"canonicalJson": {...}}                                          |                              |
+        |------------------------------------------>|                              |                              |
+        |                                           |                              |                              |
+        |                                           | 1. Validate request params   |                              |
+        |                                           |    - consumerId exists       |                              |
+        |                                           |    - subject parameter       |                              |
+        |                                           |    - JSON payload structure  |                              |
+        |                                           |                              |                              |
+        |                                           | 2. Call service.transform()  |                              |
+        |                                           |----------------------------->|                              |
+        |                                           |                              |                              |
+        |                                           |                              | 3. Retrieve template         |
+        |                                           |                              |    for consumer              |
+        |                                           |                              |                              |
+        |                                           |                              | 4. Determine engine type     |
+        |                                           |                              |    (jslt/router/pipeline)    |
+        |                                           |                              |                              |
+        |                                           |                              | 5. Instantiate appropriate   |
+        |                                           |                              |    engine                    |
+        |                                           |                              |                              |
+        |                                           |                              | 6. Call engine.transform()   |
+        |                                           |                              |----------------------------->|
+        |                                           |                              |                              |
+        |                                           |                              |                              | 7. Execute transformation
+        |                                           |                              |                              |    - JSLT: Apply expression
+        |                                           |                              |                              |    - Router: Evaluate conditions
+        |                                           |                              |                              |    - Pipeline: Execute steps
+        |                                           |                              |                              |
+        |                                           |                              | 8. Return transformed JSON   |
+        |                                           |                              |<-----------------------------|
+        |                                           |                              |                              |
+        |                                           | 9. Return success response   |                              |
+        |                                           |    {"transformedJson": {...}}|                              |
+        |<------------------------------------------|                              |                              |
+```
+
+#### Key Points About Current Flow
+
+- **No Schema Validation**: Input JSON is not validated against registered schemas for the subject
+- **Consumer-Subject Relationship**: The subject parameter is informational only - no validation that consumer is registered for that subject
+- **Template Retrieval**: System retrieves the single template associated with the consumer (one template per consumer)
+- **Engine Selection**: Template metadata determines which transformation engine to use
+- **Error Handling**: Transformation exceptions are caught and returned as HTTP 500 responses
+
+#### Engine-Specific Flows
+
+##### JSLT Engine Flow
+
+```
+Input JSON → Parse JSLT Expression → Apply Transformation → Output JSON
+```
+
+##### Router Engine Flow
+
+```
+Input JSON → Evaluate Route Conditions → Select Transformation → Apply Selected Transform → Output JSON
+```
+
+##### Pipeline Engine Flow
+
+```
+Input JSON → Step 1 Transform → Step 2 Transform → ... → Step N Transform → Output JSON
+              ↓                     ↓                           ↓
+        Continue on Error?   Continue on Error?         Continue on Error?
+```
 
 ## Database Schema
 
@@ -142,18 +219,21 @@ public interface TransformationEngine {
 ### Available Transformation Engines
 
 #### 1. JSLT Engine
+
 - **Implementation**: `JsltTransformationEngine`
 - **Purpose**: Simple JSON-to-JSON transformations using JSLT expressions
 - **Use Case**: Declarative transformations, data normalization, field mapping
 - **Example Expression**: `{ "user_id": .id, "full_name": (.firstName + " " + .lastName) }`
 
 #### 2. Router Engine
+
 - **Implementation**: `RouterTransformationEngine`
 - **Purpose**: Intelligent routing of transformations based on input data characteristics
 - **Use Case**: Conditional processing, multi-tenant data handling, content-based routing
 - **Configuration**: JSON-based routing rules with conditions and transformation mappings
 
 #### 3. Pipeline Engine
+
 - **Implementation**: `PipelineTransformationEngine`
 - **Purpose**: Sequential execution of multiple transformations
 - **Use Case**: Complex multi-step processing, data enrichment workflows, validation chains
@@ -162,21 +242,25 @@ public interface TransformationEngine {
 ### Engine Architecture Details
 
 #### Router Engine Architecture
+
 ```
 Input JSON → Condition Evaluation → Route Selection → JSLT Transformation → Output JSON
 ```
 
 **Key Components**:
+
 - **ConditionEvaluator**: Evaluates JSON path expressions against input data
 - **RouteSelector**: Selects appropriate transformation based on first matching condition
 - **RouterTransformationEngine**: Main coordinator with fallback to default transformation
 
 #### Pipeline Engine Architecture
+
 ```
 Input JSON → Step 1 → Step 2 → ... → Step N → Output JSON
 ```
 
 **Key Components**:
+
 - **PipelineStep**: Individual transformation step with error handling configuration
 - **PipelineExecutor**: Manages step execution and result accumulation
 - **PipelineTransformationEngine**: Coordinator with configurable error propagation
@@ -228,11 +312,13 @@ springdoc.swagger-ui.path=/swagger-ui.html
 ## Security Considerations
 
 ### Current State
+
 - No authentication/authorization implemented
 - All endpoints are publicly accessible
 - Suitable for internal networks or development environments
 
 ### Future Enhancements
+
 - OAuth 2.0 / JWT authentication
 - Role-based access control (RBAC)
 - API rate limiting
@@ -243,6 +329,7 @@ springdoc.swagger-ui.path=/swagger-ui.html
 ### Spring Boot Actuator
 
 Endpoints available at `/actuator/*`:
+
 - `/actuator/health` - Application health status
 - `/actuator/info` - Application information
 - `/actuator/metrics` - Application metrics
@@ -265,6 +352,7 @@ Endpoints available at `/actuator/*`:
 ### Docker Compose
 
 Services:
+
 - **app**: Spring Boot application
 - **db**: PostgreSQL database with persistent volumes
 
@@ -278,16 +366,19 @@ Services:
 ## Performance Characteristics
 
 ### Database Performance
+
 - Indexed queries for fast schema retrieval
 - JSONB storage for flexible schema storage
 - Connection pooling with HikariCP
 
 ### Caching Opportunities
+
 - Schema caching for frequently accessed schemas
 - Template compilation caching
 - Consumer metadata caching
 
 ### Scalability
+
 - Stateless application design
 - Database read replicas for read-heavy workloads
 - CDN for static API documentation
@@ -295,11 +386,13 @@ Services:
 ## Error Handling
 
 ### Global Exception Handler
+
 - Consistent error response format
 - Appropriate HTTP status codes
 - Detailed error messages for debugging
 
 ### Custom Exceptions
+
 - `ResourceNotFoundException` - 404 responses
 - `SchemaValidationException` - 400 responses for invalid schemas
 - `TransformationException` - 500 responses for transformation errors
@@ -307,15 +400,19 @@ Services:
 ## Testing Strategy
 
 ### Unit Tests
+
 - Service layer testing with mocked repositories
 - Transformation engine testing
 - Utility class testing
 
 ### Integration Tests
+
 - Controller testing with TestContainers
 - Database integration testing
 - End-to-end API testing
 
 ### Test Coverage
+
 - Target: >80% code coverage
 - Focus on business logic and edge cases
+
