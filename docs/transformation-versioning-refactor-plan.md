@@ -46,89 +46,152 @@ ON transformation_template_versions(template_id)
 WHERE is_active = TRUE;
 ```
 
-### Column Semantics Clarification
+### Schema Relationships and Referential Integrity
 
-#### Subject Column
-- **Purpose**: Identifies the data subject (domain/type) this transformation applies to
-- **Usage**: Since consumers can consume multiple subjects, each transformation template is scoped to a specific subject
-- **Example**: A consumer might have transformations for "user-profile" and "product-catalog" subjects
-- **Relationship**: Links to the `subject` field in the `schemas` table for validation
+#### Unified Schema Management
+The `schemas` table now stores all schema types with proper relationships:
 
-#### Input Schema Version Column
-- **Purpose**: Specifies which version of the subject's canonical schema this transformation is designed to handle
-- **Usage**: When subject schemas evolve (e.g., from "1.0.0" to "1.1.0"), different transformation versions may be needed to handle different input formats
-- **Semantics**: References the `version` field in the `schemas` table for the same subject
-- **Example**: Transformation version "2.0.0" might be designed to handle subject schema version "1.1.0" while transformation "1.0.0" handles "1.0.0"
+- **Canonical Schemas**: `schema_type = 'canonical'`, `consumer_id = NULL`
+  - Authoritative schemas defining subject structure
+  - Used for input validation and documentation
 
-#### Output Schema Version Column
-- **Purpose**: Specifies which version of the consumer's expected output schema this transformation produces
-- **Usage**: As consumer requirements evolve, they may expect different output formats or additional fields
-- **Semantics**: Tracks the consumer's output contract version, independent of the transformation version
-- **Example**: Consumer might evolve from expecting simple user data (output v1.0) to enriched user data (output v2.0), requiring different transformations
+- **Consumer Output Schemas**: `schema_type = 'consumer_output'`, `consumer_id ≠ NULL`
+  - Consumer-specific output contracts
+  - Define what each consumer expects as output
+  - Enable consumer evolution independent of canonical schemas
+
+#### Transformation Template Relationships
+
+**Foreign Key References**:
+- `input_schema_id` → `schemas.id` (canonical schema for the subject)
+- `output_schema_id` → `schemas.id` (consumer output schema)
+- `consumer_id` → `consumers.consumer_id`
+- `subject` (denormalized for query performance and API clarity)
+
+**Referential Integrity Benefits**:
+- **Data Consistency**: Foreign keys prevent orphaned references
+- **Cascade Protection**: `RESTRICT` on schema deletion prevents accidental data loss
+- **Audit Trail**: Clear links between transformations and their input/output contracts
+- **Query Performance**: Indexed foreign key relationships enable efficient joins
 
 ### Practical Usage Examples
 
 #### Scenario 1: Subject Schema Evolution
 ```
 Subject: "user-profile"
-Subject Schema Versions: 1.0.0 → 1.1.0 (added phone field)
-Consumer: "mobile-app"
-Output Schema Versions: 1.0 (simple), 2.0 (with phone)
+Canonical Schemas:
+- ID 1: subject="user-profile", type="canonical", version="1.0.0" (basic fields)
+- ID 2: subject="user-profile", type="canonical", version="1.1.0" (added phone field)
+
+Consumer Output Schemas:
+- ID 3: subject="user-profile", type="consumer_output", consumer="mobile-app", version="1.0" (simple view)
+- ID 4: subject="user-profile", type="consumer_output", consumer="mobile-app", version="2.0" (with phone)
 
 Transformation Versions:
-- v1.0.0: input_schema_version="1.0.0", output_schema_version="1.0"
-- v1.1.0: input_schema_version="1.1.0", output_schema_version="1.0" (backwards compatible)
-- v2.0.0: input_schema_version="1.1.0", output_schema_version="2.0" (includes phone)
+- v1.0.0: input_schema_id=1, output_schema_id=3 (handles basic input, produces simple output)
+- v1.1.0: input_schema_id=2, output_schema_id=3 (handles enhanced input, maintains simple output)
+- v2.0.0: input_schema_id=2, output_schema_id=4 (handles enhanced input, produces enhanced output)
 ```
 
 #### Scenario 2: Consumer Evolution
 ```
 Subject: "product-catalog"
-Subject Schema Version: 1.0.0 (stable)
-Consumer: "web-dashboard"
-Output Schema Versions: 1.0 → 2.0 (added analytics fields)
+Canonical Schema:
+- ID 5: subject="product-catalog", type="canonical", version="1.0.0" (stable)
+
+Consumer Output Schemas:
+- ID 6: subject="product-catalog", type="consumer_output", consumer="web-dashboard", version="1.0" (basic view)
+- ID 7: subject="product-catalog", type="consumer_output", consumer="web-dashboard", version="2.0" (with analytics)
 
 Transformation Versions:
-- v1.0.0: input_schema_version="1.0.0", output_schema_version="1.0"
-- v2.0.0: input_schema_version="1.0.0", output_schema_version="2.0" (same input, enhanced output)
+- v1.0.0: input_schema_id=5, output_schema_id=6 (stable input, basic output)
+- v2.0.0: input_schema_id=5, output_schema_id=7 (same input, enhanced output with analytics)
 ```
 
 #### Version Selection Logic
 When processing a transformation request:
 1. **Subject** determines which transformation templates are eligible
-2. **Input Schema Version** should match the current subject schema version being processed
-3. **Active Flag** determines which version to use by default
-4. **Output Schema Version** documents what the consumer receives
+2. **Active Flag** determines which version to use by default (or explicit version if specified)
+3. **Foreign Keys** ensure input/output schemas are properly linked and validated
+4. **Referential Integrity** guarantees that referenced schemas exist and are appropriate types
+
+### Benefits of Normalized Design
+
+**Data Integrity**:
+- Foreign key constraints prevent orphaned references
+- Schema type validation ensures proper usage
+- Referential integrity guarantees transformation validity
+
+**Maintainability**:
+- Single source of truth for all schemas
+- Clear relationships between transformations and contracts
+- Easier debugging with explicit schema links
+
+**Extensibility**:
+- Easy addition of new schema types
+- Support for consumer-specific schema evolution
+- Flexible schema relationship modeling
 
 This design enables:
 - **Historical Processing**: Specify exact transformation version for reprocessing old data
-- **Gradual Rollout**: Test new transformations while keeping old versions available
-- **Schema Evolution**: Handle both input and output schema changes independently
+- **Gradual Rollout**: Test new transformations while maintaining referential integrity
+- **Schema Evolution**: Handle both input and output schema changes with proper relationships
+- **Data Consistency**: Foreign key constraints prevent orphaned or invalid references
 
 ### Database Schema Changes
+
+#### Enhanced Schemas Table (Unified Design)
+
+```sql
+-- Enhanced schemas table supporting multiple schema types
+CREATE TABLE schemas (
+    id BIGSERIAL PRIMARY KEY,
+    subject VARCHAR(255) NOT NULL,
+    schema_type VARCHAR(50) NOT NULL,  -- 'canonical' or 'consumer_output'
+    consumer_id VARCHAR(255),          -- NULL for canonical, populated for consumer_output
+    version VARCHAR(50) NOT NULL,      -- Semver format
+    schema_json JSONB NOT NULL,
+    compatibility VARCHAR(50) NOT NULL DEFAULT 'BACKWARD',
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+
+    -- Constraints
+    UNIQUE(subject, schema_type, consumer_id, version),
+    CHECK (schema_type IN ('canonical', 'consumer_output')),
+    CHECK (schema_type = 'canonical' OR consumer_id IS NOT NULL),
+    FOREIGN KEY (consumer_id) REFERENCES consumers(consumer_id) ON DELETE CASCADE
+);
+
+-- Indexes
+CREATE INDEX idx_schemas_subject_type ON schemas(subject, schema_type);
+CREATE INDEX idx_schemas_consumer ON schemas(consumer_id, subject, schema_type);
+```
 
 #### Option 1: Subject-Consumer-Versioned Templates
 
 ```sql
--- New transformation_templates table structure
+-- Normalized transformation_templates with proper referential integrity
 CREATE TABLE transformation_templates (
     id BIGSERIAL PRIMARY KEY,
     consumer_id VARCHAR(255) NOT NULL,
     subject VARCHAR(255) NOT NULL,
-    version VARCHAR(50) NOT NULL,  -- Semver format (e.g., "1.2.3")
+    version VARCHAR(50) NOT NULL,      -- Transformation version (semver)
     engine VARCHAR(50) NOT NULL DEFAULT 'jslt',
-    template_expression TEXT,      -- Nullable for router/pipeline engines
-    configuration TEXT,           -- JSON configuration for router/pipeline engines
+    template_expression TEXT,          -- Nullable for router/pipeline engines
+    configuration TEXT,                -- JSON configuration for router/pipeline engines
+    input_schema_id BIGINT NOT NULL,   -- References canonical schema
+    output_schema_id BIGINT NOT NULL,  -- References consumer output schema
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
     description TEXT,
-    is_active BOOLEAN NOT NULL DEFAULT FALSE,  -- Only one active per consumer+subject
-    input_schema_version VARCHAR(50),          -- Linked to subject schema version
-    output_schema_version VARCHAR(50),         -- Consumer output schema version
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
 
     FOREIGN KEY (consumer_id) REFERENCES consumers(consumer_id) ON DELETE CASCADE,
-    UNIQUE(consumer_id, subject, version),     -- Unique version per consumer+subject
-    CHECK (is_active IN (TRUE, FALSE))         -- Boolean constraint
+    FOREIGN KEY (input_schema_id) REFERENCES schemas(id) ON DELETE RESTRICT,
+    FOREIGN KEY (output_schema_id) REFERENCES schemas(id) ON DELETE RESTRICT,
+    UNIQUE(consumer_id, subject, version),
+    CHECK (is_active IN (TRUE, FALSE))
 );
 
 -- Partial index to ensure only one active version per consumer+subject
@@ -158,24 +221,26 @@ CREATE TABLE transformation_templates (
     UNIQUE(consumer_id, subject)
 );
 
--- Versioned instances
+-- Versioned instances with proper referential integrity
 CREATE TABLE transformation_template_versions (
     id BIGSERIAL PRIMARY KEY,
     template_id BIGINT NOT NULL,
-    version VARCHAR(50) NOT NULL,  -- Semver format
+    version VARCHAR(50) NOT NULL,      -- Transformation version (semver)
     engine VARCHAR(50) NOT NULL DEFAULT 'jslt',
     template_expression TEXT,
     configuration TEXT,
+    input_schema_id BIGINT NOT NULL,   -- References canonical schema
+    output_schema_id BIGINT NOT NULL,  -- References consumer output schema
     is_active BOOLEAN NOT NULL DEFAULT FALSE,
-    input_schema_version VARCHAR(50),
-    output_schema_version VARCHAR(50),
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
 
     FOREIGN KEY (template_id) REFERENCES transformation_templates(id) ON DELETE CASCADE,
-    UNIQUE(template_id, version),              -- Unique version per template
-    CHECK (is_active IN (TRUE, FALSE))         -- Boolean constraint
+    FOREIGN KEY (input_schema_id) REFERENCES schemas(id) ON DELETE RESTRICT,
+    FOREIGN KEY (output_schema_id) REFERENCES schemas(id) ON DELETE RESTRICT,
+    UNIQUE(template_id, version),
+    CHECK (is_active IN (TRUE, FALSE))
 );
 
 -- Partial index to ensure only one active version per template
@@ -272,26 +337,36 @@ public TransformationResponse transform(String consumerId, TransformationRequest
 
 ### Version Management Service
 
-New service for handling version lifecycle:
+New service for handling version lifecycle with schema validation:
 
 ```java
 public class TransformationVersionService {
 
     public void createNewVersion(String consumerId, String subject, String version,
+                                Long inputSchemaId, Long outputSchemaId,
                                 TransformationTemplateRequest request) {
         // Validate version format (semver)
-        // Check if version already exists
+        // Verify input schema exists and is canonical type for subject
+        // Verify output schema exists and is consumer_output type for consumer+subject
+        // Check if transformation version already exists
         // Create new version as inactive
     }
 
     public void activateVersion(String consumerId, String subject, String version) {
-        // Deactivate current active version
+        // Validate transformation version exists
+        // Deactivate current active version for consumer+subject
         // Activate specified version
-        // Update schema version links
+        // Log version change for audit trail
     }
 
-    public List<String> getAvailableVersions(String consumerId, String subject) {
-        // Return all versions for consumer+subject pair
+    public List<TransformationTemplateResponse> getAvailableVersions(String consumerId, String subject) {
+        // Return all versions for consumer+subject pair with schema details
+    }
+
+    public void validateSchemaCompatibility(Long inputSchemaId, Long outputSchemaId) {
+        // Ensure input schema is canonical and matches subject
+        // Ensure output schema is consumer_output and matches consumer+subject
+        // Validate schema compatibility rules
     }
 }
 ```
@@ -301,11 +376,14 @@ public class TransformationVersionService {
 ### Database Migration
 
 #### Phase 1: Schema Changes
-1. Create new table structure (Option 1 or 2)
-2. **Important**: Ensure partial unique indexes are created to allow only one active version per consumer-subject pair
-3. Migrate existing templates to new structure
-4. Set all migrated templates as active (version "1.0.0")
-5. Update foreign key references
+1. **Enhance schemas table**: Add `schema_type`, `consumer_id` columns with proper constraints
+2. **Create transformation_templates**: Implement chosen option (1 or 2) with foreign key relationships
+3. **Migrate existing data**:
+   - Convert existing schemas to canonical type with `consumer_id = NULL`
+   - Create consumer output schemas based on existing consumer expectations
+   - Link transformation templates to appropriate schema IDs
+4. **Set initial active versions**: Mark migrated transformations as active (version "1.0.0")
+5. **Validate referential integrity**: Ensure all foreign key relationships are valid
 
 #### Phase 2: Data Migration
 1. For each existing consumer:
@@ -380,10 +458,12 @@ public class TransformationVersionService {
 ## Testing Strategy
 
 ### Unit Tests
-- Test version selection logic
-- Test activation/deactivation
+- Test version selection logic with foreign key relationships
+- Test activation/deactivation with referential integrity
 - Test semver validation
-- Test schema version linking
+- Test schema type validation (canonical vs consumer_output)
+- Test foreign key constraint enforcement
+- Test schema compatibility validation
 
 ### Integration Tests
 - Test full transformation workflows with versioning
@@ -418,6 +498,8 @@ public class TransformationVersionService {
 
 2. **Non-Functional Requirements:**
    - API performance maintained (<100ms response times)
+   - Data integrity with referential constraints enforced
+   - Schema consistency validation (100% valid references)
    - Backward compatibility for critical paths
    - Clear error messages for version conflicts
    - Comprehensive test coverage (>90%)
