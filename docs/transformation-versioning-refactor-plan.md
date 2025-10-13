@@ -4,75 +4,58 @@
 
 ### Problems Identified
 
-1. **1:1 Consumer-Template Relationship**: Current design allows only one transformation template per consumer, contradicting multi-subject consumer requirements
-2. **No Versioning**: Transformations cannot evolve with schema changes
-3. **No Fallback Mechanism**: Cannot rollback to previous transformation versions during production issues
-4. **Limited Flexibility**: Cannot process historical data with different schema versions
+1. **Incorrect Consumer-Template Relationship**: Current design enforces 1:1 relationship between consumers and transformation templates, but consumers can register for multiple subjects requiring different transformations
+
+2. **Lack of Transformation Versioning**: No support for versioning transformations as schemas evolve, preventing safe schema evolution and rollback capabilities
+
+3. **No Fallback Mechanism**: Cannot rollback to previous transformation versions during production issues or gradual rollout scenarios
+
+4. **Limited Historical Processing**: Cannot reprocess historical data with different schema versions using appropriate transformation logic
+
+5. **Schema Table Design Issues**: Current `schemas` table only supports canonical schemas, but the system needs to track consumer-specific output schemas as well
+
+6. **Database Normalization Problems**: Transformation templates store redundant schema version information instead of proper foreign key relationships
+
+7. **Lack of Referential Integrity**: No foreign key constraints between transformation templates and schemas, allowing orphaned or invalid references
+
+8. **Missing Schema Type Support**: No way to distinguish between canonical schemas (authoritative) and consumer output schemas (contracts)
+
+9. **Inflexible Subject-Consumer Binding**: Current design doesn't properly support consumers having different transformation logic for different subjects
 
 ### Business Requirements
 
-- **Multi-Subject Support**: Consumers can transform multiple subjects
-- **Schema Evolution**: Support for evolving canonical schemas and consumer output schemas
-- **Transformation Versioning**: Semver-based versioning linked to subject:consumer pairs
-- **Active/Default Versions**: Only one transformation version active per subject:consumer pair at a time
-- **Fallback Capability**: Ability to switch back to previous versions for operational issues
-- **Historical Processing**: Ability to specify transformation version in API calls for reprocessing
-- **Breaking Changes Allowed**: No existing users, development stage allows major changes
+- **Multi-Subject Consumer Support**: Each consumer can transform multiple subjects with subject-specific transformation logic
+- **Schema Evolution Handling**: Support for evolving canonical schemas while maintaining backward compatibility for consumers
+- **Independent Consumer Evolution**: Consumers can evolve their output requirements independently of canonical schema changes
+- **Transformation Versioning**: Semver-based versioning for transformations linked to subject:consumer pairs
+- **Active Version Management**: Only one transformation version active per subject:consumer pair at any time
+- **Fallback and Rollback**: Ability to switch back to previous transformation versions for operational safety
+- **Historical Data Processing**: Support for reprocessing historical data using specific transformation versions
+- **Schema Contract Management**: Track both input (canonical) and output (consumer) schema contracts
+- **Referential Integrity**: Proper database relationships ensuring data consistency
+- **Breaking Changes Allowed**: Development stage allows major architectural changes without backward compatibility concerns
 
 ## Proposed New Architecture
 
 ### Core Concepts
 
-1. **Transformation Templates**: Versioned transformation logic per subject:consumer pair
-2. **Active Versions**: Each subject:consumer pair has one active transformation version
-3. **Version Selection**: API can specify version or use active version
-4. **Schema Compatibility**: Transformations linked to specific schema versions
+1. **Multi-Subject Consumer Support**: Consumers can register for multiple subjects and have subject-specific transformation logic
 
-### Important Constraint Correction
+2. **Unified Schema Management**: Single `schemas` table supporting both canonical schemas (authoritative) and consumer output schemas (contracts)
 
-**Issue Identified**: Initial design proposed `UNIQUE(consumer_id, subject, is_active)` which would only allow two records per consumer-subject pair (true/false). This was incorrect.
+3. **Versioned Transformations**: Semver-based versioning for transformation templates linked to subject:consumer pairs
 
-**Solution**: Use partial unique indexes to ensure only one active version per consumer-subject pair while allowing multiple inactive versions:
+4. **Active Version Management**: Each subject:consumer pair has exactly one active transformation version at any time
 
-```sql
--- For Option 1
-CREATE UNIQUE INDEX idx_transformation_templates_active_only
-ON transformation_templates(consumer_id, subject)
-WHERE is_active = TRUE;
+5. **Referential Integrity**: Foreign key relationships ensure transformations reference valid schemas and prevent orphaned data
 
--- For Option 2
-CREATE UNIQUE INDEX idx_template_versions_active_only
-ON transformation_template_versions(template_id)
-WHERE is_active = TRUE;
-```
+6. **Schema Evolution Support**: Independent evolution of canonical schemas and consumer output contracts
 
-### Schema Relationships and Referential Integrity
+7. **Fallback Capabilities**: Ability to rollback to previous transformation versions for operational safety
 
-#### Unified Schema Management
-The `schemas` table now stores all schema types with proper relationships:
+8. **Historical Processing**: Support for reprocessing data using specific transformation versions via API parameters
 
-- **Canonical Schemas**: `schema_type = 'canonical'`, `consumer_id = NULL`
-  - Authoritative schemas defining subject structure
-  - Used for input validation and documentation
 
-- **Consumer Output Schemas**: `schema_type = 'consumer_output'`, `consumer_id ≠ NULL`
-  - Consumer-specific output contracts
-  - Define what each consumer expects as output
-  - Enable consumer evolution independent of canonical schemas
-
-#### Transformation Template Relationships
-
-**Foreign Key References**:
-- `input_schema_id` → `schemas.id` (canonical schema for the subject)
-- `output_schema_id` → `schemas.id` (consumer output schema)
-- `consumer_id` → `consumers.consumer_id`
-- `subject` (denormalized for query performance and API clarity)
-
-**Referential Integrity Benefits**:
-- **Data Consistency**: Foreign keys prevent orphaned references
-- **Cascade Protection**: `RESTRICT` on schema deletion prevents accidental data loss
-- **Audit Trail**: Clear links between transformations and their input/output contracts
-- **Query Performance**: Indexed foreign key relationships enable efficient joins
 
 ### Practical Usage Examples
 
@@ -248,6 +231,52 @@ CREATE UNIQUE INDEX idx_template_versions_active_only
 ON transformation_template_versions(template_id)
 WHERE is_active = TRUE;
 ```
+
+### Important Constraint Correction
+
+**Issue Identified**: Initial design proposed `UNIQUE(consumer_id, subject, is_active)` which would only allow two records per consumer-subject pair (true/false). This was incorrect.
+
+**Solution**: Use partial unique indexes to ensure only one active version per consumer-subject pair while allowing multiple inactive versions:
+
+```sql
+-- For Option 1
+CREATE UNIQUE INDEX idx_transformation_templates_active_only
+ON transformation_templates(consumer_id, subject)
+WHERE is_active = TRUE;
+
+-- For Option 2
+CREATE UNIQUE INDEX idx_template_versions_active_only
+ON transformation_template_versions(template_id)
+WHERE is_active = TRUE;
+```
+
+### Schema Relationships and Referential Integrity
+
+#### Unified Schema Management
+The `schemas` table now stores all schema types with proper relationships:
+
+- **Canonical Schemas**: `schema_type = 'canonical'`, `consumer_id = NULL`
+  - Authoritative schemas defining subject structure
+  - Used for input validation and documentation
+
+- **Consumer Output Schemas**: `schema_type = 'consumer_output'`, `consumer_id ≠ NULL`
+  - Consumer-specific output contracts
+  - Define what each consumer expects as output
+  - Enable consumer evolution independent of canonical schemas
+
+#### Transformation Template Relationships
+
+**Foreign Key References**:
+- `input_schema_id` → `schemas.id` (canonical schema for the subject)
+- `output_schema_id` → `schemas.id` (consumer output schema)
+- `consumer_id` → `consumers.consumer_id`
+- `subject` (denormalized for query performance and API clarity)
+
+**Referential Integrity Benefits**:
+- **Data Consistency**: Foreign keys prevent orphaned references
+- **Cascade Protection**: `RESTRICT` on schema deletion prevents accidental data loss
+- **Audit Trail**: Clear links between transformations and their input/output contracts
+- **Query Performance**: Indexed foreign key relationships enable efficient joins
 
 ## API Changes
 
