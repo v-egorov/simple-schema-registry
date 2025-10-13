@@ -305,6 +305,201 @@ Validate JSON data against the latest version of a schema or a specific version.
 
 ---
 
+## Consumer Schema API
+
+### Register Consumer Schema
+Register a new consumer output schema or create a new version for a specific consumer.
+
+**Endpoint**: `POST /api/consumers/{consumerId}/schemas/{subject}`
+
+**Request Body**:
+```json
+{
+  "subject": "user-profile",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "id": {"type": "integer"},
+      "name": {"type": "string"},
+      "email": {"type": "string", "format": "email"}
+    },
+    "required": ["id", "name"]
+  },
+  "compatibility": "BACKWARD",
+  "description": "Consumer output schema for mobile app"
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "id": 2,
+  "subject": "user-profile",
+  "version": "1.0.0",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "id": {"type": "integer"},
+      "name": {"type": "string"},
+      "email": {"type": "string", "format": "email"}
+    },
+    "required": ["id", "name"]
+  },
+  "compatibility": "BACKWARD",
+  "description": "Consumer output schema for mobile app",
+  "createdAt": "2024-01-15T10:30:00",
+  "updatedAt": "2024-01-15T10:30:00"
+}
+```
+
+### Get All Consumer Schema Versions
+Retrieve all versions of consumer output schemas for a subject and consumer.
+
+**Endpoint**: `GET /api/consumers/{consumerId}/schemas/{subject}/versions`
+
+**Response** (200 OK):
+```json
+[
+  {
+    "id": 2,
+    "subject": "user-profile",
+    "version": "1.0.0",
+    "schema": {...},
+    "compatibility": "BACKWARD",
+    "description": "Consumer output schema for mobile app",
+    "createdAt": "2024-01-15T10:30:00",
+    "updatedAt": "2024-01-15T10:30:00"
+  }
+]
+```
+
+### Get Specific Consumer Schema Version
+Retrieve a specific version of a consumer output schema.
+
+**Endpoint**: `GET /api/consumers/{consumerId}/schemas/{subject}/versions/{version}`
+
+**Response** (200 OK):
+```json
+{
+  "id": 2,
+  "subject": "user-profile",
+  "version": "1.0.0",
+  "schema": {...},
+  "compatibility": "BACKWARD",
+  "description": "Consumer output schema for mobile app",
+  "createdAt": "2024-01-15T10:30:00",
+  "updatedAt": "2024-01-15T10:30:00"
+}
+```
+
+### Get Latest Consumer Schema Version
+Retrieve the latest version of a consumer output schema.
+
+**Endpoint**: `GET /api/consumers/{consumerId}/schemas/{subject}`
+
+**Response** (200 OK):
+```json
+{
+  "id": 2,
+  "subject": "user-profile",
+  "version": "1.0.0",
+  "schema": {...},
+  "compatibility": "BACKWARD",
+  "description": "Consumer output schema for mobile app",
+  "createdAt": "2024-01-15T10:30:00",
+  "updatedAt": "2024-01-15T10:30:00"
+}
+```
+
+### Check Consumer Schema Compatibility
+Check if a new consumer output schema is compatible with existing versions.
+
+**Endpoint**: `POST /api/consumers/{consumerId}/schemas/{subject}/compat`
+
+**Request Body**:
+```json
+{
+  "subject": "user-profile",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "id": {"type": "integer"},
+      "name": {"type": "string"},
+      "email": {"type": "string", "format": "email"},
+      "phone": {"type": "string"}
+    },
+    "required": ["id", "name"]
+  }
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "compatible": true,
+  "message": "Consumer output schema is compatible with all existing versions"
+}
+```
+
+### Validate JSON Against Consumer Schema
+Validate JSON data against the latest version or a specific version of a consumer output schema.
+
+**Endpoint**: `POST /api/consumers/{consumerId}/schemas/{subject}/validate`
+
+**Request Body**:
+```json
+{
+  "subject": "user-profile",
+  "jsonData": {
+    "id": 123,
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
+  "version": "1.0.0"  // Optional - if not provided, uses latest version
+}
+```
+
+**Response** (200 OK) - Valid:
+```json
+{
+  "valid": true,
+  "subject": "user-profile",
+  "schemaVersion": "1.0.0"
+}
+```
+
+**Response** (200 OK) - Invalid:
+```json
+{
+  "valid": false,
+  "subject": "user-profile",
+  "schemaVersion": "1.0.0",
+  "errors": [
+    "$.email: does not match the email pattern",
+    "$.name: is missing but it is required"
+  ]
+}
+```
+
+### List Consumer Schema Subjects
+Retrieve all unique subjects that have consumer output schemas for a specific consumer.
+
+**Endpoint**: `GET /api/consumers/{consumerId}/schemas/subjects`
+
+**Response** (200 OK):
+```json
+[
+  "user-profile",
+  "product-catalog",
+  "order-data"
+]
+```
+
+---
+
 ## Consumer Management API
 
 ### Register Consumer
@@ -378,14 +573,14 @@ Retrieve details of a specific consumer.
 ## Transformation API
 
 ### Transform JSON Data
-Transform canonical JSON data for a specific consumer using their transformation template.
+Transform canonical JSON data for a specific consumer and subject using their active transformation template.
 
-**Endpoint**: `POST /api/transform/{consumerId}`
+**Endpoint**: `POST /api/consumers/{consumerId}/subjects/{subject}/transform`
 
-#### JSLT Engine Example
 **Request Body**:
 ```json
 {
+  "subject": "user-profile",
   "canonicalJson": {
     "userId": 12345,
     "fullName": "John Doe",
@@ -405,77 +600,27 @@ Transform canonical JSON data for a specific consumer using their transformation
     "email": "john.doe@example.com",
     "registered": "2024-01-15T10:30:00Z",
     "status": "active"
-  }
+  },
+  "subject": "user-profile"
 }
 ```
 
-#### Router Engine Example
-**Request Body** (User Data):
-```json
-{
-  "canonicalJson": {
-    "type": "user",
-    "id": 12345,
-    "firstName": "John",
-    "lastName": "Doe",
-    "email": "john.doe@example.com",
-    "department": "engineering"
-  }
-}
-```
+### Transform JSON Data with Specific Version
+Transform canonical JSON data using a specific transformation template version.
 
-**Response** (200 OK):
-```json
-{
-  "transformedJson": {
-    "user_id": 12345,
-    "full_name": "John Doe",
-    "email": "john.doe@example.com",
-    "department": "engineering",
-    "normalized_type": "user"
-  }
-}
-```
+**Endpoint**: `POST /api/consumers/{consumerId}/subjects/{subject}/transform/versions/{version}`
 
-**Request Body** (Product Data):
-```json
-{
-  "canonicalJson": {
-    "type": "product",
-    "id": 67890,
-    "name": "Wireless Headphones",
-    "category": "electronics",
-    "price": 199.99,
-    "inStock": true
-  }
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "transformedJson": {
-    "product_id": 67890,
-    "product_name": "Wireless Headphones",
-    "category": "electronics",
-    "price_usd": 199.99,
-    "availability": "in_stock",
-    "enriched_category": "electronics"
-  }
-}
-```
-
-#### Pipeline Engine Example
 **Request Body**:
 ```json
 {
+  "subject": "user-profile",
+  "transformationVersion": "1.0.0",
   "canonicalJson": {
-    "type": "user",
-    "id": 12345,
-    "firstName": "John",
-    "lastName": "Doe",
-    "email": "john.doe@example.com",
-    "registrationDate": "2024-01-15T10:30:00Z"
+    "userId": 12345,
+    "fullName": "John Doe",
+    "emailAddress": "john.doe@example.com",
+    "registrationDate": "2024-01-15T10:30:00Z",
+    "accountStatus": "active"
   }
 }
 ```
@@ -484,58 +629,46 @@ Transform canonical JSON data for a specific consumer using their transformation
 ```json
 {
   "transformedJson": {
-    "type": "user",
     "id": 12345,
-    "firstName": "John",
-    "lastName": "Doe",
+    "name": "John Doe",
     "email": "john.doe@example.com",
-    "registrationDate": "2024-01-15T10:30:00Z",
-    "validated": true,
-    "normalized": true,
-    "enriched": true,
-    "timestamp": "2024-01-15T10:35:00Z"
-  }
+    "registered": "2024-01-15T10:30:00Z",
+    "status": "active"
+  },
+  "subject": "user-profile"
 }
 ```
 
-### Get Transformation Template
-Retrieve the transformation template for a consumer.
+### Create Transformation Template Version
+Create a new version of a transformation template for a consumer and subject.
 
-**Endpoint**: `GET /api/transform/templates/{consumerId}`
-
-**Response** (200 OK):
-```json
-{
-  "consumerId": "mobile-app",
-  "template": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
-  "engine": "JSLT",
-  "createdAt": "2024-01-15T10:35:00",
-  "updatedAt": "2024-01-15T10:35:00"
-}
-```
-
-### Create/Update Transformation Template
-Create or update a transformation template for a consumer.
-
-**Endpoint**: `POST /api/transform/templates/{consumerId}`
+**Endpoint**: `POST /api/consumers/{consumerId}/subjects/{subject}/templates`
 
 #### JSLT Engine Example
 **Request Body**:
 ```json
 {
+  "version": "1.0.0",
   "engine": "jslt",
   "expression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
+  "inputSchemaId": 1,
+  "outputSchemaId": 2,
   "description": "Simple field mapping for mobile app"
 }
 ```
 
-**Response** (200 OK):
+**Response** (201 Created):
 ```json
 {
   "id": 1,
   "consumerId": "mobile-app",
+  "subject": "user-profile",
+  "version": "1.0.0",
   "engine": "jslt",
-  "expression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
+  "inputSchema": 1,
+  "outputSchema": 2,
+  "isActive": true,
+  "templateExpression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
   "configuration": null,
   "description": "Simple field mapping for mobile app",
   "createdAt": "2024-01-15T10:35:00",
@@ -547,6 +680,7 @@ Create or update a transformation template for a consumer.
 **Request Body**:
 ```json
 {
+  "version": "1.0.0",
   "engine": "router",
   "routerConfig": {
     "type": "router",
@@ -568,21 +702,9 @@ Create or update a transformation template for a consumer.
       "outputSchema": "consumer-data-schema-v1"
     }
   },
+  "inputSchemaId": 1,
+  "outputSchemaId": 2,
   "description": "Content-based routing for different data types"
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "id": 2,
-  "consumerId": "multi-tenant-app",
-  "engine": "router",
-  "expression": "{\"type\":\"router\",\"routes\":[{\"condition\":\"$.type == 'user'\",\"transformationId\":\"user-normalization-v1\",\"description\":\"Normalize user data\"},{\"condition\":\"$.type == 'product'\",\"transformationId\":\"product-enrichment-v1\",\"description\":\"Enrich product data\"}],\"defaultTransformationId\":\"generic-transformation-v1\",\"validation\":{\"inputSchema\":\"canonical-data-schema-v1\",\"outputSchema\":\"consumer-data-schema-v1\"}}",
-  "configuration": "{\"type\":\"router\",\"routes\":[{\"condition\":\"$.type == 'user'\",\"transformationId\":\"user-normalization-v1\",\"description\":\"Normalize user data\"},{\"condition\":\"$.type == 'product'\",\"transformationId\":\"product-enrichment-v1\",\"description\":\"Enrich product data\"}],\"defaultTransformationId\":\"generic-transformation-v1\",\"validation\":{\"inputSchema\":\"canonical-data-schema-v1\",\"outputSchema\":\"consumer-data-schema-v1\"}}",
-  "description": "Content-based routing for different data types",
-  "createdAt": "2024-01-15T10:40:00",
-  "updatedAt": "2024-01-15T10:40:00"
 }
 ```
 
@@ -590,6 +712,7 @@ Create or update a transformation template for a consumer.
 **Request Body**:
 ```json
 {
+  "version": "1.0.0",
   "engine": "pipeline",
   "pipelineConfig": {
     "type": "pipeline",
@@ -621,28 +744,145 @@ Create or update a transformation template for a consumer.
       }
     }
   },
+  "inputSchemaId": 1,
+  "outputSchemaId": 2,
   "description": "Multi-step data processing pipeline"
 }
 ```
 
+### Get All Template Versions
+Retrieve all versions of transformation templates for a consumer and subject.
+
+**Endpoint**: `GET /api/consumers/{consumerId}/subjects/{subject}/templates`
+
+**Response** (200 OK):
+```json
+[
+  {
+    "id": 1,
+    "consumerId": "mobile-app",
+    "subject": "user-profile",
+    "version": "1.0.0",
+    "engine": "jslt",
+    "inputSchema": 1,
+    "outputSchema": 2,
+    "isActive": true,
+    "templateExpression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
+    "configuration": null,
+    "description": "Simple field mapping for mobile app",
+    "createdAt": "2024-01-15T10:35:00",
+    "updatedAt": "2024-01-15T10:35:00"
+  }
+]
+```
+
+### Get Active Template
+Retrieve the currently active transformation template for a consumer and subject.
+
+**Endpoint**: `GET /api/consumers/{consumerId}/subjects/{subject}/templates/active`
+
 **Response** (200 OK):
 ```json
 {
-  "id": 3,
-  "consumerId": "analytics-platform",
-  "engine": "pipeline",
-  "expression": "{\"type\":\"pipeline\",\"steps\":[{\"name\":\"validate-input\",\"transformationId\":\"input-validation-v1\",\"continueOnError\":false,\"description\":\"Validate input data structure\"},{\"name\":\"normalize-data\",\"transformationId\":\"data-normalization-v1\",\"continueOnError\":false,\"description\":\"Normalize data format\"},{\"name\":\"enrich-data\",\"transformationId\":\"data-enrichment-v1\",\"continueOnError\":true,\"description\":\"Add computed fields\"}],\"validation\":{\"finalSchema\":\"enriched-data-schema-v1\",\"intermediateSchemas\":{\"after-step-1\":\"validated-data-schema-v1\",\"after-step-2\":\"normalized-data-schema-v1\"}}}",
-  "configuration": "{\"type\":\"pipeline\",\"steps\":[{\"name\":\"validate-input\",\"transformationId\":\"input-validation-v1\",\"continueOnError\":false,\"description\":\"Validate input data structure\"},{\"name\":\"normalize-data\",\"transformationId\":\"data-normalization-v1\",\"continueOnError\":false,\"description\":\"Normalize data format\"},{\"name\":\"enrich-data\",\"transformationId\":\"data-enrichment-v1\",\"continueOnError\":true,\"description\":\"Add computed fields\"}],\"validation\":{\"finalSchema\":\"enriched-data-schema-v1\",\"intermediateSchemas\":{\"after-step-1\":\"validated-data-schema-v1\",\"after-step-2\":\"normalized-data-schema-v1\"}}}",
-  "description": "Multi-step data processing pipeline",
-  "createdAt": "2024-01-15T10:45:00",
-  "updatedAt": "2024-01-15T10:45:00"
+  "id": 1,
+  "consumerId": "mobile-app",
+  "subject": "user-profile",
+  "version": "1.0.0",
+  "engine": "jslt",
+  "inputSchema": 1,
+  "outputSchema": 2,
+  "isActive": true,
+  "templateExpression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
+  "configuration": null,
+  "description": "Simple field mapping for mobile app",
+  "createdAt": "2024-01-15T10:35:00",
+  "updatedAt": "2024-01-15T10:35:00"
 }
 ```
+
+### Get Specific Template Version
+Retrieve a specific version of a transformation template.
+
+**Endpoint**: `GET /api/consumers/{consumerId}/subjects/{subject}/templates/versions/{version}`
+
+**Response** (200 OK):
+```json
+{
+  "id": 1,
+  "consumerId": "mobile-app",
+  "subject": "user-profile",
+  "version": "1.0.0",
+  "engine": "jslt",
+  "inputSchema": 1,
+  "outputSchema": 2,
+  "isActive": true,
+  "templateExpression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
+  "configuration": null,
+  "description": "Simple field mapping for mobile app",
+  "createdAt": "2024-01-15T10:35:00",
+  "updatedAt": "2024-01-15T10:35:00"
+}
+```
+
+### Activate Template Version
+Activate a specific version of a transformation template.
+
+**Endpoint**: `PUT /api/consumers/{consumerId}/subjects/{subject}/templates/versions/{version}/activate`
+
+**Response** (200 OK):
+```json
+{
+  "id": 2,
+  "consumerId": "mobile-app",
+  "subject": "user-profile",
+  "version": "2.0.0",
+  "engine": "jslt",
+  "inputSchema": 1,
+  "outputSchema": 2,
+  "isActive": true,
+  "templateExpression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus, lastLogin: .lastLoginDate}",
+  "configuration": null,
+  "description": "Updated field mapping with last login",
+  "createdAt": "2024-01-15T11:00:00",
+  "updatedAt": "2024-01-15T11:00:00"
+}
+```
+
+### Deactivate Template Version
+Deactivate a specific version of a transformation template.
+
+**Endpoint**: `PUT /api/consumers/{consumerId}/subjects/{subject}/templates/versions/{version}/deactivate`
+
+**Response** (200 OK):
+```json
+{
+  "id": 1,
+  "consumerId": "mobile-app",
+  "subject": "user-profile",
+  "version": "1.0.0",
+  "engine": "jslt",
+  "inputSchema": 1,
+  "outputSchema": 2,
+  "isActive": false,
+  "templateExpression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
+  "configuration": null,
+  "description": "Simple field mapping for mobile app",
+  "createdAt": "2024-01-15T10:35:00",
+  "updatedAt": "2024-01-15T11:00:00"
+}
+```
+
+### Delete Template Version
+Delete a specific version of a transformation template (only if not active).
+
+**Endpoint**: `DELETE /api/consumers/{consumerId}/subjects/{subject}/templates/versions/{version}`
+
+**Response** (204 No Content)
 
 ### List Available Transformation Engines
 Get a list of supported transformation engines.
 
-**Endpoint**: `GET /api/transform/engines`
+**Endpoint**: `GET /api/consumers/engines`
 
 **Response** (200 OK):
 ```json
@@ -707,7 +947,7 @@ Unexpected server error.
   "status": 500,
   "error": "Internal Server Error",
   "message": "An unexpected error occurred",
-  "path": "/api/transform/mobile-app"
+  "path": "/api/consumers/mobile-app/subjects/user-profile/transform"
 }
 ```
 
