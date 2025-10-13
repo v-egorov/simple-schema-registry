@@ -5,11 +5,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import ru.vegorov.schemaregistry.dto.SchemaReference;
 import ru.vegorov.schemaregistry.dto.TransformationRequest;
 import ru.vegorov.schemaregistry.dto.TransformationResponse;
 import ru.vegorov.schemaregistry.dto.TransformationTemplateRequest;
 import ru.vegorov.schemaregistry.dto.TransformationTemplateResponse;
 import ru.vegorov.schemaregistry.entity.SchemaEntity;
+import ru.vegorov.schemaregistry.entity.SchemaType;
 import ru.vegorov.schemaregistry.entity.TransformationTemplateEntity;
 import ru.vegorov.schemaregistry.exception.ConflictException;
 import ru.vegorov.schemaregistry.exception.ResourceNotFoundException;
@@ -97,13 +99,8 @@ public class TransformationService {
         }
 
         // Validate input and output schemas exist
-        SchemaEntity inputSchema = schemaRepository.findById(request.getInputSchemaId())
-            .orElseThrow(() -> new ResourceNotFoundException(
-                String.format("Input schema not found: %s", request.getInputSchemaId())));
-
-        SchemaEntity outputSchema = schemaRepository.findById(request.getOutputSchemaId())
-            .orElseThrow(() -> new ResourceNotFoundException(
-                String.format("Output schema not found: %s", request.getOutputSchemaId())));
+        SchemaEntity inputSchema = resolveSchemaReference(request.getInputSchema(), SchemaType.canonical);
+        SchemaEntity outputSchema = resolveSchemaReference(request.getOutputSchema(), SchemaType.consumer_output);
 
         // The subject is derived from the input schema
         String subject = inputSchema.getSubject();
@@ -266,17 +263,87 @@ public class TransformationService {
     }
 
     /**
+     * Resolve a schema reference to a SchemaEntity
+     */
+    private SchemaEntity resolveSchemaReference(SchemaReference ref, SchemaType expectedType) {
+        if (ref == null) {
+            throw new IllegalArgumentException("Schema reference cannot be null");
+        }
+
+        SchemaEntity schema;
+        if (ref.getVersion() != null) {
+            // Find specific version
+            if (expectedType == SchemaType.canonical) {
+                if (ref.getConsumerId() != null) {
+                    throw new IllegalArgumentException("Consumer ID should not be specified for canonical schemas");
+                }
+                schema = schemaRepository.findBySubjectAndSchemaTypeAndVersion(ref.getSubject(), expectedType, ref.getVersion())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format("Canonical schema not found: subject=%s, version=%s", ref.getSubject(), ref.getVersion())));
+            } else { // consumer_output
+                if (ref.getConsumerId() == null) {
+                    throw new IllegalArgumentException("Consumer ID is required for consumer output schemas");
+                }
+                schema = schemaRepository.findBySubjectAndSchemaTypeAndConsumerIdAndVersion(
+                        ref.getSubject(), expectedType, ref.getConsumerId(), ref.getVersion())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format("Consumer output schema not found: subject=%s, consumer=%s, version=%s",
+                            ref.getSubject(), ref.getConsumerId(), ref.getVersion())));
+            }
+        } else {
+            // Find latest version
+            if (expectedType == SchemaType.canonical) {
+                if (ref.getConsumerId() != null) {
+                    throw new IllegalArgumentException("Consumer ID should not be specified for canonical schemas");
+                }
+                schema = schemaRepository.findFirstBySubjectAndSchemaTypeOrderByVersionDesc(ref.getSubject(), expectedType)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format("No canonical schemas found for subject: %s", ref.getSubject())));
+            } else { // consumer_output
+                if (ref.getConsumerId() == null) {
+                    throw new IllegalArgumentException("Consumer ID is required for consumer output schemas");
+                }
+                schema = schemaRepository.findFirstBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc(
+                        ref.getSubject(), expectedType, ref.getConsumerId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format("No consumer output schemas found for subject: %s, consumer: %s",
+                            ref.getSubject(), ref.getConsumerId())));
+            }
+        }
+
+        return schema;
+    }
+
+    /**
      * Map entity to response DTO
      */
     private TransformationTemplateResponse mapToResponse(TransformationTemplateEntity entity) {
+        // Create schema references from the entity relationships
+        SchemaReference inputSchemaRef = null;
+        if (entity.getInputSchema() != null) {
+            inputSchemaRef = new SchemaReference(
+                entity.getInputSchema().getSubject(),
+                entity.getInputSchema().getVersion()
+            );
+        }
+
+        SchemaReference outputSchemaRef = null;
+        if (entity.getOutputSchema() != null) {
+            outputSchemaRef = new SchemaReference(
+                entity.getOutputSchema().getSubject(),
+                entity.getOutputSchema().getConsumerId(),
+                entity.getOutputSchema().getVersion()
+            );
+        }
+
         return new TransformationTemplateResponse(
             entity.getId(),
             entity.getConsumerId(),
             entity.getSubject(),
             entity.getVersion(),
             entity.getEngine(),
-            entity.getInputSchema() != null ? entity.getInputSchema().getId() : null,
-            entity.getOutputSchema() != null ? entity.getOutputSchema().getId() : null,
+            inputSchemaRef,
+            outputSchemaRef,
             entity.getIsActive(),
             entity.getTemplateExpression(),
             entity.getConfiguration(),

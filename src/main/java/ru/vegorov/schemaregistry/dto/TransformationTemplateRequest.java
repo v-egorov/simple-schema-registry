@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import ru.vegorov.schemaregistry.dto.SchemaReference;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TransformationTemplateRequest {
@@ -15,10 +16,12 @@ public class TransformationTemplateRequest {
     private String engine = "jslt";
 
     @NotNull
-    private Long inputSchemaId;
+    @Valid
+    private SchemaReference inputSchema;
 
     @NotNull
-    private Long outputSchemaId;
+    @Valid
+    private SchemaReference outputSchema;
 
     // For JSLT engine - simple expression
     // For router/pipeline engines, this is derived from configuration
@@ -35,32 +38,32 @@ public class TransformationTemplateRequest {
     // Constructors
     public TransformationTemplateRequest() {}
 
-    public TransformationTemplateRequest(String version, String engine, Long inputSchemaId, Long outputSchemaId,
-                                       String expression, String description) {
+    public TransformationTemplateRequest(String version, String engine, SchemaReference inputSchema, SchemaReference outputSchema,
+                                        String expression, String description) {
         this.version = version;
         this.engine = engine;
-        this.inputSchemaId = inputSchemaId;
-        this.outputSchemaId = outputSchemaId;
+        this.inputSchema = inputSchema;
+        this.outputSchema = outputSchema;
         this.expression = expression;
         this.description = description;
     }
 
-    public TransformationTemplateRequest(String version, String engine, Long inputSchemaId, Long outputSchemaId,
-                                       RouterConfiguration routerConfig, String description) {
+    public TransformationTemplateRequest(String version, String engine, SchemaReference inputSchema, SchemaReference outputSchema,
+                                        RouterConfiguration routerConfig, String description) {
         this.version = version;
         this.engine = engine;
-        this.inputSchemaId = inputSchemaId;
-        this.outputSchemaId = outputSchemaId;
+        this.inputSchema = inputSchema;
+        this.outputSchema = outputSchema;
         this.routerConfig = routerConfig;
         this.description = description;
     }
 
-    public TransformationTemplateRequest(String version, String engine, Long inputSchemaId, Long outputSchemaId,
-                                       PipelineConfiguration pipelineConfig, String description) {
+    public TransformationTemplateRequest(String version, String engine, SchemaReference inputSchema, SchemaReference outputSchema,
+                                        PipelineConfiguration pipelineConfig, String description) {
         this.version = version;
         this.engine = engine;
-        this.inputSchemaId = inputSchemaId;
-        this.outputSchemaId = outputSchemaId;
+        this.inputSchema = inputSchema;
+        this.outputSchema = outputSchema;
         this.pipelineConfig = pipelineConfig;
         this.description = description;
     }
@@ -82,20 +85,20 @@ public class TransformationTemplateRequest {
         this.engine = engine;
     }
 
-    public Long getInputSchemaId() {
-        return inputSchemaId;
+    public SchemaReference getInputSchema() {
+        return inputSchema;
     }
 
-    public void setInputSchemaId(Long inputSchemaId) {
-        this.inputSchemaId = inputSchemaId;
+    public void setInputSchema(SchemaReference inputSchema) {
+        this.inputSchema = inputSchema;
     }
 
-    public Long getOutputSchemaId() {
-        return outputSchemaId;
+    public SchemaReference getOutputSchema() {
+        return outputSchema;
     }
 
-    public void setOutputSchemaId(Long outputSchemaId) {
-        this.outputSchemaId = outputSchemaId;
+    public void setOutputSchema(SchemaReference outputSchema) {
+        this.outputSchema = outputSchema;
     }
 
     public String getExpression() {

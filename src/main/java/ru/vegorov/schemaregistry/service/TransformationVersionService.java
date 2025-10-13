@@ -2,6 +2,7 @@ package ru.vegorov.schemaregistry.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.vegorov.schemaregistry.dto.SchemaReference;
 import ru.vegorov.schemaregistry.dto.TransformationTemplateResponse;
 import ru.vegorov.schemaregistry.entity.TransformationTemplateEntity;
 import ru.vegorov.schemaregistry.exception.ConflictException;
@@ -143,14 +144,32 @@ public class TransformationVersionService {
      * Map entity to response DTO
      */
     private TransformationTemplateResponse mapToResponse(TransformationTemplateEntity entity) {
+        // Create schema references from the entity relationships
+        SchemaReference inputSchemaRef = null;
+        if (entity.getInputSchema() != null) {
+            inputSchemaRef = new SchemaReference(
+                entity.getInputSchema().getSubject(),
+                entity.getInputSchema().getVersion()
+            );
+        }
+
+        SchemaReference outputSchemaRef = null;
+        if (entity.getOutputSchema() != null) {
+            outputSchemaRef = new SchemaReference(
+                entity.getOutputSchema().getSubject(),
+                entity.getOutputSchema().getConsumerId(),
+                entity.getOutputSchema().getVersion()
+            );
+        }
+
         return new TransformationTemplateResponse(
             entity.getId(),
             entity.getConsumerId(),
             entity.getSubject(),
             entity.getVersion(),
             entity.getEngine(),
-            entity.getInputSchema() != null ? entity.getInputSchema().getId() : null,
-            entity.getOutputSchema() != null ? entity.getOutputSchema().getId() : null,
+            inputSchemaRef,
+            outputSchemaRef,
             entity.getIsActive(),
             entity.getTemplateExpression(),
             entity.getConfiguration(),

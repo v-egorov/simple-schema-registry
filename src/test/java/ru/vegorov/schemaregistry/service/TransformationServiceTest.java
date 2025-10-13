@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.vegorov.schemaregistry.dto.TransformationRequest;
 import ru.vegorov.schemaregistry.dto.TransformationResponse;
+import ru.vegorov.schemaregistry.dto.SchemaReference;
 import ru.vegorov.schemaregistry.dto.TransformationTemplateRequest;
 import ru.vegorov.schemaregistry.dto.TransformationTemplateResponse;
 import ru.vegorov.schemaregistry.entity.SchemaEntity;
@@ -72,11 +73,14 @@ class TransformationServiceTest {
         canonicalJson.put("id", 123);
         canonicalJson.put("name", "John Doe");
 
+        SchemaReference inputSchemaRef = new SchemaReference("input-subject", "1.0.0");
+        SchemaReference outputSchemaRef = new SchemaReference("output-subject", "test-consumer", "1.0.0");
+
         TransformationTemplateRequest request = new TransformationTemplateRequest(
             "1.0.0",
             "jslt",
-            1L, // inputSchemaId
-            2L, // outputSchemaId
+            inputSchemaRef,
+            outputSchemaRef,
             ".",
             "Test template"
         );
@@ -84,11 +88,14 @@ class TransformationServiceTest {
         SchemaEntity inputSchema = new SchemaEntity();
         inputSchema.setId(1L);
         inputSchema.setSubject("input-subject");
+        inputSchema.setVersion("1.0.0");
         inputSchema.setSchemaType(SchemaType.canonical);
 
         SchemaEntity outputSchema = new SchemaEntity();
         outputSchema.setId(2L);
         outputSchema.setSubject("output-subject");
+        outputSchema.setConsumerId("test-consumer");
+        outputSchema.setVersion("1.0.0");
         outputSchema.setSchemaType(SchemaType.consumer_output);
         outputSchema.setConsumerId("consumer-1");
 
@@ -104,8 +111,10 @@ class TransformationServiceTest {
         savedEntity.setIsActive(true);
 
         when(consumerService.consumerExists("consumer-1")).thenReturn(true);
-        when(schemaRepository.findById(1L)).thenReturn(Optional.of(inputSchema));
-        when(schemaRepository.findById(2L)).thenReturn(Optional.of(outputSchema));
+        when(schemaRepository.findBySubjectAndSchemaTypeAndVersion("input-subject", SchemaType.canonical, "1.0.0"))
+            .thenReturn(Optional.of(inputSchema));
+        when(schemaRepository.findBySubjectAndSchemaTypeAndConsumerIdAndVersion("output-subject", SchemaType.consumer_output, "test-consumer", "1.0.0"))
+            .thenReturn(Optional.of(outputSchema));
         when(templateRepository.existsByConsumerIdAndSubjectAndVersion("consumer-1", "input-subject", "1.0.0")).thenReturn(false);
         when(templateRepository.existsByConsumerIdAndSubject("consumer-1", "input-subject")).thenReturn(false);
         when(jsltEngine.validateExpression(".")).thenReturn(true);
@@ -125,8 +134,10 @@ class TransformationServiceTest {
     @Test
     void createTemplateVersion_shouldThrowWhenConsumerDoesNotExist() {
         // Given
+        SchemaReference inputSchemaRef = new SchemaReference("input-subject", "1.0.0");
+        SchemaReference outputSchemaRef = new SchemaReference("output-subject", "test-consumer", "1.0.0");
         TransformationTemplateRequest request = new TransformationTemplateRequest(
-            "1.0.0", "jslt", 1L, 2L, ".", "Test template"
+            "1.0.0", "jslt", inputSchemaRef, outputSchemaRef, ".", "Test template"
         );
 
         when(consumerService.consumerExists("non-existent-consumer")).thenReturn(false);
@@ -140,17 +151,20 @@ class TransformationServiceTest {
     @Test
     void createTemplateVersion_shouldThrowWhenInputSchemaDoesNotExist() {
         // Given
+        SchemaReference inputSchemaRef = new SchemaReference("input-subject", "1.0.0");
+        SchemaReference outputSchemaRef = new SchemaReference("output-subject", "test-consumer", "1.0.0");
         TransformationTemplateRequest request = new TransformationTemplateRequest(
-            "1.0.0", "jslt", 1L, 2L, ".", "Test template"
+            "1.0.0", "jslt", inputSchemaRef, outputSchemaRef, ".", "Test template"
         );
 
         when(consumerService.consumerExists("consumer-1")).thenReturn(true);
-        when(schemaRepository.findById(1L)).thenReturn(Optional.empty());
+        when(schemaRepository.findBySubjectAndSchemaTypeAndVersion("input-subject", SchemaType.canonical, "1.0.0"))
+            .thenReturn(Optional.empty());
 
         // When & Then
         assertThatThrownBy(() -> transformationService.createTemplateVersion("consumer-1", request))
             .isInstanceOf(ResourceNotFoundException.class)
-            .hasMessageContaining("Input schema not found: 1");
+            .hasMessageContaining("Canonical schema not found: subject=input-subject, version=1.0.0");
     }
 
     @Test

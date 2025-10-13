@@ -701,8 +701,15 @@ Create a new version of a transformation template for a consumer and subject.
   "version": "1.0.0",
   "engine": "jslt",
   "expression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
-  "inputSchemaId": 1,
-  "outputSchemaId": 2,
+  "inputSchema": {
+    "subject": "user-profile",
+    "version": "1.0.0"
+  },
+  "outputSchema": {
+    "subject": "user-profile",
+    "consumerId": "mobile-app",
+    "version": "1.0.0"
+  },
   "description": "Simple field mapping for mobile app"
 }
 ```
@@ -755,8 +762,15 @@ Create a new version of a transformation template for a consumer and subject.
       "outputSchema": "consumer-data-schema-v1"
     }
   },
-  "inputSchemaId": 1,
-  "outputSchemaId": 2,
+  "inputSchema": {
+    "subject": "user-profile",
+    "version": "1.0.0"
+  },
+  "outputSchema": {
+    "subject": "user-profile",
+    "consumerId": "multi-tenant-app",
+    "version": "1.0.0"
+  },
   "description": "Content-based routing for different data types"
 }
 ```
@@ -799,8 +813,15 @@ Create a new version of a transformation template for a consumer and subject.
       }
     }
   },
-  "inputSchemaId": 1,
-  "outputSchemaId": 2,
+  "inputSchema": {
+    "subject": "user-profile",
+    "version": "1.0.0"
+  },
+  "outputSchema": {
+    "subject": "user-profile",
+    "consumerId": "analytics-platform",
+    "version": "1.0.0"
+  },
   "description": "Multi-step data processing pipeline"
 }
 ```
@@ -816,13 +837,20 @@ Retrieve all versions of transformation templates for a consumer and subject.
 ```json
 [
   {
-    "id": 1,
-    "consumerId": "mobile-app",
+  "id": 1,
+  "consumerId": "mobile-app",
+  "subject": "user-profile",
+  "version": "1.0.0",
+  "engine": "jslt",
+  "inputSchema": {
     "subject": "user-profile",
-    "version": "1.0.0",
-    "engine": "jslt",
-    "inputSchema": 1,
-    "outputSchema": 2,
+    "version": "1.0.0"
+  },
+  "outputSchema": {
+    "subject": "user-profile",
+    "consumerId": "mobile-app",
+    "version": "1.0.0"
+  },
     "isActive": true,
     "templateExpression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
     "configuration": null,

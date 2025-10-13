@@ -1,6 +1,7 @@
 package ru.vegorov.schemaregistry.dto;
 
 import java.time.LocalDateTime;
+import ru.vegorov.schemaregistry.dto.SchemaReference;
 
 public class TransformationTemplateResponse {
 
@@ -9,8 +10,8 @@ public class TransformationTemplateResponse {
     private String subject;
     private String version;
     private String engine;
-    private Long inputSchemaId;
-    private Long outputSchemaId;
+    private SchemaReference inputSchema;
+    private SchemaReference outputSchema;
     private Boolean isActive;
     private String expression;
     private String configuration;
@@ -22,16 +23,16 @@ public class TransformationTemplateResponse {
     public TransformationTemplateResponse() {}
 
     public TransformationTemplateResponse(Long id, String consumerId, String subject, String version,
-                                        String engine, Long inputSchemaId, Long outputSchemaId, Boolean isActive,
-                                        String expression, String configuration, String description,
-                                        LocalDateTime createdAt, LocalDateTime updatedAt) {
+                                         String engine, SchemaReference inputSchema, SchemaReference outputSchema, Boolean isActive,
+                                         String expression, String configuration, String description,
+                                         LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.consumerId = consumerId;
         this.subject = subject;
         this.version = version;
         this.engine = engine;
-        this.inputSchemaId = inputSchemaId;
-        this.outputSchemaId = outputSchemaId;
+        this.inputSchema = inputSchema;
+        this.outputSchema = outputSchema;
         this.isActive = isActive;
         this.expression = expression;
         this.configuration = configuration;
@@ -81,20 +82,20 @@ public class TransformationTemplateResponse {
         this.engine = engine;
     }
 
-    public Long getInputSchemaId() {
-        return inputSchemaId;
+    public SchemaReference getInputSchema() {
+        return inputSchema;
     }
 
-    public void setInputSchemaId(Long inputSchemaId) {
-        this.inputSchemaId = inputSchemaId;
+    public void setInputSchema(SchemaReference inputSchema) {
+        this.inputSchema = inputSchema;
     }
 
-    public Long getOutputSchemaId() {
-        return outputSchemaId;
+    public SchemaReference getOutputSchema() {
+        return outputSchema;
     }
 
-    public void setOutputSchemaId(Long outputSchemaId) {
-        this.outputSchemaId = outputSchemaId;
+    public void setOutputSchema(SchemaReference outputSchema) {
+        this.outputSchema = outputSchema;
     }
 
     public Boolean getIsActive() {
