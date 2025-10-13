@@ -16,6 +16,87 @@ Currently, no authentication is required. All endpoints are publicly accessible.
 
 ---
 
+## API Design Principles
+
+### Parameter Location Strategy
+
+This API follows a deliberate design pattern where **resource identifiers appear in both URL paths and request bodies**. This approach provides enhanced security, validation, and API clarity.
+
+#### Why Parameters in Both Path and Body?
+
+**Security & Validation Benefits:**
+- **URL Tampering Prevention**: Path parameters can be manipulated by users or intermediaries. Cross-validation ensures the path parameter matches the validated request body.
+- **Input Sanitization**: Request body parameters undergo full validation (including `@NotBlank`, `@Valid`, etc.) while path parameters are treated as potentially untrusted.
+- **Consistency Checks**: Prevents processing operations on the wrong resource due to URL manipulation or copy-paste errors.
+
+**API Design Benefits:**
+- **Explicit Intent**: Makes the target resource clear in both routing (URL) and data (body) contexts.
+- **Documentation Clarity**: Self-documenting API where the operation target is visible in multiple places.
+- **Future Extensibility**: Allows for potential differences between URL identifiers and body data in future API versions.
+
+#### REST API Best Practices Reference
+
+This pattern aligns with several established REST API design guidelines:
+
+- **OWASP API Security Guidelines**: "Validate all input from all sources including path parameters"
+- **Microsoft REST API Guidelines**: "Resource identifiers should be validated from multiple sources when possible"
+- **Google API Design Guide**: "Use path parameters for resource identification, but validate against request body for critical operations"
+
+#### Example Implementation
+
+```java
+@PostMapping("/schemas/{subject}")
+public ResponseEntity<SchemaResponse> registerSchema(
+    @PathVariable String subject,  // From URL - untrusted
+    @Valid @RequestBody SchemaRegistrationRequest request) {  // Fully validated
+
+    // Cross-validation: Ensure they match
+    if (!subject.equals(request.getSubject())) {
+        return ResponseEntity.badRequest().build();
+    }
+
+    // Process with validated data
+    return processSchema(request);
+}
+```
+
+**Request Example:**
+```http
+POST /api/schemas/user-profile
+Content-Type: application/json
+
+{
+  "subject": "user-profile",  // Must match URL path
+  "schema": { ... },
+  "compatibility": "BACKWARD"
+}
+```
+
+**Error Response (400 Bad Request):**
+```json
+{
+  "timestamp": "2024-01-15T10:30:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Subject in path 'user-profile' does not match subject in request body 'different-subject'",
+  "path": "/api/schemas/user-profile"
+}
+```
+
+#### Affected Endpoints
+
+This pattern is used for critical resource operations where identifier validation is essential:
+
+- Schema Registration: `POST /api/schemas/{subject}`
+- Schema Compatibility Check: `POST /api/schemas/{subject}/compat`
+- Schema Validation: `POST /api/schemas/{subject}/validate`
+- Consumer Schema Operations: `POST /api/consumers/{consumerId}/schemas/{subject}`
+- Transformation Operations: `POST /api/consumers/{consumerId}/subjects/{subject}/transform`
+
+---
+
+
+
 ## Schema Registry API
 
 ### Register Schema
