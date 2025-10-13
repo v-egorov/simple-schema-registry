@@ -47,33 +47,33 @@ assert_response "$(echo "$response" | tail -n1)" 201 "Version 2 creation should 
 # Test 1: Get specific version 1
 echo
 echo "Test 1: Get specific version 1"
-response=$(get_request "/api/schemas/test-specific-version/1")
+response=$(get_request "/api/schemas/test-specific-version/versions/1.0.0")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 200 "Should successfully retrieve version 1"
 assert_json_field "$response_body" "subject" "test-specific-version"
-assert_json_field "$response_body" "version" 1
+assert_json_field "$response_body" "version" "1.0.0"
 assert_contains "$response_body" '"name"' "Should contain name field"
 assert_not_contains "$response_body" '"email"' "Should not contain email field (added in v2)"
 
 # Test 2: Get specific version 2
 echo
 echo "Test 2: Get specific version 2"
-response=$(get_request "/api/schemas/test-specific-version/2")
+response=$(get_request "/api/schemas/test-specific-version/versions/1.0.1")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 200 "Should successfully retrieve version 2"
 assert_json_field "$response_body" "subject" "test-specific-version"
-assert_json_field "$response_body" "version" 2
+assert_json_field "$response_body" "version" "1.0.1"
 assert_contains "$response_body" '"name"' "Should contain name field"
 assert_contains "$response_body" '"email"' "Should contain email field"
 
 # Test 3: Try to get non-existent version
 echo
 echo "Test 3: Get non-existent version"
-response=$(get_request "/api/schemas/test-specific-version/99")
+response=$(get_request "/api/schemas/test-specific-version/versions/99.0.0")
 http_code=$(echo "$response" | tail -n1)
 
 assert_response "$http_code" 404 "Should return 404 for non-existent version"
@@ -81,7 +81,7 @@ assert_response "$http_code" 404 "Should return 404 for non-existent version"
 # Test 4: Try to get version from non-existent subject
 echo
 echo "Test 4: Get version from non-existent subject"
-response=$(get_request "/api/schemas/non-existent-subject/1")
+response=$(get_request "/api/schemas/non-existent-subject/versions/1.0.0")
 http_code=$(echo "$response" | tail -n1)
 
 assert_response "$http_code" 404 "Should return 404 for non-existent subject"
@@ -89,7 +89,7 @@ assert_response "$http_code" 404 "Should return 404 for non-existent subject"
 # Test 5: Get version 0 (invalid)
 echo
 echo "Test 5: Get invalid version 0"
-response=$(get_request "/api/schemas/test-specific-version/0")
+response=$(get_request "/api/schemas/test-specific-version/versions/0.0.0")
 http_code=$(echo "$response" | tail -n1)
 
 assert_response "$http_code" 404 "Should return 404 for invalid version 0"
@@ -97,7 +97,7 @@ assert_response "$http_code" 404 "Should return 404 for invalid version 0"
 # Test 6: Get negative version
 echo
 echo "Test 6: Get negative version"
-response=$(get_request "/api/schemas/test-specific-version/-1")
+response=$(get_request "/api/schemas/test-specific-version/versions/-1.0.0")
 http_code=$(echo "$response" | tail -n1)
 
 # This might return 400 or 404 depending on implementation

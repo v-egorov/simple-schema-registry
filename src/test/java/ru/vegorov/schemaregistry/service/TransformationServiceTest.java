@@ -84,12 +84,12 @@ class TransformationServiceTest {
         SchemaEntity inputSchema = new SchemaEntity();
         inputSchema.setId(1L);
         inputSchema.setSubject("input-subject");
-        inputSchema.setSchemaType(SchemaType.CANONICAL);
+        inputSchema.setSchemaType(SchemaType.canonical);
 
         SchemaEntity outputSchema = new SchemaEntity();
         outputSchema.setId(2L);
         outputSchema.setSubject("output-subject");
-        outputSchema.setSchemaType(SchemaType.CONSUMER_OUTPUT);
+        outputSchema.setSchemaType(SchemaType.consumer_output);
         outputSchema.setConsumerId("consumer-1");
 
         TransformationTemplateEntity savedEntity = new TransformationTemplateEntity();

@@ -7,10 +7,10 @@ public enum SchemaType {
     /**
      * Canonical schemas define the authoritative structure for a subject
      */
-    CANONICAL,
+    canonical,
 
     /**
      * Consumer output schemas define what a specific consumer expects as output
      */
-    CONSUMER_OUTPUT
+    consumer_output
 }

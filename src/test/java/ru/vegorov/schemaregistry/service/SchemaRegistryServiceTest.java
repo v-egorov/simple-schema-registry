@@ -53,11 +53,11 @@ class SchemaRegistryServiceTest {
         SchemaEntity savedEntity = new SchemaEntity();
         savedEntity.setId(1L);
         savedEntity.setSubject("test-subject");
-        savedEntity.setSchemaType(SchemaType.CANONICAL);
+        savedEntity.setSchemaType(SchemaType.canonical);
         savedEntity.setVersion("1.0.0");
         savedEntity.setSchemaJson(schemaJson);
 
-        when(schemaRepository.findBySubjectAndSchemaTypeOrderByVersionDesc("test-subject", SchemaType.CANONICAL))
+        when(schemaRepository.findBySubjectAndSchemaTypeOrderByVersionDesc("test-subject", SchemaType.canonical))
             .thenReturn(java.util.Collections.emptyList());
         when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
 
@@ -86,12 +86,12 @@ class SchemaRegistryServiceTest {
         SchemaEntity savedEntity = new SchemaEntity();
         savedEntity.setId(1L);
         savedEntity.setSubject("test-subject");
-        savedEntity.setSchemaType(SchemaType.CONSUMER_OUTPUT);
+        savedEntity.setSchemaType(SchemaType.consumer_output);
         savedEntity.setConsumerId("consumer-1");
         savedEntity.setVersion("1.0.0");
         savedEntity.setSchemaJson(schemaJson);
 
-        when(schemaRepository.findBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc("test-subject", SchemaType.CONSUMER_OUTPUT, "consumer-1"))
+        when(schemaRepository.findBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc("test-subject", SchemaType.consumer_output, "consumer-1"))
             .thenReturn(java.util.Collections.emptyList());
         when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
 
@@ -125,7 +125,7 @@ class SchemaRegistryServiceTest {
 
         SchemaEntity schemaEntity = new SchemaEntity();
         schemaEntity.setSubject("test-subject");
-        schemaEntity.setSchemaType(SchemaType.CANONICAL);
+        schemaEntity.setSchemaType(SchemaType.canonical);
         schemaEntity.setVersion("1.0.0");
         schemaEntity.setSchemaJson(schemaJson);
 
@@ -134,7 +134,7 @@ class SchemaRegistryServiceTest {
 
         SchemaValidationRequest request = new SchemaValidationRequest("test-subject", validJson);
 
-        when(schemaRepository.findFirstBySubjectAndSchemaTypeOrderByVersionDesc("test-subject", SchemaType.CANONICAL))
+        when(schemaRepository.findFirstBySubjectAndSchemaTypeOrderByVersionDesc("test-subject", SchemaType.canonical))
             .thenReturn(Optional.of(schemaEntity));
 
         // When
@@ -169,7 +169,7 @@ class SchemaRegistryServiceTest {
 
         SchemaEntity schemaEntity = new SchemaEntity();
         schemaEntity.setSubject("test-subject");
-        schemaEntity.setSchemaType(SchemaType.CONSUMER_OUTPUT);
+        schemaEntity.setSchemaType(SchemaType.consumer_output);
         schemaEntity.setConsumerId("consumer-1");
         schemaEntity.setVersion("1.0.0");
         schemaEntity.setSchemaJson(schemaJson);
@@ -179,7 +179,7 @@ class SchemaRegistryServiceTest {
 
         SchemaValidationRequest request = new SchemaValidationRequest("test-subject", validJson);
 
-        when(schemaRepository.findFirstBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc("test-subject", SchemaType.CONSUMER_OUTPUT, "consumer-1"))
+        when(schemaRepository.findFirstBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc("test-subject", SchemaType.consumer_output, "consumer-1"))
             .thenReturn(Optional.of(schemaEntity));
 
         // When

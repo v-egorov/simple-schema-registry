@@ -73,7 +73,7 @@ assert_response "$(echo "$response" | tail -n1)" 201 "Version 3 creation should 
 # Test 1: Get all versions of existing subject
 echo
 echo "Test 1: Get all versions of existing subject"
-response=$(get_request "/api/schemas/$subject_name")
+response=$(get_request "/api/schemas/$subject_name/versions")
 http_code=$(echo "$response" | tail -n1)
 schemas_response=$(echo "$response" | head -n -1)
 
@@ -116,7 +116,7 @@ assert_contains "$schemas_response" '"createdAt"' "Should contain timestamps"
 # Test 5: Get versions for non-existent subject
 echo
 echo "Test 5: Get versions for non-existent subject"
-response=$(get_request "/api/schemas/non-existent-subject")
+response=$(get_request "/api/schemas/non-existent-subject/versions")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 

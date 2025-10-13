@@ -214,7 +214,7 @@ create_test_schema() {
     local subject="$1"
     local schema_data="$2"
 
-    local response=$(post_request "/api/schemas" "{
+    local response=$(post_request "/api/schemas/$subject" "{
         \"subject\": \"$subject\",
         \"schema\": $schema_data,
         \"compatibility\": \"BACKWARD\",

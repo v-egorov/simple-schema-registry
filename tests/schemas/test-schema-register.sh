@@ -24,7 +24,7 @@ schema_data='{
     "required": ["id", "name"]
 }'
 
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$subject1" "{
     \"subject\": \"$subject1\",
     \"schema\": $schema_data,
     \"compatibility\": \"BACKWARD\",
@@ -35,7 +35,7 @@ response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 201 "Schema registration should succeed"
 assert_json_field "$response_body" "subject" "$subject1"
-assert_json_field "$response_body" "version" 1
+assert_json_field "$response_body" "version" "1.0.0"
 assert_json_field "$response_body" "compatibility" "BACKWARD"
 assert_json_field "$response_body" "description" "Test user profile schema"
 assert_contains "$response_body" '"createdAt"' "Should contain createdAt timestamp"
@@ -56,7 +56,7 @@ schema_data_v2='{
     "required": ["id", "name"]
 }'
 
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$subject1" "{
     \"subject\": \"$subject1\",
     \"schema\": $schema_data_v2,
     \"compatibility\": \"BACKWARD\",
@@ -67,14 +67,14 @@ response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 201 "Schema version 2 registration should succeed"
 assert_json_field "$response_body" "subject" "$subject1"
-assert_json_field "$response_body" "version" 2
+assert_json_field "$response_body" "version" "1.0.1"
 assert_contains "$response_body" '"phone"' "Should contain new phone field"
 
 # Test 3: Register schema with different compatibility
 echo
 echo "Test 3: Register schema with FORWARD compatibility"
 subject3="test-product-$timestamp"
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$subject3" "{
     \"subject\": \"$subject3\",
     \"schema\": {
         \"\$schema\": \"http://json-schema.org/draft-07/schema#\",
@@ -99,7 +99,7 @@ assert_json_field "$response_body" "compatibility" "FORWARD"
 echo
 echo "Test 4: Register schema with minimal data"
 subject4="test-minimal-$timestamp"
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$subject4" "{
     \"subject\": \"$subject4\",
     \"schema\": {
         \"type\": \"object\",
@@ -113,13 +113,13 @@ response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 201 "Minimal schema registration should succeed"
 assert_json_field "$response_body" "subject" "$subject4"
-assert_json_field "$response_body" "version" 1
+assert_json_field "$response_body" "version" "1.0.0"
 
 # Test 5: Try invalid JSON schema
 echo
 echo "Test 5: Register invalid JSON schema"
 subject5="test-invalid-$timestamp"
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$subject5" "{
     \"subject\": \"$subject5\",
     \"schema\": {
         \"type\": \"invalid_type\",
@@ -143,23 +143,21 @@ fi
 # Test 6: Register schema with missing required fields
 echo
 echo "Test 6: Register schema with missing subject"
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/missing-subject-test" "{
+    \"subject\": \"\",
     \"schema\": {
-        \"type\": \"object\",
-        \"properties\": {
-            \"id\": {\"type\": \"string\"}
-        }
+        \"type\": \"object\"
     }
 }")
 http_code=$(echo "$response" | tail -n1)
 
-assert_response "$http_code" 400 "Should reject schema with missing subject"
+assert_response "$http_code" 400 "Should reject schema with missing schema data"
 
 # Test 7: Register schema with missing schema
 echo
 echo "Test 7: Register schema with missing schema data"
 subject7="test-no-schema-$timestamp"
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$subject7" "{
     \"subject\": \"$subject7\"
 }")
 http_code=$(echo "$response" | tail -n1)

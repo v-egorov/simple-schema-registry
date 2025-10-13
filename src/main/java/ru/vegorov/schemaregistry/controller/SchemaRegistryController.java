@@ -189,9 +189,9 @@ public class SchemaRegistryController {
 
     @GetMapping("/consumers/{consumerId}/schemas/subjects")
     @Operation(summary = "List all subjects for a consumer", description = "Retrieve all subjects that have consumer output schemas for the specified consumer")
-    public ResponseEntity<List<String>> getConsumersForSubject(
+    public ResponseEntity<List<String>> getSubjectsForConsumer(
             @Parameter(description = "Consumer ID") @PathVariable String consumerId) {
-        List<String> subjects = schemaService.getConsumersForSubject(consumerId);
+        List<String> subjects = schemaService.getSubjectsForConsumer(consumerId);
         return ResponseEntity.ok(subjects);
     }
 

@@ -112,4 +112,10 @@ public interface SchemaRepository extends JpaRepository<SchemaEntity, Long> {
      */
     @Query("SELECT DISTINCT s.consumerId FROM SchemaEntity s WHERE s.subject = :subject AND s.schemaType = :schemaType AND s.consumerId IS NOT NULL ORDER BY s.consumerId")
     List<String> findConsumerIdsBySubjectAndSchemaType(@Param("subject") String subject, @Param("schemaType") SchemaType schemaType);
+
+    /**
+     * Get all subjects that have consumer output schemas for a consumer
+     */
+    @Query("SELECT DISTINCT s.subject FROM SchemaEntity s WHERE s.consumerId = :consumerId AND s.schemaType = :schemaType ORDER BY s.subject")
+    List<String> findSubjectsByConsumerIdAndSchemaType(@Param("consumerId") String consumerId, @Param("schemaType") SchemaType schemaType);
 }
