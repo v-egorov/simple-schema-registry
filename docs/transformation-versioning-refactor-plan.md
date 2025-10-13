@@ -46,6 +46,65 @@ ON transformation_template_versions(template_id)
 WHERE is_active = TRUE;
 ```
 
+### Column Semantics Clarification
+
+#### Subject Column
+- **Purpose**: Identifies the data subject (domain/type) this transformation applies to
+- **Usage**: Since consumers can consume multiple subjects, each transformation template is scoped to a specific subject
+- **Example**: A consumer might have transformations for "user-profile" and "product-catalog" subjects
+- **Relationship**: Links to the `subject` field in the `schemas` table for validation
+
+#### Input Schema Version Column
+- **Purpose**: Specifies which version of the subject's canonical schema this transformation is designed to handle
+- **Usage**: When subject schemas evolve (e.g., from "1.0.0" to "1.1.0"), different transformation versions may be needed to handle different input formats
+- **Semantics**: References the `version` field in the `schemas` table for the same subject
+- **Example**: Transformation version "2.0.0" might be designed to handle subject schema version "1.1.0" while transformation "1.0.0" handles "1.0.0"
+
+#### Output Schema Version Column
+- **Purpose**: Specifies which version of the consumer's expected output schema this transformation produces
+- **Usage**: As consumer requirements evolve, they may expect different output formats or additional fields
+- **Semantics**: Tracks the consumer's output contract version, independent of the transformation version
+- **Example**: Consumer might evolve from expecting simple user data (output v1.0) to enriched user data (output v2.0), requiring different transformations
+
+### Practical Usage Examples
+
+#### Scenario 1: Subject Schema Evolution
+```
+Subject: "user-profile"
+Subject Schema Versions: 1.0.0 → 1.1.0 (added phone field)
+Consumer: "mobile-app"
+Output Schema Versions: 1.0 (simple), 2.0 (with phone)
+
+Transformation Versions:
+- v1.0.0: input_schema_version="1.0.0", output_schema_version="1.0"
+- v1.1.0: input_schema_version="1.1.0", output_schema_version="1.0" (backwards compatible)
+- v2.0.0: input_schema_version="1.1.0", output_schema_version="2.0" (includes phone)
+```
+
+#### Scenario 2: Consumer Evolution
+```
+Subject: "product-catalog"
+Subject Schema Version: 1.0.0 (stable)
+Consumer: "web-dashboard"
+Output Schema Versions: 1.0 → 2.0 (added analytics fields)
+
+Transformation Versions:
+- v1.0.0: input_schema_version="1.0.0", output_schema_version="1.0"
+- v2.0.0: input_schema_version="1.0.0", output_schema_version="2.0" (same input, enhanced output)
+```
+
+#### Version Selection Logic
+When processing a transformation request:
+1. **Subject** determines which transformation templates are eligible
+2. **Input Schema Version** should match the current subject schema version being processed
+3. **Active Flag** determines which version to use by default
+4. **Output Schema Version** documents what the consumer receives
+
+This design enables:
+- **Historical Processing**: Specify exact transformation version for reprocessing old data
+- **Gradual Rollout**: Test new transformations while keeping old versions available
+- **Schema Evolution**: Handle both input and output schema changes independently
+
 ### Database Schema Changes
 
 #### Option 1: Subject-Consumer-Versioned Templates
