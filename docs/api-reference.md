@@ -3,14 +3,17 @@
 This document provides detailed API documentation for the JSON Schema Registry and Transformation Service. All endpoints return JSON responses and use standard HTTP status codes.
 
 ## Base URL
+
 ```
 http://localhost:8080
 ```
 
 ## Authentication
+
 Currently, no authentication is required. All endpoints are publicly accessible.
 
 ## Content Types
+
 - **Request**: `application/json`
 - **Response**: `application/json`
 
@@ -25,11 +28,13 @@ This API follows a deliberate design pattern where **resource identifiers appear
 #### Why Parameters in Both Path and Body?
 
 **Security & Validation Benefits:**
+
 - **URL Tampering Prevention**: Path parameters can be manipulated by users or intermediaries. Cross-validation ensures the path parameter matches the validated request body.
 - **Input Sanitization**: Request body parameters undergo full validation (including `@NotBlank`, `@Valid`, etc.) while path parameters are treated as potentially untrusted.
 - **Consistency Checks**: Prevents processing operations on the wrong resource due to URL manipulation or copy-paste errors.
 
 **API Design Benefits:**
+
 - **Explicit Intent**: Makes the target resource clear in both routing (URL) and data (body) contexts.
 - **Documentation Clarity**: Self-documenting API where the operation target is visible in multiple places.
 - **Future Extensibility**: Allows for potential differences between URL identifiers and body data in future API versions.
@@ -61,6 +66,7 @@ public ResponseEntity<SchemaResponse> registerSchema(
 ```
 
 **Request Example:**
+
 ```http
 POST /api/schemas/user-profile
 Content-Type: application/json
@@ -73,6 +79,7 @@ Content-Type: application/json
 ```
 
 **Error Response (400 Bad Request):**
+
 ```json
 {
   "timestamp": "2024-01-15T10:30:00",
@@ -95,16 +102,16 @@ This pattern is used for critical resource operations where identifier validatio
 
 ---
 
-
-
 ## Schema Registry API
 
 ### Register Schema
+
 Register a new schema or create a new version of an existing schema.
 
 **Endpoint**: `POST /api/schemas`
 
 **Request Body**:
+
 ```json
 {
   "subject": "user-profile",
@@ -112,9 +119,9 @@ Register a new schema or create a new version of an existing schema.
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
-      "id": {"type": "integer"},
-      "name": {"type": "string"},
-      "email": {"type": "string", "format": "email"}
+      "id": { "type": "integer" },
+      "name": { "type": "string" },
+      "email": { "type": "string", "format": "email" }
     },
     "required": ["id", "name"]
   },
@@ -124,6 +131,7 @@ Register a new schema or create a new version of an existing schema.
 ```
 
 **Response** (201 Created):
+
 ```json
 {
   "id": 1,
@@ -133,9 +141,9 @@ Register a new schema or create a new version of an existing schema.
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
-      "id": {"type": "integer"},
-      "name": {"type": "string"},
-      "email": {"type": "string", "format": "email"}
+      "id": { "type": "integer" },
+      "name": { "type": "string" },
+      "email": { "type": "string", "format": "email" }
     },
     "required": ["id", "name"]
   },
@@ -147,11 +155,13 @@ Register a new schema or create a new version of an existing schema.
 ```
 
 ### Get All Schema Versions
+
 Retrieve all versions of a schema by subject.
 
 **Endpoint**: `GET /api/schemas/{subject}`
 
 **Response** (200 OK):
+
 ```json
 [
   {
@@ -178,11 +188,13 @@ Retrieve all versions of a schema by subject.
 ```
 
 ### Get Specific Schema Version
+
 Retrieve a specific version of a schema.
 
 **Endpoint**: `GET /api/schemas/{subject}/{version}`
 
 **Response** (200 OK):
+
 ```json
 {
   "id": 2,
@@ -197,11 +209,13 @@ Retrieve a specific version of a schema.
 ```
 
 ### Get Latest Schema Version
+
 Retrieve the latest version of a schema.
 
 **Endpoint**: `GET /api/schemas/{subject}/latest`
 
 **Response** (200 OK):
+
 ```json
 {
   "id": 2,
@@ -216,21 +230,23 @@ Retrieve the latest version of a schema.
 ```
 
 ### Check Schema Compatibility
+
 Check if a new schema is compatible with existing versions.
 
 **Endpoint**: `POST /api/schemas/{subject}/compat`
 
 **Request Body**:
+
 ```json
 {
   "schema": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
-      "id": {"type": "integer"},
-      "name": {"type": "string"},
-      "email": {"type": "string", "format": "email"},
-      "phone": {"type": "string"}
+      "id": { "type": "integer" },
+      "name": { "type": "string" },
+      "email": { "type": "string", "format": "email" },
+      "phone": { "type": "string" }
     },
     "required": ["id", "name"]
   }
@@ -238,6 +254,7 @@ Check if a new schema is compatible with existing versions.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "compatible": true,
@@ -246,25 +263,25 @@ Check if a new schema is compatible with existing versions.
 ```
 
 ### List All Schema Subjects
+
 Retrieve all unique schema subjects.
 
 **Endpoint**: `GET /api/schemas/subjects`
 
 **Response** (200 OK):
+
 ```json
-[
-  "user-profile",
-  "product-catalog",
-  "order-data"
-]
+["user-profile", "product-catalog", "order-data"]
 ```
 
 ### Validate JSON Against Schema
+
 Validate JSON data against the latest version of a schema or a specific version.
 
 **Endpoint**: `POST /api/schemas/{subject}/validate`
 
 **Request Body**:
+
 ```json
 {
   "subject": "user-profile",
@@ -273,11 +290,12 @@ Validate JSON data against the latest version of a schema or a specific version.
     "name": "John Doe",
     "email": "john@example.com"
   },
-  "version": "1.0.0"  // Optional - if not provided, uses latest version
+  "version": "1.0.0" // Optional - if not provided, uses latest version
 }
 ```
 
 **Response** (200 OK) - Valid:
+
 ```json
 {
   "valid": true,
@@ -287,6 +305,7 @@ Validate JSON data against the latest version of a schema or a specific version.
 ```
 
 **Response** (200 OK) - Invalid:
+
 ```json
 {
   "valid": false,
@@ -300,6 +319,7 @@ Validate JSON data against the latest version of a schema or a specific version.
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Schema subject not found
 - `400 Bad Request`: Invalid request format or subject mismatch
 
@@ -308,11 +328,13 @@ Validate JSON data against the latest version of a schema or a specific version.
 ## Consumer Schema API
 
 ### Register Consumer Schema
+
 Register a new consumer output schema or create a new version for a specific consumer.
 
 **Endpoint**: `POST /api/consumers/{consumerId}/schemas/{subject}`
 
 **Request Body**:
+
 ```json
 {
   "subject": "user-profile",
@@ -320,9 +342,9 @@ Register a new consumer output schema or create a new version for a specific con
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
-      "id": {"type": "integer"},
-      "name": {"type": "string"},
-      "email": {"type": "string", "format": "email"}
+      "id": { "type": "integer" },
+      "name": { "type": "string" },
+      "email": { "type": "string", "format": "email" }
     },
     "required": ["id", "name"]
   },
@@ -332,6 +354,7 @@ Register a new consumer output schema or create a new version for a specific con
 ```
 
 **Response** (201 Created):
+
 ```json
 {
   "id": 2,
@@ -341,9 +364,9 @@ Register a new consumer output schema or create a new version for a specific con
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
-      "id": {"type": "integer"},
-      "name": {"type": "string"},
-      "email": {"type": "string", "format": "email"}
+      "id": { "type": "integer" },
+      "name": { "type": "string" },
+      "email": { "type": "string", "format": "email" }
     },
     "required": ["id", "name"]
   },
@@ -355,11 +378,13 @@ Register a new consumer output schema or create a new version for a specific con
 ```
 
 ### Get All Consumer Schema Versions
+
 Retrieve all versions of consumer output schemas for a subject and consumer.
 
 **Endpoint**: `GET /api/consumers/{consumerId}/schemas/{subject}/versions`
 
 **Response** (200 OK):
+
 ```json
 [
   {
@@ -376,11 +401,13 @@ Retrieve all versions of consumer output schemas for a subject and consumer.
 ```
 
 ### Get Specific Consumer Schema Version
+
 Retrieve a specific version of a consumer output schema.
 
 **Endpoint**: `GET /api/consumers/{consumerId}/schemas/{subject}/versions/{version}`
 
 **Response** (200 OK):
+
 ```json
 {
   "id": 2,
@@ -395,11 +422,13 @@ Retrieve a specific version of a consumer output schema.
 ```
 
 ### Get Latest Consumer Schema Version
+
 Retrieve the latest version of a consumer output schema.
 
 **Endpoint**: `GET /api/consumers/{consumerId}/schemas/{subject}`
 
 **Response** (200 OK):
+
 ```json
 {
   "id": 2,
@@ -414,11 +443,13 @@ Retrieve the latest version of a consumer output schema.
 ```
 
 ### Check Consumer Schema Compatibility
+
 Check if a new consumer output schema is compatible with existing versions.
 
 **Endpoint**: `POST /api/consumers/{consumerId}/schemas/{subject}/compat`
 
 **Request Body**:
+
 ```json
 {
   "subject": "user-profile",
@@ -426,10 +457,10 @@ Check if a new consumer output schema is compatible with existing versions.
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
-      "id": {"type": "integer"},
-      "name": {"type": "string"},
-      "email": {"type": "string", "format": "email"},
-      "phone": {"type": "string"}
+      "id": { "type": "integer" },
+      "name": { "type": "string" },
+      "email": { "type": "string", "format": "email" },
+      "phone": { "type": "string" }
     },
     "required": ["id", "name"]
   }
@@ -437,6 +468,7 @@ Check if a new consumer output schema is compatible with existing versions.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "compatible": true,
@@ -445,11 +477,13 @@ Check if a new consumer output schema is compatible with existing versions.
 ```
 
 ### Validate JSON Against Consumer Schema
+
 Validate JSON data against the latest version or a specific version of a consumer output schema.
 
 **Endpoint**: `POST /api/consumers/{consumerId}/schemas/{subject}/validate`
 
 **Request Body**:
+
 ```json
 {
   "subject": "user-profile",
@@ -458,11 +492,12 @@ Validate JSON data against the latest version or a specific version of a consume
     "name": "John Doe",
     "email": "john@example.com"
   },
-  "version": "1.0.0"  // Optional - if not provided, uses latest version
+  "version": "1.0.0" // Optional - if not provided, uses latest version
 }
 ```
 
 **Response** (200 OK) - Valid:
+
 ```json
 {
   "valid": true,
@@ -472,6 +507,7 @@ Validate JSON data against the latest version or a specific version of a consume
 ```
 
 **Response** (200 OK) - Invalid:
+
 ```json
 {
   "valid": false,
@@ -485,17 +521,15 @@ Validate JSON data against the latest version or a specific version of a consume
 ```
 
 ### List Consumer Schema Subjects
+
 Retrieve all unique subjects that have consumer output schemas for a specific consumer.
 
 **Endpoint**: `GET /api/consumers/{consumerId}/schemas/subjects`
 
 **Response** (200 OK):
+
 ```json
-[
-  "user-profile",
-  "product-catalog",
-  "order-data"
-]
+["user-profile", "product-catalog", "order-data"]
 ```
 
 ---
@@ -503,11 +537,13 @@ Retrieve all unique subjects that have consumer output schemas for a specific co
 ## Consumer Management API
 
 ### Register Consumer
+
 Register a new consumer application.
 
 **Endpoint**: `POST /api/consumers`
 
 **Request Body**:
+
 ```json
 {
   "consumerId": "mobile-app",
@@ -517,6 +553,7 @@ Register a new consumer application.
 ```
 
 **Response** (201 Created):
+
 ```json
 {
   "consumerId": "mobile-app",
@@ -528,11 +565,13 @@ Register a new consumer application.
 ```
 
 ### List All Consumers
+
 Retrieve all registered consumers.
 
 **Endpoint**: `GET /api/consumers`
 
 **Response** (200 OK):
+
 ```json
 [
   {
@@ -553,11 +592,13 @@ Retrieve all registered consumers.
 ```
 
 ### Get Consumer Details
+
 Retrieve details of a specific consumer.
 
 **Endpoint**: `GET /api/consumers/{consumerId}`
 
 **Response** (200 OK):
+
 ```json
 {
   "consumerId": "mobile-app",
@@ -573,11 +614,13 @@ Retrieve details of a specific consumer.
 ## Transformation API
 
 ### Transform JSON Data
+
 Transform canonical JSON data for a specific consumer and subject using their active transformation template.
 
 **Endpoint**: `POST /api/consumers/{consumerId}/subjects/{subject}/transform`
 
 **Request Body**:
+
 ```json
 {
   "subject": "user-profile",
@@ -592,6 +635,7 @@ Transform canonical JSON data for a specific consumer and subject using their ac
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "transformedJson": {
@@ -606,11 +650,13 @@ Transform canonical JSON data for a specific consumer and subject using their ac
 ```
 
 ### Transform JSON Data with Specific Version
+
 Transform canonical JSON data using a specific transformation template version.
 
 **Endpoint**: `POST /api/consumers/{consumerId}/subjects/{subject}/transform/versions/{version}`
 
 **Request Body**:
+
 ```json
 {
   "subject": "user-profile",
@@ -626,6 +672,7 @@ Transform canonical JSON data using a specific transformation template version.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "transformedJson": {
@@ -640,12 +687,15 @@ Transform canonical JSON data using a specific transformation template version.
 ```
 
 ### Create Transformation Template Version
+
 Create a new version of a transformation template for a consumer and subject.
 
 **Endpoint**: `POST /api/consumers/{consumerId}/subjects/{subject}/templates`
 
 #### JSLT Engine Example
+
 **Request Body**:
+
 ```json
 {
   "version": "1.0.0",
@@ -658,6 +708,7 @@ Create a new version of a transformation template for a consumer and subject.
 ```
 
 **Response** (201 Created):
+
 ```json
 {
   "id": 1,
@@ -677,7 +728,9 @@ Create a new version of a transformation template for a consumer and subject.
 ```
 
 #### Router Engine Example
+
 **Request Body**:
+
 ```json
 {
   "version": "1.0.0",
@@ -695,8 +748,8 @@ Create a new version of a transformation template for a consumer and subject.
         "transformationId": "product-enrichment-v1",
         "description": "Enrich product data"
       }
+      "defaultTransformationId": "generic-transformation-v1",
     ],
-    "defaultTransformationId": "generic-transformation-v1",
     "validation": {
       "inputSchema": "canonical-data-schema-v1",
       "outputSchema": "consumer-data-schema-v1"
@@ -709,7 +762,9 @@ Create a new version of a transformation template for a consumer and subject.
 ```
 
 #### Pipeline Engine Example
+
 **Request Body**:
+
 ```json
 {
   "version": "1.0.0",
@@ -751,11 +806,13 @@ Create a new version of a transformation template for a consumer and subject.
 ```
 
 ### Get All Template Versions
+
 Retrieve all versions of transformation templates for a consumer and subject.
 
 **Endpoint**: `GET /api/consumers/{consumerId}/subjects/{subject}/templates`
 
 **Response** (200 OK):
+
 ```json
 [
   {
@@ -777,11 +834,13 @@ Retrieve all versions of transformation templates for a consumer and subject.
 ```
 
 ### Get Active Template
+
 Retrieve the currently active transformation template for a consumer and subject.
 
 **Endpoint**: `GET /api/consumers/{consumerId}/subjects/{subject}/templates/active`
 
 **Response** (200 OK):
+
 ```json
 {
   "id": 1,
@@ -801,11 +860,13 @@ Retrieve the currently active transformation template for a consumer and subject
 ```
 
 ### Get Specific Template Version
+
 Retrieve a specific version of a transformation template.
 
 **Endpoint**: `GET /api/consumers/{consumerId}/subjects/{subject}/templates/versions/{version}`
 
 **Response** (200 OK):
+
 ```json
 {
   "id": 1,
@@ -825,11 +886,13 @@ Retrieve a specific version of a transformation template.
 ```
 
 ### Activate Template Version
+
 Activate a specific version of a transformation template.
 
 **Endpoint**: `PUT /api/consumers/{consumerId}/subjects/{subject}/templates/versions/{version}/activate`
 
 **Response** (200 OK):
+
 ```json
 {
   "id": 2,
@@ -849,11 +912,13 @@ Activate a specific version of a transformation template.
 ```
 
 ### Deactivate Template Version
+
 Deactivate a specific version of a transformation template.
 
 **Endpoint**: `PUT /api/consumers/{consumerId}/subjects/{subject}/templates/versions/{version}/deactivate`
 
 **Response** (200 OK):
+
 ```json
 {
   "id": 1,
@@ -873,6 +938,7 @@ Deactivate a specific version of a transformation template.
 ```
 
 ### Delete Template Version
+
 Delete a specific version of a transformation template (only if not active).
 
 **Endpoint**: `DELETE /api/consumers/{consumerId}/subjects/{subject}/templates/versions/{version}`
@@ -880,17 +946,15 @@ Delete a specific version of a transformation template (only if not active).
 **Response** (204 No Content)
 
 ### List Available Transformation Engines
+
 Get a list of supported transformation engines.
 
 **Endpoint**: `GET /api/consumers/engines`
 
 **Response** (200 OK):
+
 ```json
-[
-  "jslt",
-  "router",
-  "pipeline"
-]
+["jslt", "router", "pipeline"]
 ```
 
 ---
@@ -900,6 +964,7 @@ Get a list of supported transformation engines.
 All endpoints may return the following error responses:
 
 ### 400 Bad Request
+
 Invalid request data or validation errors.
 
 ```json
@@ -913,6 +978,7 @@ Invalid request data or validation errors.
 ```
 
 ### 404 Not Found
+
 Resource not found.
 
 ```json
@@ -926,6 +992,7 @@ Resource not found.
 ```
 
 ### 409 Conflict
+
 Schema compatibility conflict.
 
 ```json
@@ -939,6 +1006,7 @@ Schema compatibility conflict.
 ```
 
 ### 500 Internal Server Error
+
 Unexpected server error.
 
 ```json
@@ -969,12 +1037,14 @@ The following compatibility types are supported:
 The service supports multiple transformation engines for different use cases:
 
 ### JSLT Engine (`jslt`)
+
 - **Purpose**: Simple JSON-to-JSON transformations using JSLT expressions
 - **Use Case**: Field mapping, data normalization, simple transformations
 - **Configuration**: Single JSLT expression string
 - **Example**: `{ "user_id": .id, "full_name": (.firstName + " " + .lastName) }`
 
 ### Router Engine (`router`)
+
 - **Purpose**: Intelligent routing based on input data characteristics
 - **Use Case**: Multi-tenant applications, content-based routing, conditional processing
 - **Configuration**: JSON object with routing rules and conditions
@@ -985,6 +1055,7 @@ The service supports multiple transformation engines for different use cases:
   - Schema validation support
 
 ### Pipeline Engine (`pipeline`)
+
 - **Purpose**: Sequential execution of multiple transformations
 - **Use Case**: Complex multi-step processing, data enrichment workflows
 - **Configuration**: JSON object with ordered transformation steps
@@ -996,12 +1067,12 @@ The service supports multiple transformation engines for different use cases:
 
 ### Engine Selection Guide
 
-| Use Case | Recommended Engine | Reason |
-|----------|-------------------|---------|
-| Simple field mapping | `jslt` | Most efficient for basic transformations |
-| Multi-tenant data routing | `router` | Routes different data types to appropriate handlers |
-| Complex data processing | `pipeline` | Supports multi-step workflows with error handling |
-| Conditional transformations | `router` | Evaluates conditions to select transformation paths |
+| Use Case                    | Recommended Engine | Reason                                              |
+| --------------------------- | ------------------ | --------------------------------------------------- |
+| Simple field mapping        | `jslt`             | Most efficient for basic transformations            |
+| Multi-tenant data routing   | `router`           | Routes different data types to appropriate handlers |
+| Complex data processing     | `pipeline`         | Supports multi-step workflows with error handling   |
+| Conditional transformations | `router`           | Evaluates conditions to select transformation paths |
 
 ### Configuration Validation
 
@@ -1012,4 +1083,5 @@ All engines include comprehensive configuration validation:
 - **Structural Validation**: Ensures required fields and proper data types
 - **Runtime Safety**: Prevents invalid configurations from being deployed
 
-For more information about JSLT syntax, visit: https://github.com/schibsted/jslt
+For more information about JSLT syntax, visit: <https://github.com/schibsted/jslt>
+
