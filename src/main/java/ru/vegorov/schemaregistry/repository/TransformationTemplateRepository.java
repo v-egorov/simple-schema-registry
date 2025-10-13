@@ -12,21 +12,7 @@ import java.util.Optional;
 @Repository
 public interface TransformationTemplateRepository extends JpaRepository<TransformationTemplateEntity, Long> {
 
-    // ===== LEGACY METHODS (for backward compatibility during migration) =====
-
-    /**
-     * Find transformation template by consumerId - LEGACY: assumes single template per consumer
-     * @deprecated Use findByConsumerIdAndSubject methods instead
-     */
-    @Deprecated
-    Optional<TransformationTemplateEntity> findByConsumerId(String consumerId);
-
-    /**
-     * Check if transformation template exists for consumerId - LEGACY
-     * @deprecated Use existsByConsumerIdAndSubject methods instead
-     */
-    @Deprecated
-    boolean existsByConsumerId(String consumerId);
+    // ===== NEW METHODS FOR VERSIONING SYSTEM =====
 
     // ===== NEW METHODS FOR VERSIONING SYSTEM =====
 

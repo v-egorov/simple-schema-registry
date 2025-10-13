@@ -195,50 +195,5 @@ public class SchemaRegistryController {
         return ResponseEntity.ok(subjects);
     }
 
-    // ===== LEGACY ENDPOINTS (for backward compatibility) =====
 
-    @PostMapping("/schemas")
-    @Operation(summary = "Register a new schema - LEGACY", description = "Register a new schema or create a new version - LEGACY ENDPOINT")
-    @Deprecated
-    public ResponseEntity<SchemaResponse> registerSchema(
-            @Valid @RequestBody SchemaRegistrationRequest request) {
-        SchemaResponse response = schemaService.registerSchema(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    @GetMapping("/schemas/{subject}/all")
-    @Operation(summary = "Get all versions of a schema - LEGACY", description = "Retrieve all versions of a schema by subject - LEGACY ENDPOINT")
-    @Deprecated
-    public ResponseEntity<List<SchemaResponse>> getSchemasBySubject(
-            @Parameter(description = "Schema subject") @PathVariable String subject) {
-        List<SchemaResponse> responses = schemaService.getSchemasBySubject(subject);
-        return ResponseEntity.ok(responses);
-    }
-
-    @GetMapping("/schemas/{subject}/version/{version}")
-    @Operation(summary = "Get specific schema version - LEGACY", description = "Retrieve a specific version of a schema - LEGACY ENDPOINT")
-    @Deprecated
-    public ResponseEntity<SchemaResponse> getSchema(
-            @Parameter(description = "Schema subject") @PathVariable String subject,
-            @Parameter(description = "Schema version") @PathVariable String version) {
-        SchemaResponse response = schemaService.getSchema(subject, version);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/schemas/compat")
-    @Operation(summary = "Check schema compatibility - LEGACY", description = "Check if a new schema is compatible with existing versions - LEGACY ENDPOINT")
-    @Deprecated
-    public ResponseEntity<CompatibilityCheckResponse> checkCompatibility(
-            @Valid @RequestBody CompatibilityCheckRequest request) {
-        CompatibilityCheckResponse response = schemaService.checkCompatibility(request);
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/subjects")
-    @Operation(summary = "List all schema subjects - LEGACY", description = "Retrieve all unique schema subjects - LEGACY ENDPOINT")
-    @Deprecated
-    public ResponseEntity<List<String>> getAllSubjects() {
-        List<String> subjects = schemaService.getAllSubjects();
-        return ResponseEntity.ok(subjects);
-    }
 }

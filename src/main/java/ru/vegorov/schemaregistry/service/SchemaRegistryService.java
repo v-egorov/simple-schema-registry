@@ -84,14 +84,7 @@ public class SchemaRegistryService {
         return mapToResponse(savedEntity);
     }
 
-    /**
-     * Register a new schema or create a new version - LEGACY METHOD for backward compatibility
-     * @deprecated Use registerCanonicalSchema instead
-     */
-    @Deprecated
-    public SchemaResponse registerSchema(SchemaRegistrationRequest request) {
-        return registerCanonicalSchema(request);
-    }
+
 
     /**
      * Get all versions of canonical schemas by subject
@@ -115,15 +108,7 @@ public class SchemaRegistryService {
             .collect(Collectors.toList());
     }
 
-    /**
-     * Get all versions of a schema by subject - LEGACY METHOD for backward compatibility
-     * @deprecated Use getCanonicalSchemasBySubject instead
-     */
-    @Deprecated
-    @Transactional(readOnly = true)
-    public List<SchemaResponse> getSchemasBySubject(String subject) {
-        return getCanonicalSchemasBySubject(subject);
-    }
+
 
     /**
      * Get a specific canonical schema version
@@ -145,15 +130,7 @@ public class SchemaRegistryService {
         return mapToResponse(entity);
     }
 
-    /**
-     * Get a specific schema version - LEGACY METHOD for backward compatibility
-     * @deprecated Use getCanonicalSchema instead
-     */
-    @Deprecated
-    @Transactional(readOnly = true)
-    public SchemaResponse getSchema(String subject, String version) {
-        return getCanonicalSchema(subject, version);
-    }
+
 
     /**
      * Get the latest version of a canonical schema
@@ -175,15 +152,7 @@ public class SchemaRegistryService {
         return mapToResponse(entity);
     }
 
-    /**
-     * Get the latest version of a schema - LEGACY METHOD for backward compatibility
-     * @deprecated Use getLatestCanonicalSchema instead
-     */
-    @Deprecated
-    @Transactional(readOnly = true)
-    public SchemaResponse getLatestSchema(String subject) {
-        return getLatestCanonicalSchema(subject);
-    }
+
 
     /**
      * Check compatibility of a new canonical schema against the latest version
@@ -237,15 +206,7 @@ public class SchemaRegistryService {
         return new CompatibilityCheckResponse(compatible, message);
     }
 
-    /**
-     * Check compatibility of a new schema against the latest version - LEGACY METHOD
-     * @deprecated Use checkCanonicalSchemaCompatibility instead
-     */
-    @Deprecated
-    @Transactional(readOnly = true)
-    public CompatibilityCheckResponse checkCompatibility(CompatibilityCheckRequest request) {
-        return checkCanonicalSchemaCompatibility(request);
-    }
+
 
     /**
      * Get all unique subjects that have canonical schemas
@@ -279,15 +240,7 @@ public class SchemaRegistryService {
         return schemaRepository.findSubjectsByConsumerIdAndSchemaType(consumerId, SchemaType.consumer_output);
     }
 
-    /**
-     * Get all unique subjects - LEGACY METHOD for backward compatibility
-     * @deprecated Use getAllCanonicalSubjects instead
-     */
-    @Deprecated
-    @Transactional(readOnly = true)
-    public List<String> getAllSubjects() {
-        return getAllCanonicalSubjects();
-    }
+
 
     /**
      * Validate JSON data against a canonical schema
@@ -400,14 +353,7 @@ public class SchemaRegistryService {
         return incrementPatchVersion(maxVersion);
     }
 
-    /**
-     * Get the next version number for a subject - LEGACY METHOD
-     * @deprecated Use getNextVersionForCanonicalSchema instead
-     */
-    @Deprecated
-    private String getNextVersion(String subject) {
-        return getNextVersionForCanonicalSchema(subject);
-    }
+
 
     /**
      * Compare two semver strings

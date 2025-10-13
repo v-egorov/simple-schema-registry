@@ -142,37 +142,7 @@ public class TransformationController {
         return ResponseEntity.ok(engines);
     }
 
-    // ===== LEGACY ENDPOINTS (for backward compatibility) =====
 
-    @PostMapping("/{consumerId}/transform")
-    @Operation(summary = "Transform JSON data - LEGACY", description = "Transform canonical JSON data for a specific consumer - LEGACY ENDPOINT")
-    @Deprecated
-    public ResponseEntity<TransformationResponse> transformLegacy(
-            @Parameter(description = "Consumer ID") @PathVariable String consumerId,
-            @Parameter(description = "Subject") @RequestParam("subject") String subject,
-            @Valid @RequestBody TransformationRequest request) throws TransformationException {
-        // Set subject in request
-        request.setSubject(subject);
-        TransformationResponse response = transformationService.transform(consumerId, request);
-        return ResponseEntity.ok(response);
-    }
 
-    @GetMapping("/templates/{consumerId}")
-    @Operation(summary = "Get transformation template - LEGACY", description = "Retrieve transformation template for a consumer - LEGACY ENDPOINT")
-    @Deprecated
-    public ResponseEntity<TransformationTemplateResponse> getTemplate(
-            @Parameter(description = "Consumer ID") @PathVariable String consumerId) {
-        TransformationTemplateResponse response = transformationService.getTemplate(consumerId);
-        return ResponseEntity.ok(response);
-    }
 
-    @PostMapping("/templates/{consumerId}")
-    @Operation(summary = "Create/update transformation template - LEGACY", description = "Create or update transformation template for a consumer - LEGACY ENDPOINT")
-    @Deprecated
-    public ResponseEntity<TransformationTemplateResponse> createOrUpdateTemplate(
-            @Parameter(description = "Consumer ID") @PathVariable String consumerId,
-            @Valid @RequestBody TransformationTemplateRequest request) {
-        TransformationTemplateResponse response = transformationService.createOrUpdateTemplate(consumerId, request);
-        return ResponseEntity.ok(response);
-    }
 }

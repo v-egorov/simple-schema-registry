@@ -207,16 +207,7 @@ public class TransformationService {
         }
     }
 
-    /**
-     * Create or update transformation template for a consumer - LEGACY METHOD
-     * @deprecated Use createTemplateVersion instead
-     */
-    @Deprecated
-    public TransformationTemplateResponse createOrUpdateTemplate(String consumerId,
-                                                                TransformationTemplateRequest request) {
-        // For backward compatibility, assume subject from input schema and use version from request
-        return createTemplateVersion(consumerId, request);
-    }
+
 
     /**
      * Get the active transformation template for a consumer and subject
@@ -251,21 +242,7 @@ public class TransformationService {
             .collect(Collectors.toList());
     }
 
-    /**
-     * Get transformation template for a consumer - LEGACY METHOD
-     * @deprecated Use getActiveTemplate with subject parameter
-     */
-    @Deprecated
-    @Transactional(readOnly = true)
-    public TransformationTemplateResponse getTemplate(String consumerId) {
-        // For backward compatibility, get the first subject for this consumer
-        List<String> subjects = templateRepository.findSubjectsByConsumerId(consumerId);
-        if (subjects.isEmpty()) {
-            throw new ResourceNotFoundException(
-                String.format("No transformation templates found for consumer: %s", consumerId));
-        }
-        return getActiveTemplate(consumerId, subjects.get(0));
-    }
+
 
     /**
      * Get available transformation engines
