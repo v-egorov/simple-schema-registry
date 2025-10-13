@@ -15,6 +15,7 @@ import ru.vegorov.schemaregistry.dto.SchemaResponse;
 import ru.vegorov.schemaregistry.dto.SchemaValidationRequest;
 import ru.vegorov.schemaregistry.dto.SchemaValidationResponse;
 import ru.vegorov.schemaregistry.entity.SchemaEntity;
+import ru.vegorov.schemaregistry.entity.SchemaType;
 import ru.vegorov.schemaregistry.exception.ResourceNotFoundException;
 import ru.vegorov.schemaregistry.exception.SchemaValidationException;
 import ru.vegorov.schemaregistry.repository.SchemaRepository;
@@ -37,17 +38,18 @@ public class SchemaRegistryService {
     }
 
     /**
-     * Register a new schema or create a new version
+     * Register a new canonical schema or create a new version
      */
-    public SchemaResponse registerSchema(SchemaRegistrationRequest request) {
+    public SchemaResponse registerCanonicalSchema(SchemaRegistrationRequest request) {
         String subject = request.getSubject();
 
-        // Get the next version number
-        String nextVersion = getNextVersion(subject);
+        // Get the next version number for canonical schemas
+        String nextVersion = getNextVersionForCanonicalSchema(subject);
 
-        // Create new schema entity
+        // Create new canonical schema entity
         SchemaEntity schemaEntity = new SchemaEntity(
             subject,
+            SchemaType.CANONICAL,
             nextVersion,
             request.getSchema(),
             request.getCompatibility(),
@@ -59,45 +61,141 @@ public class SchemaRegistryService {
     }
 
     /**
-     * Get all versions of a schema by subject
+     * Register a consumer output schema
+     */
+    public SchemaResponse registerConsumerOutputSchema(String consumerId, SchemaRegistrationRequest request) {
+        String subject = request.getSubject();
+
+        // Get the next version number for consumer output schemas
+        String nextVersion = getNextVersionForConsumerOutputSchema(subject, consumerId);
+
+        // Create new consumer output schema entity
+        SchemaEntity schemaEntity = new SchemaEntity(
+            subject,
+            SchemaType.CONSUMER_OUTPUT,
+            consumerId,
+            nextVersion,
+            request.getSchema(),
+            request.getCompatibility(),
+            request.getDescription()
+        );
+
+        SchemaEntity savedEntity = schemaRepository.save(schemaEntity);
+        return mapToResponse(savedEntity);
+    }
+
+    /**
+     * Register a new schema or create a new version - LEGACY METHOD for backward compatibility
+     * @deprecated Use registerCanonicalSchema instead
+     */
+    @Deprecated
+    public SchemaResponse registerSchema(SchemaRegistrationRequest request) {
+        return registerCanonicalSchema(request);
+    }
+
+    /**
+     * Get all versions of canonical schemas by subject
      */
     @Transactional(readOnly = true)
-    public List<SchemaResponse> getSchemasBySubject(String subject) {
-        List<SchemaEntity> entities = schemaRepository.findBySubjectOrderByVersionDesc(subject);
+    public List<SchemaResponse> getCanonicalSchemasBySubject(String subject) {
+        List<SchemaEntity> entities = schemaRepository.findBySubjectAndSchemaTypeOrderByVersionDesc(subject, SchemaType.CANONICAL);
         return entities.stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
 
     /**
-     * Get a specific schema version
+     * Get all versions of consumer output schemas by subject and consumer
      */
+    @Transactional(readOnly = true)
+    public List<SchemaResponse> getConsumerOutputSchemasBySubjectAndConsumer(String subject, String consumerId) {
+        List<SchemaEntity> entities = schemaRepository.findBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc(subject, SchemaType.CONSUMER_OUTPUT, consumerId);
+        return entities.stream()
+            .map(this::mapToResponse)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all versions of a schema by subject - LEGACY METHOD for backward compatibility
+     * @deprecated Use getCanonicalSchemasBySubject instead
+     */
+    @Deprecated
+    @Transactional(readOnly = true)
+    public List<SchemaResponse> getSchemasBySubject(String subject) {
+        return getCanonicalSchemasBySubject(subject);
+    }
+
+    /**
+     * Get a specific canonical schema version
+     */
+    @Transactional(readOnly = true)
+    public SchemaResponse getCanonicalSchema(String subject, String version) {
+        SchemaEntity entity = schemaRepository.findBySubjectAndSchemaTypeAndVersion(subject, SchemaType.CANONICAL, version)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                String.format("Canonical schema not found: subject=%s, version=%s", subject, version)));
+        return mapToResponse(entity);
+    }
+
+    /**
+     * Get a specific consumer output schema version
+     */
+    @Transactional(readOnly = true)
+    public SchemaResponse getConsumerOutputSchema(String subject, String consumerId, String version) {
+        SchemaEntity entity = schemaRepository.findBySubjectAndSchemaTypeAndConsumerIdAndVersion(subject, SchemaType.CONSUMER_OUTPUT, consumerId, version)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                String.format("Consumer output schema not found: subject=%s, consumer=%s, version=%s", subject, consumerId, version)));
+        return mapToResponse(entity);
+    }
+
+    /**
+     * Get a specific schema version - LEGACY METHOD for backward compatibility
+     * @deprecated Use getCanonicalSchema instead
+     */
+    @Deprecated
     @Transactional(readOnly = true)
     public SchemaResponse getSchema(String subject, String version) {
-        SchemaEntity entity = schemaRepository.findBySubjectAndVersion(subject, version)
+        return getCanonicalSchema(subject, version);
+    }
+
+    /**
+     * Get the latest version of a canonical schema
+     */
+    @Transactional(readOnly = true)
+    public SchemaResponse getLatestCanonicalSchema(String subject) {
+        SchemaEntity entity = schemaRepository.findFirstBySubjectAndSchemaTypeOrderByVersionDesc(subject, SchemaType.CANONICAL)
             .orElseThrow(() -> new ResourceNotFoundException(
-                String.format("Schema not found: subject=%s, version=%s", subject, version)));
+                String.format("No canonical schemas found for subject: %s", subject)));
         return mapToResponse(entity);
     }
 
     /**
-     * Get the latest version of a schema
+     * Get the latest version of a consumer output schema
      */
+    @Transactional(readOnly = true)
+    public SchemaResponse getLatestConsumerOutputSchema(String subject, String consumerId) {
+        SchemaEntity entity = schemaRepository.findFirstBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc(subject, SchemaType.CONSUMER_OUTPUT, consumerId)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                String.format("No consumer output schemas found for subject: %s, consumer: %s", subject, consumerId)));
+        return mapToResponse(entity);
+    }
+
+    /**
+     * Get the latest version of a schema - LEGACY METHOD for backward compatibility
+     * @deprecated Use getLatestCanonicalSchema instead
+     */
+    @Deprecated
     @Transactional(readOnly = true)
     public SchemaResponse getLatestSchema(String subject) {
-        SchemaEntity entity = schemaRepository.findFirstBySubjectOrderByVersionDesc(subject)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                String.format("No schemas found for subject: %s", subject)));
-        return mapToResponse(entity);
+        return getLatestCanonicalSchema(subject);
     }
 
     /**
-     * Check compatibility of a new schema against the latest version
+     * Check compatibility of a new canonical schema against the latest version
      */
     @Transactional(readOnly = true)
-    public CompatibilityCheckResponse checkCompatibility(CompatibilityCheckRequest request) {
+    public CompatibilityCheckResponse checkCanonicalSchemaCompatibility(CompatibilityCheckRequest request) {
         String subject = request.getSubject();
-        Optional<SchemaEntity> latestSchemaOpt = schemaRepository.findFirstBySubjectOrderByVersionDesc(subject);
+        Optional<SchemaEntity> latestSchemaOpt = schemaRepository.findFirstBySubjectAndSchemaTypeOrderByVersionDesc(subject, SchemaType.CANONICAL);
 
         if (latestSchemaOpt.isEmpty()) {
             // If no existing schema, it's compatible
@@ -118,18 +216,96 @@ public class SchemaRegistryService {
     }
 
     /**
-     * Get all unique subjects
+     * Check compatibility of a new consumer output schema against the latest version
      */
     @Transactional(readOnly = true)
-    public List<String> getAllSubjects() {
-        return schemaRepository.findAllSubjects();
+    public CompatibilityCheckResponse checkConsumerOutputSchemaCompatibility(String consumerId, CompatibilityCheckRequest request) {
+        String subject = request.getSubject();
+        Optional<SchemaEntity> latestSchemaOpt = schemaRepository.findFirstBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc(subject, SchemaType.CONSUMER_OUTPUT, consumerId);
+
+        if (latestSchemaOpt.isEmpty()) {
+            // If no existing schema, it's compatible
+            return new CompatibilityCheckResponse(true, "No existing consumer output schema to check against");
+        }
+
+        SchemaEntity latestSchema = latestSchemaOpt.get();
+        String compatibilityMode = latestSchema.getCompatibility();
+
+        // For now, implement basic compatibility checking
+        // In a real implementation, this would use proper JSON Schema compatibility algorithms
+        boolean compatible = checkSchemaCompatibility(latestSchema.getSchemaJson(),
+                                                     request.getSchema(), compatibilityMode);
+
+        String message = compatible ? "Consumer output schema is compatible" : "Consumer output schema is not compatible";
+
+        return new CompatibilityCheckResponse(compatible, message);
     }
 
     /**
-     * Validate JSON data against a schema
+     * Check compatibility of a new schema against the latest version - LEGACY METHOD
+     * @deprecated Use checkCanonicalSchemaCompatibility instead
+     */
+    @Deprecated
+    @Transactional(readOnly = true)
+    public CompatibilityCheckResponse checkCompatibility(CompatibilityCheckRequest request) {
+        return checkCanonicalSchemaCompatibility(request);
+    }
+
+    /**
+     * Get all unique subjects that have canonical schemas
+     */
+    @Transactional(readOnly = true)
+    public List<String> getAllCanonicalSubjects() {
+        return schemaRepository.findAllSubjectsBySchemaType(SchemaType.CANONICAL);
+    }
+
+    /**
+     * Get all unique subjects that have consumer output schemas
+     */
+    @Transactional(readOnly = true)
+    public List<String> getAllConsumerOutputSubjects() {
+        return schemaRepository.findAllSubjectsBySchemaType(SchemaType.CONSUMER_OUTPUT);
+    }
+
+    /**
+     * Get all consumers that have output schemas for a subject
+     */
+    @Transactional(readOnly = true)
+    public List<String> getConsumersForSubject(String subject) {
+        return schemaRepository.findConsumerIdsBySubjectAndSchemaType(subject, SchemaType.CONSUMER_OUTPUT);
+    }
+
+    /**
+     * Get all unique subjects - LEGACY METHOD for backward compatibility
+     * @deprecated Use getAllCanonicalSubjects instead
+     */
+    @Deprecated
+    @Transactional(readOnly = true)
+    public List<String> getAllSubjects() {
+        return getAllCanonicalSubjects();
+    }
+
+    /**
+     * Validate JSON data against a canonical schema
      */
     @Transactional(readOnly = true)
     public SchemaValidationResponse validateJson(SchemaValidationRequest request) {
+        return validateJsonAgainstSchema(request, SchemaType.CANONICAL, null);
+    }
+
+    /**
+     * Validate JSON data against a consumer output schema
+     */
+    @Transactional(readOnly = true)
+    public SchemaValidationResponse validateJsonAgainstConsumerOutputSchema(SchemaValidationRequest request, String consumerId) {
+        return validateJsonAgainstSchema(request, SchemaType.CONSUMER_OUTPUT, consumerId);
+    }
+
+    /**
+     * Validate JSON data against a schema of specified type
+     */
+    @Transactional(readOnly = true)
+    private SchemaValidationResponse validateJsonAgainstSchema(SchemaValidationRequest request, SchemaType schemaType, String consumerId) {
         String subject = request.getSubject();
         JsonNode jsonData = request.getJsonData();
 
@@ -137,14 +313,32 @@ public class SchemaRegistryService {
         SchemaEntity schemaEntity;
         if (request.getVersion() != null) {
             // Validate against specific version
-            schemaEntity = schemaRepository.findBySubjectAndVersion(subject, request.getVersion())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                    String.format("Schema not found: subject=%s, version=%s", subject, request.getVersion())));
+            if (schemaType == SchemaType.CANONICAL) {
+                schemaEntity = schemaRepository.findBySubjectAndSchemaTypeAndVersion(subject, schemaType, request.getVersion())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format("Canonical schema not found: subject=%s, version=%s", subject, request.getVersion())));
+            } else {
+                if (consumerId == null) {
+                    throw new IllegalArgumentException("Consumer ID is required for consumer output schema validation");
+                }
+                schemaEntity = schemaRepository.findBySubjectAndSchemaTypeAndConsumerIdAndVersion(subject, schemaType, consumerId, request.getVersion())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format("Consumer output schema not found: subject=%s, consumer=%s, version=%s", subject, consumerId, request.getVersion())));
+            }
         } else {
             // Validate against latest version
-            schemaEntity = schemaRepository.findFirstBySubjectOrderByVersionDesc(subject)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                    String.format("No schemas found for subject: %s", subject)));
+            if (schemaType == SchemaType.CANONICAL) {
+                schemaEntity = schemaRepository.findFirstBySubjectAndSchemaTypeOrderByVersionDesc(subject, schemaType)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format("No canonical schemas found for subject: %s", subject)));
+            } else {
+                if (consumerId == null) {
+                    throw new IllegalArgumentException("Consumer ID is required for consumer output schema validation");
+                }
+                schemaEntity = schemaRepository.findFirstBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc(subject, schemaType, consumerId)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format("No consumer output schemas found for subject: %s, consumer: %s", subject, consumerId)));
+            }
         }
 
         // Perform validation
@@ -169,11 +363,10 @@ public class SchemaRegistryService {
     }
 
     /**
-     * Get the next version number for a subject
-     * TODO - we may need to be able to specify version explicitly
+     * Get the next version number for a canonical schema subject
      */
-    private String getNextVersion(String subject) {
-        List<SchemaEntity> schemas = schemaRepository.findBySubjectOrderByVersionDesc(subject);
+    private String getNextVersionForCanonicalSchema(String subject) {
+        List<SchemaEntity> schemas = schemaRepository.findBySubjectAndSchemaTypeOrderByVersionDesc(subject, SchemaType.CANONICAL);
         if (schemas.isEmpty()) {
             return "1.0.0";
         }
@@ -184,6 +377,32 @@ public class SchemaRegistryService {
             .orElse("1.0.0");
         // Increment patch version
         return incrementPatchVersion(maxVersion);
+    }
+
+    /**
+     * Get the next version number for a consumer output schema
+     */
+    private String getNextVersionForConsumerOutputSchema(String subject, String consumerId) {
+        List<SchemaEntity> schemas = schemaRepository.findBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc(subject, SchemaType.CONSUMER_OUTPUT, consumerId);
+        if (schemas.isEmpty()) {
+            return "1.0.0";
+        }
+        // Find the highest version by semver comparison
+        String maxVersion = schemas.stream()
+            .map(SchemaEntity::getVersion)
+            .max(this::compareSemver)
+            .orElse("1.0.0");
+        // Increment patch version
+        return incrementPatchVersion(maxVersion);
+    }
+
+    /**
+     * Get the next version number for a subject - LEGACY METHOD
+     * @deprecated Use getNextVersionForCanonicalSchema instead
+     */
+    @Deprecated
+    private String getNextVersion(String subject) {
+        return getNextVersionForCanonicalSchema(subject);
     }
 
     /**

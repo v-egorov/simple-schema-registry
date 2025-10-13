@@ -10,11 +10,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 @Entity
-@Table(name = "schemas", indexes = {
-    @Index(name = "idx_schemas_subject", columnList = "subject"),
-    @Index(name = "idx_schemas_subject_version", columnList = "subject, version DESC"),
-    @Index(name = "idx_schemas_created_at", columnList = "created_at")
-})
+@Table(name = "schemas")
 public class SchemaEntity {
 
     @Id
@@ -24,6 +20,14 @@ public class SchemaEntity {
     @NotBlank
     @Column(nullable = false)
     private String subject;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "schema_type", nullable = false)
+    private SchemaType schemaType;
+
+    @Column(name = "consumer_id")
+    private String consumerId;
 
     @NotNull
     @Column(nullable = false)
@@ -50,9 +54,21 @@ public class SchemaEntity {
     // Constructors
     public SchemaEntity() {}
 
-    public SchemaEntity(String subject, String version, Map<String, Object> schemaJson,
-                        String compatibility, String description) {
+    public SchemaEntity(String subject, SchemaType schemaType, String version,
+                        Map<String, Object> schemaJson, String compatibility, String description) {
         this.subject = subject;
+        this.schemaType = schemaType;
+        this.version = version;
+        this.schemaJson = schemaJson;
+        this.compatibility = compatibility != null ? compatibility : "BACKWARD";
+        this.description = description;
+    }
+
+    public SchemaEntity(String subject, SchemaType schemaType, String consumerId, String version,
+                        Map<String, Object> schemaJson, String compatibility, String description) {
+        this.subject = subject;
+        this.schemaType = schemaType;
+        this.consumerId = consumerId;
         this.version = version;
         this.schemaJson = schemaJson;
         this.compatibility = compatibility != null ? compatibility : "BACKWARD";
@@ -74,6 +90,22 @@ public class SchemaEntity {
 
     public void setSubject(String subject) {
         this.subject = subject;
+    }
+
+    public SchemaType getSchemaType() {
+        return schemaType;
+    }
+
+    public void setSchemaType(SchemaType schemaType) {
+        this.schemaType = schemaType;
+    }
+
+    public String getConsumerId() {
+        return consumerId;
+    }
+
+    public void setConsumerId(String consumerId) {
+        this.consumerId = consumerId;
     }
 
     public String getVersion() {

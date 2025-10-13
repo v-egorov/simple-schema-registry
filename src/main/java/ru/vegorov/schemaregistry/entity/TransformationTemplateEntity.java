@@ -7,9 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "transformation_templates", indexes = {
-    @Index(name = "idx_transformation_templates_consumer_id", columnList = "consumer_id")
-})
+@Table(name = "transformation_templates")
 public class TransformationTemplateEntity {
 
     @Id
@@ -22,15 +20,35 @@ public class TransformationTemplateEntity {
 
     @NotBlank
     @Column(nullable = false)
+    private String subject;
+
+    @NotBlank
+    @Column(nullable = false)
+    private String version;
+
+    @NotBlank
+    @Column(nullable = false)
     private String engine = "jslt";
 
-    // For JSLT engine - simple expression (nullable for router/pipeline)
-    @Column(name = "template_expression", columnDefinition = "TEXT")
+    @Column(name = "template_expression")
     private String templateExpression;
 
-    // For router/pipeline engines - JSON configuration
-    @Column(name = "configuration", columnDefinition = "TEXT")
+    @Column(name = "configuration")
     private String configuration;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "input_schema_id", nullable = false)
+    private SchemaEntity inputSchema;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "output_schema_id", nullable = false)
+    private SchemaEntity outputSchema;
+
+    @NotNull
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = false;
 
     @Column(length = 1000)
     private String description;
@@ -44,11 +62,19 @@ public class TransformationTemplateEntity {
     // Constructors
     public TransformationTemplateEntity() {}
 
-    public TransformationTemplateEntity(String consumerId, String engine,
-                                       String templateExpression, String description) {
+    public TransformationTemplateEntity(String consumerId, String subject, String version,
+                                      String engine, String templateExpression, String configuration,
+                                      SchemaEntity inputSchema, SchemaEntity outputSchema,
+                                      Boolean isActive, String description) {
         this.consumerId = consumerId;
+        this.subject = subject;
+        this.version = version;
         this.engine = engine != null ? engine : "jslt";
         this.templateExpression = templateExpression;
+        this.configuration = configuration;
+        this.inputSchema = inputSchema;
+        this.outputSchema = outputSchema;
+        this.isActive = isActive != null ? isActive : false;
         this.description = description;
     }
 
@@ -67,6 +93,22 @@ public class TransformationTemplateEntity {
 
     public void setConsumerId(String consumerId) {
         this.consumerId = consumerId;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public String getEngine() {
@@ -91,6 +133,30 @@ public class TransformationTemplateEntity {
 
     public void setConfiguration(String configuration) {
         this.configuration = configuration;
+    }
+
+    public SchemaEntity getInputSchema() {
+        return inputSchema;
+    }
+
+    public void setInputSchema(SchemaEntity inputSchema) {
+        this.inputSchema = inputSchema;
+    }
+
+    public SchemaEntity getOutputSchema() {
+        return outputSchema;
+    }
+
+    public void setOutputSchema(SchemaEntity outputSchema) {
+        this.outputSchema = outputSchema;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public String getDescription() {

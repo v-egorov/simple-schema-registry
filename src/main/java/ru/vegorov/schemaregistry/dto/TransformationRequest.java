@@ -11,12 +11,20 @@ public class TransformationRequest {
 
     private String subject;
 
+    private String transformationVersion; // Optional - uses active version if not specified
+
     // Constructors
     public TransformationRequest() {}
 
     public TransformationRequest(Map<String, Object> canonicalJson, String subject) {
         this.canonicalJson = canonicalJson;
         this.subject = subject;
+    }
+
+    public TransformationRequest(Map<String, Object> canonicalJson, String subject, String transformationVersion) {
+        this.canonicalJson = canonicalJson;
+        this.subject = subject;
+        this.transformationVersion = transformationVersion;
     }
 
     // Getters and Setters
@@ -34,5 +42,13 @@ public class TransformationRequest {
 
     public void setSubject(String subject) {
         this.subject = subject;
+    }
+
+    public String getTransformationVersion() {
+        return transformationVersion;
+    }
+
+    public void setTransformationVersion(String transformationVersion) {
+        this.transformationVersion = transformationVersion;
     }
 }
