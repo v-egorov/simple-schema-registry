@@ -1111,5 +1111,25 @@ All engines include comprehensive configuration validation:
 - **Structural Validation**: Ensures required fields and proper data types
 - **Runtime Safety**: Prevents invalid configurations from being deployed
 
+### Runtime Data Validation
+
+Router and pipeline engines support optional runtime schema validation during data transformation to ensure data integrity and catch transformation errors early.
+
+#### Router Engine Validation
+
+The `validation` element enables schema validation at routing boundaries:
+
+- `inputSchema`: Validates that incoming data conforms to the expected input schema before routing decisions are made
+- `outputSchema`: Validates that the final transformed output matches the target consumer schema
+
+#### Pipeline Engine Validation
+
+The `validation` element provides validation checkpoints throughout the processing pipeline:
+
+- `finalSchema`: Validates the end result of the entire pipeline against the expected output schema
+- `intermediateSchemas`: Optional validation checkpoints after specific pipeline steps (e.g., "after-step-1", "after-step-2") to catch data integrity issues mid-process
+
+This runtime validation prevents invalid data from propagating through transformations and provides early error detection in complex processing workflows.
+
 For more information about JSLT syntax, visit: <https://github.com/schibsted/jslt>
 
