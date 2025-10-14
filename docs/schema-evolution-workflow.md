@@ -38,7 +38,7 @@ The first step is registering your canonical (master) schema. This establishes t
 ### API Endpoint
 
 ```
-POST /api/schemas
+POST /api/schemas/{subject}
 ```
 
 ### Example: User Profile Schema
@@ -46,10 +46,10 @@ POST /api/schemas
 **Request:**
 
 ```bash
-curl -X POST http://localhost:8080/api/schemas \
+curl -X POST http://localhost:8080/api/schemas/user-profile \
   -H "Content-Type: application/json" \
   -d '{
-    "subject": "user-profile",
+    "version": "1.0.0",
     "schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
@@ -75,7 +75,8 @@ curl -X POST http://localhost:8080/api/schemas \
       },
       "required": ["userId", "email"]
     },
-    "compatibility": "BACKWARD"
+    "compatibility": "BACKWARD",
+    "description": "Canonical user profile schema"
   }'
 ```
 
@@ -174,7 +175,7 @@ Transformation templates define how to convert canonical data into consumer-spec
 ### API Endpoint
 
 ```
-POST /api/transform/templates/{consumerId}
+POST /api/consumers/{consumerId}/subjects/{subject}/templates
 ```
 
 ### Example: Mobile App Template
@@ -184,11 +185,20 @@ For mobile apps, we might want a simplified view with camelCase field names:
 **Request:**
 
 ```bash
-curl -X POST http://localhost:8080/api/transform/templates/mobile-app-v1 \
+curl -X POST http://localhost:8080/api/consumers/mobile-app-v1/subjects/user-profile/templates \
   -H "Content-Type: application/json" \
   -d '{
-    "expression": "{ \"userId\": .userId, \"fullName\": .fullName, \"email\": .email }",
-    "engine": "jslt"
+    "version": "1.0.0",
+    "engine": "jslt",
+    "templateExpression": "{ \\"userId\\": .userId, \\"fullName\\": .fullName, \\"email\\": .email }",
+    "inputSchema": {
+      "subject": "user-profile"
+    },
+    "outputSchema": {
+      "subject": "user-profile",
+      "consumerId": "mobile-app-v1"
+    },
+    "description": "Mobile app user profile transformation"
   }'
 ```
 
@@ -211,11 +221,20 @@ For analytics, we might want to flatten and add metadata:
 **Request:**
 
 ```bash
-curl -X POST http://localhost:8080/api/transform/templates/analytics-service \
+curl -X POST http://localhost:8080/api/consumers/analytics-service/subjects/user-profile/templates \
   -H "Content-Type: application/json" \
   -d '{
-    "expression": "{ \"user_id\": .userId, \"name\": .fullName, \"email_domain\": (.email | split(\"@\") | [1]), \"signup_date\": .createdAt, \"data_source\": \"user_profile\" }",
-    "engine": "jslt"
+    "version": "1.0.0",
+    "engine": "jslt",
+    "templateExpression": "{ \\"user_id\\": .userId, \\"name\\": .fullName, \\"email_domain\\": (.email | split(\\"@\\") | [1]), \\"signup_date\\": .createdAt, \\"data_source\\": \\"user_profile\\" }",
+    "inputSchema": {
+      "subject": "user-profile"
+    },
+    "outputSchema": {
+      "subject": "user-profile",
+      "consumerId": "analytics-service"
+    },
+    "description": "Analytics user profile transformation"
   }'
 ```
 

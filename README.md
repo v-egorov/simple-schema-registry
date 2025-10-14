@@ -4,15 +4,18 @@ A comprehensive Spring Boot application for managing JSON schemas and transformi
 
 ## Features
 
-- **Schema Registry**: Store, version, and manage JSON schemas with automatic compatibility checking
+- **Dual Schema Management**: Separate canonical schemas (source of truth) and consumer-specific output schemas
+- **Schema Versioning**: Full semantic versioning support with compatibility checking for both schema types
 - **Advanced JSON Transformation**: Transform data using multiple engines - JSLT, Router, and Pipeline
 - **Router Engine**: Intelligent routing based on data characteristics and conditional logic
 - **Pipeline Engine**: Sequential multi-step transformations with error handling and validation
+- **Template Versioning**: Version-controlled transformation templates with activation/deactivation
 - **Multi-Consumer Support**: Handle different data format requirements for various applications (mobile, web, analytics)
+- **JSON Schema Validation**: Validate data against both canonical and consumer output schemas
 - **RESTful API**: Complete REST API with OpenAPI 3.0 documentation and Swagger UI
 - **Database Persistence**: PostgreSQL with Flyway migrations for reliable schema management
 - **Docker Support**: Containerized deployment with Docker Compose
-- **Extensible Design**: Pluggable transformation engines with JSON Schema validation
+- **Extensible Design**: Pluggable transformation engines with comprehensive error handling
 
 ## Technology Stack
 
@@ -75,26 +78,52 @@ docker-compose down
 
 ## API Overview
 
-The service provides three main API groups:
+The service provides four main API groups with a clear separation between canonical schemas and consumer-specific schemas:
 
-### Schema Registry API (`/api/schemas`)
-- `POST /api/schemas` - Register a new schema or create a new version
-- `GET /api/schemas/{subject}` - Get all versions of a schema
-- `GET /api/schemas/{subject}/{version}` - Get specific schema version
-- `GET /api/schemas/{subject}/latest` - Get latest schema version
-- `POST /api/schemas/{subject}/compat` - Check schema compatibility
-- `GET /api/schemas/subjects` - List all schema subjects
+### Schema Registry API
+
+#### Canonical Schemas (`/api/schemas`)
+- `POST /api/schemas/{subject}` - Register a new canonical schema or create a new version
+- `GET /api/schemas/{subject}/versions` - Get all versions of a canonical schema
+- `GET /api/schemas/{subject}/versions/{version}` - Get specific canonical schema version
+- `GET /api/schemas/{subject}` - Get latest canonical schema version
+- `POST /api/schemas/{subject}/compat` - Check canonical schema compatibility
+- `POST /api/schemas/{subject}/validate` - Validate JSON against canonical schema
+- `GET /api/schemas/subjects` - List all canonical schema subjects
+
+#### Consumer Output Schemas (`/api/consumers/{consumerId}/schemas`)
+- `POST /api/consumers/{consumerId}/schemas/{subject}` - Register a consumer output schema
+- `GET /api/consumers/{consumerId}/schemas/{subject}/versions` - Get all versions of a consumer output schema
+- `GET /api/consumers/{consumerId}/schemas/{subject}/versions/{version}` - Get specific consumer output schema version
+- `GET /api/consumers/{consumerId}/schemas/{subject}` - Get latest consumer output schema version
+- `POST /api/consumers/{consumerId}/schemas/{subject}/compat` - Check consumer output schema compatibility
+- `POST /api/consumers/{consumerId}/schemas/{subject}/validate` - Validate JSON against consumer output schema
+- `GET /api/consumers/{consumerId}/schemas/subjects` - List subjects for a consumer
 
 ### Consumer Management API (`/api/consumers`)
 - `POST /api/consumers` - Register a new consumer
 - `GET /api/consumers` - List all consumers
 - `GET /api/consumers/{consumerId}` - Get consumer details
 
-### Transformation API (`/api/transform`)
-- `POST /api/transform/{consumerId}` - Transform JSON data for a consumer
-- `GET /api/transform/templates/{consumerId}` - Get transformation template
-- `POST /api/transform/templates/{consumerId}` - Create/update transformation template
-- `GET /api/transform/engines` - List available transformation engines
+### Transformation API (`/api/consumers/{consumerId}/subjects/{subject}`)
+
+#### Data Transformation
+- `POST /api/consumers/{consumerId}/subjects/{subject}/transform` - Transform JSON data using active template
+- `POST /api/consumers/{consumerId}/subjects/{subject}/transform/versions/{version}` - Transform with specific template version
+
+#### Template Management
+- `POST /api/consumers/{consumerId}/subjects/{subject}/templates` - Create new transformation template version
+- `GET /api/consumers/{consumerId}/subjects/{subject}/templates` - Get all template versions
+- `GET /api/consumers/{consumerId}/subjects/{subject}/templates/active` - Get active template
+- `GET /api/consumers/{consumerId}/subjects/{subject}/templates/versions/{version}` - Get specific template version
+
+#### Version Management
+- `PUT /api/consumers/{consumerId}/subjects/{subject}/templates/versions/{version}/activate` - Activate template version
+- `PUT /api/consumers/{consumerId}/subjects/{subject}/templates/versions/{version}/deactivate` - Deactivate template version
+- `DELETE /api/consumers/{consumerId}/subjects/{subject}/templates/versions/{version}` - Delete template version
+
+#### Utilities
+- `GET /api/consumers/engines` - List available transformation engines
 
 ## Configuration
 

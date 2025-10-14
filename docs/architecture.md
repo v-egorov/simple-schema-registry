@@ -35,16 +35,20 @@ The presentation layer handles HTTP requests and responses, providing RESTful AP
 
 The service layer contains the core business logic:
 
-- **SchemaRegistryService**: Handles schema versioning, compatibility validation, and retrieval
-- **TransformationService**: Manages transformation templates and executes transformations
+- **SchemaRegistryService**: Handles schema versioning, compatibility validation, and retrieval for both canonical and consumer output schemas
+- **TransformationService**: Manages transformation template creation, retrieval, and executes transformations
+- **TransformationVersionService**: Handles template version activation, deactivation, and lifecycle management
 - **ConsumerService**: Manages consumer application registrations
-- **Transformation Engines**: Pluggable engines for different transformation languages
+- **ConfigurationValidator**: Validates transformation engine configurations
+- **Transformation Engines**: Pluggable engines for different transformation languages (JSLT, Router, Pipeline)
 
 **Key Features**:
 
 - Transaction management with Spring's `@Transactional`
-- Business rule validation
+- Business rule validation and schema relationships
+- Template versioning with active version management
 - Engine abstraction for extensibility
+- Schema validation integration
 
 ### 3. Data Access Layer (Repositories)
 
@@ -58,9 +62,10 @@ Spring Data JPA repositories provide data access:
 
 JPA entities representing the domain model:
 
-- **SchemaEntity**: Stores schema definitions with versioning
+- **SchemaEntity**: Stores schema definitions with versioning, supporting both canonical and consumer output schema types
 - **ConsumerEntity**: Represents consumer applications
-- **TransformationTemplateEntity**: Stores transformation logic per consumer
+- **TransformationTemplateEntity**: Stores transformation templates with versioning, linked to input/output schemas
+- **SchemaType**: Enum defining schema types (CANONICAL, CONSUMER_OUTPUT)
 
 ## Data Flow
 
@@ -76,62 +81,69 @@ JPA entities representing the domain model:
 
 #### High-Level Flow
 
-1. Client sends transformation request with canonical JSON
-2. Controller validates request
-3. Service retrieves consumer's transformation template
-4. Appropriate transformation engine processes the data
-5. Transformed JSON is returned to client
+1. Client sends transformation request with canonical JSON data
+2. Controller validates request parameters and consumer/subject existence
+3. Service retrieves the active transformation template version for the consumer-subject pair
+4. Appropriate transformation engine processes the data according to the template
+5. Transformed JSON is validated against the consumer output schema (if configured)
+6. Transformed JSON is returned to client
 
 #### Detailed Sequence Diagram
 
 ```
 Client Application                    TransformationController              TransformationService              TransformationEngine
         |                                           |                              |                              |
-        |  POST /api/consumers/{consumerId}/transform?subject={subject}            |                              |
+        |  POST /api/consumers/{consumerId}/subjects/{subject}/transform           |                              |
         |  Content-Type: application/json                                          |                              |
-        |  Body: {"canonicalJson": {...}}                                          |                              |
+        |  Body: {"data": {...}}                                                   |                              |
         |------------------------------------------>|                              |                              |
         |                                           |                              |                              |
         |                                           | 1. Validate request params   |                              |
         |                                           |    - consumerId exists       |                              |
-        |                                           |    - subject parameter       |                              |
+        |                                           |    - subject exists          |                              |
         |                                           |    - JSON payload structure  |                              |
         |                                           |                              |                              |
         |                                           | 2. Call service.transform()  |                              |
         |                                           |----------------------------->|                              |
         |                                           |                              |                              |
-        |                                           |                              | 3. Retrieve template         |
-        |                                           |                              |    for consumer              |
+        |                                           |                              | 3. Retrieve active template  |
+        |                                           |                              |    version for consumer+subject|
         |                                           |                              |                              |
-        |                                           |                              | 4. Determine engine type     |
+        |                                           |                              | 4. Validate input against    |
+        |                                           |                              |    canonical schema          |
+        |                                           |                              |                              |
+        |                                           |                              | 5. Determine engine type     |
         |                                           |                              |    (jslt/router/pipeline)    |
         |                                           |                              |                              |
-        |                                           |                              | 5. Instantiate appropriate   |
+        |                                           |                              | 6. Instantiate appropriate   |
         |                                           |                              |    engine                    |
         |                                           |                              |                              |
-        |                                           |                              | 6. Call engine.transform()   |
+        |                                           |                              | 7. Call engine.transform()   |
         |                                           |                              |----------------------------->|
         |                                           |                              |                              |
-        |                                           |                              |                              | 7. Execute transformation
+        |                                           |                              |                              | 8. Execute transformation
         |                                           |                              |                              |    - JSLT: Apply expression
         |                                           |                              |                              |    - Router: Evaluate conditions
         |                                           |                              |                              |    - Pipeline: Execute steps
         |                                           |                              |                              |
-        |                                           |                              | 8. Return transformed JSON   |
+        |                                           |                              | 9. Validate output against   |
+        |                                           |                              |    consumer output schema    |
+        |                                           |                              |                              |
+        |                                           |                              | 10. Return transformed JSON  |
         |                                           |                              |<-----------------------------|
         |                                           |                              |                              |
-        |                                           | 9. Return success response   |                              |
-        |                                           |    {"transformedJson": {...}}|                              |
+        |                                           | 11. Return success response  |                              |
+        |                                           |    {"transformedData": {...}}|                              |
         |<------------------------------------------|                              |                              |
 ```
 
 #### Key Points About Current Flow
 
-- **No Schema Validation**: Input JSON is not validated against registered schemas for the subject
-- **Consumer-Subject Relationship**: The subject parameter is informational only - no validation that consumer is registered for that subject
-- **Template Retrieval**: System retrieves the single template associated with the consumer (one template per consumer)
+- **Schema Validation**: Input JSON is validated against canonical schemas, output against consumer schemas
+- **Template Versioning**: Uses active template version for consumer-subject pairs (many templates per consumer)
+- **Subject-Based Organization**: Templates are organized by consumer-subject combinations
 - **Engine Selection**: Template metadata determines which transformation engine to use
-- **Error Handling**: Transformation exceptions are caught and returned as HTTP 500 responses
+- **Version Management**: Templates support multiple versions with activation/deactivation
 
 #### Engine-Specific Flows
 
@@ -160,17 +172,23 @@ Input JSON → Step 1 Transform → Step 2 Transform → ... → Step N Transfor
 ### Tables
 
 ```sql
--- Schema storage with versioning
+-- Schema storage with versioning and type support
 CREATE TABLE schemas (
     id BIGSERIAL PRIMARY KEY,
     subject VARCHAR(255) NOT NULL,
+    schema_type VARCHAR(50) NOT NULL DEFAULT 'canonical' CHECK (schema_type IN ('canonical', 'consumer_output')),
+    consumer_id VARCHAR(255),  -- NULL for canonical schemas, required for consumer_output
     version INTEGER NOT NULL,
     schema_json JSONB NOT NULL,
     compatibility VARCHAR(50) NOT NULL DEFAULT 'BACKWARD',
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    UNIQUE(subject, version)
+
+    -- Constraints
+    FOREIGN KEY (consumer_id) REFERENCES consumers(consumer_id) ON DELETE CASCADE,
+    UNIQUE(subject, schema_type, consumer_id, version),
+    CHECK (schema_type = 'canonical' OR consumer_id IS NOT NULL)
 );
 
 -- Consumer applications
@@ -183,26 +201,38 @@ CREATE TABLE consumers (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
--- Transformation templates per consumer
+-- Transformation templates with versioning and schema relationships
 CREATE TABLE transformation_templates (
     id BIGSERIAL PRIMARY KEY,
     consumer_id VARCHAR(255) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    version VARCHAR(50) NOT NULL,
     engine VARCHAR(50) NOT NULL DEFAULT 'jslt',
     template_expression TEXT,  -- Nullable for router/pipeline engines
-    configuration TEXT,        -- JSON configuration for router/pipeline engines
+    configuration TEXT,       -- JSON configuration for router/pipeline engines
+    input_schema_id BIGINT NOT NULL,
+    output_schema_id BIGINT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+
+    -- Constraints
     FOREIGN KEY (consumer_id) REFERENCES consumers(consumer_id) ON DELETE CASCADE,
-    UNIQUE(consumer_id)
+    FOREIGN KEY (input_schema_id) REFERENCES schemas(id) ON DELETE RESTRICT,
+    FOREIGN KEY (output_schema_id) REFERENCES schemas(id) ON DELETE RESTRICT,
+    UNIQUE(consumer_id, subject, version)
 );
 ```
 
 ### Indexes
 
-- `idx_schemas_subject` - Fast subject-based queries
-- `idx_schemas_subject_version` - Optimized version retrieval
-- `idx_transformation_templates_consumer_id` - Fast template lookups
+- `idx_schemas_subject_type` - Fast queries by subject and schema type
+- `idx_schemas_consumer` - Optimized consumer-specific schema queries
+- `idx_transformation_templates_consumer_subject` - Fast template lookups by consumer and subject
+- `idx_transformation_templates_active` - Optimized active template retrieval
+- `idx_transformation_templates_version` - Fast version-specific queries
+- `unique_active_template` - Ensures only one active version per consumer-subject pair
 
 ## Transformation Engine Architecture
 
@@ -415,4 +445,3 @@ Services:
 
 - Target: >80% code coverage
 - Focus on business logic and edge cases
-

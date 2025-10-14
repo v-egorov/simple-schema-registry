@@ -137,15 +137,16 @@ For development with your own PostgreSQL instance:
    curl http://localhost:8080/actuator/health
    ```
 
-## Multi-Subject Consumer Support
+## Schema and Consumer Architecture
 
-This service supports consumers that can subscribe to multiple subjects. When registering a consumer, specify the subjects they will consume. All transformation requests must include a `subject` parameter to indicate which subject the data belongs to.
+This service implements a dual-schema architecture with flexible consumer-subject relationships:
 
 ### Key Features:
-- **Multi-Subject Registration**: Consumers can register for multiple subjects
-- **Subject-Specific Transformations**: Each transformation request specifies the subject
-- **Subject Validation**: The service validates that consumers are registered for requested subjects
-- **Semver Schema Versioning**: Schema versions follow semantic versioning (x.y.z format)
+- **Dual Schema Types**: Canonical schemas (source of truth) and consumer-specific output schemas
+- **Subject-Based Organization**: Schemas and transformations are organized by subjects
+- **Consumer-Subject Templates**: Each consumer-subject pair can have its own transformation template
+- **Template Versioning**: Templates support multiple versions with activation/deactivation
+- **Schema Validation**: Input validated against canonical schemas, output against consumer schemas
 
 ## First API Calls
 
@@ -153,7 +154,7 @@ Let's test the service with some basic API calls using curl.
 
 ### 1. Register a Consumer
 
-First, register a consumer application with the subjects it will consume:
+First, register a consumer application:
 
 ```bash
 curl -X POST http://localhost:8080/api/consumers \
@@ -161,8 +162,7 @@ curl -X POST http://localhost:8080/api/consumers \
   -d '{
     "consumerId": "mobile-app",
     "name": "Mobile Application",
-    "description": "iOS and Android mobile app",
-    "subjects": ["user-profile", "product-catalog"]
+    "description": "iOS and Android mobile app"
   }'
 ```
 
@@ -173,21 +173,21 @@ Response:
   "consumerId": "mobile-app",
   "name": "Mobile Application",
   "description": "iOS and Android mobile app",
-  "subjects": ["user-profile", "product-catalog"],
   "createdAt": "2024-01-15T10:30:00",
   "updatedAt": "2024-01-15T10:30:00"
 }
 ```
 
-### 2. Register a Schema
+### 2. Register Schemas
 
-Register a JSON schema for user profiles:
+Register both canonical and consumer output schemas:
 
+#### Canonical Schema (Source of Truth)
 ```bash
-curl -X POST http://localhost:8080/api/schemas \
+curl -X POST http://localhost:8080/api/schemas/user-profile \
   -H "Content-Type: application/json" \
   -d '{
-    "subject": "user-profile",
+    "version": "1.0.0",
     "schema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "type": "object",
@@ -199,125 +199,139 @@ curl -X POST http://localhost:8080/api/schemas \
       "required": ["id", "name"]
     },
     "compatibility": "BACKWARD",
-    "description": "User profile schema"
+    "description": "Canonical user profile schema"
   }'
 ```
 
-Response:
-```json
-{
-  "id": 1,
-  "subject": "user-profile",
-  "version": "1.0.0",
-  "schema": {...},
-  "compatibility": "BACKWARD",
-  "description": "User profile schema",
-  "createdAt": "2024-01-15T10:30:00",
-  "updatedAt": "2024-01-15T10:30:00"
-}
+#### Consumer Output Schema (Mobile App Format)
+```bash
+curl -X POST http://localhost:8080/api/consumers/mobile-app/schemas/user-profile \
+  -H "Content-Type: application/json" \
+  -d '{
+    "version": "1.0.0",
+    "schema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "userId": {"type": "integer"},
+        "fullName": {"type": "string"},
+        "email": {"type": "string", "format": "email"}
+      },
+      "required": ["userId", "fullName"]
+    },
+    "compatibility": "BACKWARD",
+    "description": "Mobile app user profile schema"
+  }'
 ```
 
 ### 3. Create Transformation Templates
 
-#### JSLT Engine Template
-Create a simple transformation template for the mobile app:
+Templates are created per consumer-subject pair and require input/output schema references:
 
+#### JSLT Engine Template
 ```bash
-curl -X POST http://localhost:8080/api/consumers/templates/mobile-app \
+curl -X POST http://localhost:8080/api/consumers/mobile-app/subjects/user-profile/templates \
   -H "Content-Type: application/json" \
   -d '{
+    "version": "1.0.0",
     "engine": "jslt",
-    "expression": ". | {\"id\": .id, \"name\": .name, \"email\": .email}",
-    "description": "Simple field mapping for mobile app"
+    "templateExpression": "{ \\"userId\\": .userId, \\"fullName\\": .fullName, \\"email\\": .email }",
+    "inputSchema": {
+      "subject": "user-profile"
+    },
+    "outputSchema": {
+      "subject": "user-profile",
+      "consumerId": "mobile-app"
+    },
+    "description": "Mobile app user profile transformation"
   }'
 ```
 
 #### Router Engine Template
-Create a router template that routes different data types:
-
 ```bash
-curl -X POST http://localhost:8080/api/consumers/templates/multi-tenant-app \
+curl -X POST http://localhost:8080/api/consumers/multi-tenant-app/subjects/data/templates \
   -H "Content-Type: application/json" \
   -d '{
+    "version": "1.0.0",
     "engine": "router",
-    "routerConfig": {
-      "type": "router",
+    "configuration": {
       "routes": [
         {
-          "condition": "$.type == \"user\"",
-          "transformationId": "user-normalization-v1",
-          "description": "Normalize user data"
+          "condition": ".type == \\"user\\"",
+          "transformation": ". | {\\"userId\\": .id, \\"name\\": .name}",
+          "description": "User data transformation"
         },
         {
-          "condition": "$.type == \"product\"",
-          "transformationId": "product-enrichment-v1",
-          "description": "Enrich product data"
+          "condition": ".type == \\"product\\"",
+          "transformation": ". | {\\"productId\\": .id, \\"title\\": .name}",
+          "description": "Product data transformation"
         }
       ],
-      "defaultTransformationId": "generic-transformation-v1",
-      "validation": {
-        "inputSchema": "canonical-data-schema-v1",
-        "outputSchema": "consumer-data-schema-v1"
-      }
+      "defaultTransformation": ".",
+      "description": "Content-based routing"
     },
-    "description": "Content-based routing for different data types"
+    "inputSchema": {
+      "subject": "data"
+    },
+    "outputSchema": {
+      "subject": "data",
+      "consumerId": "multi-tenant-app"
+    },
+    "description": "Multi-tenant data routing"
   }'
 ```
 
 #### Pipeline Engine Template
-Create a pipeline template for multi-step processing:
-
 ```bash
-curl -X POST http://localhost:8080/api/consumers/templates/analytics-platform \
+curl -X POST http://localhost:8080/api/consumers/analytics-platform/subjects/user-profile/templates \
   -H "Content-Type: application/json" \
   -d '{
+    "version": "1.0.0",
     "engine": "pipeline",
-    "pipelineConfig": {
-      "type": "pipeline",
+    "configuration": {
       "steps": [
         {
-          "name": "validate-input",
-          "transformationId": "input-validation-v1",
+          "name": "validate",
+          "transformation": ".",
           "continueOnError": false,
-          "description": "Validate input data structure"
+          "description": "Input validation"
         },
         {
-          "name": "normalize-data",
-          "transformationId": "data-normalization-v1",
+          "name": "normalize",
+          "transformation": ". | {\\"user_id\\": .id, \\"full_name\\": .name}",
           "continueOnError": false,
-          "description": "Normalize data format"
+          "description": "Field normalization"
         },
         {
-          "name": "enrich-data",
-          "transformationId": "data-enrichment-v1",
+          "name": "enrich",
+          "transformation": ". | . + {\\"processed_at\\": now()}",
           "continueOnError": true,
-          "description": "Add computed fields"
+          "description": "Add metadata"
         }
       ],
-      "validation": {
-        "finalSchema": "enriched-data-schema-v1",
-        "intermediateSchemas": {
-          "after-step-1": "validated-data-schema-v1",
-          "after-step-2": "normalized-data-schema-v1"
-        }
-      }
+      "description": "Analytics data pipeline"
     },
-    "description": "Multi-step data processing pipeline"
+    "inputSchema": {
+      "subject": "user-profile"
+    },
+    "outputSchema": {
+      "subject": "user-profile",
+      "consumerId": "analytics-platform"
+    },
+    "description": "Analytics data processing pipeline"
   }'
 ```
 
 ### 4. Transform Data with Different Engines
 
-**Note**: All transformation requests require a `subject` query parameter that matches one of the consumer's registered subjects.
-
 #### JSLT Engine Transformation
-Transform data using the simple JSLT template. This example shows how JSLT can filter fields - only `id`, `name`, and `email` are included in the output, while `internalId` and `createdAt` are removed:
+Transform canonical data for the mobile app consumer:
 
 ```bash
-curl -X POST "http://localhost:8080/api/consumers/mobile-app/transform?subject=user-profile" \
+curl -X POST "http://localhost:8080/api/consumers/mobile-app/subjects/user-profile/transform" \
   -H "Content-Type: application/json" \
   -d '{
-    "canonicalJson": {
+    "data": {
       "id": 123,
       "name": "John Doe",
       "email": "john@example.com",
@@ -330,79 +344,27 @@ curl -X POST "http://localhost:8080/api/consumers/mobile-app/transform?subject=u
 Response:
 ```json
 {
-  "transformedJson": {
-    "id": 123,
-    "name": "John Doe",
+  "transformedData": {
+    "userId": 123,
+    "fullName": "John Doe",
     "email": "john@example.com"
   },
-  "subject": "user-profile"
+  "subject": "user-profile",
+  "consumerId": "mobile-app",
+  "templateVersion": "1.0.0"
 }
 ```
 
 **Note**: The transformation template `{"id": .id, "name": .name, "email": .email}` explicitly selects only the desired fields, effectively filtering out sensitive or unnecessary data like `internalId` and `createdAt`.
 
-#### JSLT Engine Transformation - Complex Object Filtering
-Transform data with nested objects, removing sensitive information from complex structures:
+#### Router Engine Transformation
+Transform data using content-based routing:
 
 ```bash
-curl -X POST "http://localhost:8080/api/consumers/mobile-app/transform?subject=user-profile" \
+curl -X POST "http://localhost:8080/api/consumers/multi-tenant-app/subjects/data/transform" \
   -H "Content-Type: application/json" \
   -d '{
-    "canonicalJson": {
-      "userId": 123,
-      "personalInfo": {
-        "firstName": "John",
-        "lastName": "Doe",
-        "email": "john@example.com",
-        "phone": "+1-555-0123",
-        "ssn": "123-45-6789"
-      },
-      "preferences": {
-        "theme": "dark",
-        "notifications": true,
-        "marketingEmails": false
-      },
-      "metadata": {
-        "createdAt": "2024-01-15T10:30:00Z",
-        "lastLogin": "2024-01-20T14:22:00Z",
-        "internalNotes": "VIP customer"
-      }
-    }
-  }'
-```
-
-Template: `{"userId": .userId, "personalInfo": {"firstName": .personalInfo.firstName, "lastName": .personalInfo.lastName, "email": .personalInfo.email}, "preferences": .preferences}`
-
-Response:
-```json
-{
-  "transformedJson": {
-    "userId": 123,
-    "personalInfo": {
-      "firstName": "John",
-      "lastName": "Doe",
-      "email": "john@example.com"
-    },
-    "preferences": {
-      "theme": "dark",
-      "notifications": true,
-      "marketingEmails": false
-    }
-  },
-  "subject": "user-profile"
-}
-```
-
-**Note**: This example shows filtering within nested objects. The `personalInfo` object has `phone` and `ssn` (sensitive data) removed, and the entire `metadata` object is excluded from the output.
-
-#### Router Engine Transformation - User Data
-Transform user data using the router (routes to user-normalization-v1):
-
-```bash
-curl -X POST "http://localhost:8080/api/consumers/multi-tenant-app/transform?subject=user-profile" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "canonicalJson": {
+    "data": {
       "type": "user",
       "id": 12345,
       "firstName": "John",
@@ -416,57 +378,24 @@ curl -X POST "http://localhost:8080/api/consumers/multi-tenant-app/transform?sub
 Response:
 ```json
 {
-  "transformedJson": {
-    "user_id": 12345,
-    "full_name": "John Doe",
-    "email": "john.doe@example.com",
-    "department": "engineering",
-    "normalized_type": "user"
-  }
-}
-```
-
-#### Router Engine Transformation - Product Data
-Transform product data using the router (routes to product-enrichment-v1):
-
-```bash
-curl -X POST "http://localhost:8080/api/consumers/multi-tenant-app/transform?subject=product-catalog" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "canonicalJson": {
-      "type": "product",
-      "id": 67890,
-      "name": "Wireless Headphones",
-      "category": "electronics",
-      "price": 199.99,
-      "inStock": true
-    }
-  }'
-```
-
-Response:
-```json
-{
-  "transformedJson": {
-    "product_id": 67890,
-    "product_name": "Wireless Headphones",
-    "category": "electronics",
-    "price_usd": 199.99,
-    "availability": "in_stock",
-    "enriched_category": "electronics"
-  }
+  "transformedData": {
+    "userId": 12345,
+    "name": "John Doe"
+  },
+  "subject": "data",
+  "consumerId": "multi-tenant-app",
+  "templateVersion": "1.0.0"
 }
 ```
 
 #### Pipeline Engine Transformation
-Transform data through the multi-step pipeline:
+Transform data through multi-step processing:
 
 ```bash
-curl -X POST "http://localhost:8080/api/consumers/analytics-platform/transform?subject=user-profile" \
+curl -X POST "http://localhost:8080/api/consumers/analytics-platform/subjects/user-profile/transform" \
   -H "Content-Type: application/json" \
   -d '{
-    "canonicalJson": {
-      "type": "user",
+    "data": {
       "id": 12345,
       "firstName": "John",
       "lastName": "Doe",
@@ -479,19 +408,14 @@ curl -X POST "http://localhost:8080/api/consumers/analytics-platform/transform?s
 Response:
 ```json
 {
-  "transformedJson": {
-    "type": "user",
-    "id": 12345,
-    "firstName": "John",
-    "lastName": "Doe",
-    "email": "john.doe@example.com",
-    "registrationDate": "2024-01-15T10:30:00Z",
-    "validated": true,
-    "normalized": true,
-    "enriched": true,
-    "timestamp": "2024-01-15T10:35:00Z"
+  "transformedData": {
+    "user_id": 12345,
+    "full_name": "John Doe",
+    "processed_at": "2024-01-15T10:35:00Z"
   },
-  "subject": "user-profile"
+  "subject": "user-profile",
+  "consumerId": "analytics-platform",
+  "templateVersion": "1.0.0"
 }
 ```
 
@@ -523,25 +447,29 @@ Registers a JSON schema from a file with the Schema Registry.
 **Arguments:**
 - `schema_file`: Path to JSON schema file (must be valid JSON)
 - `subject`: Schema subject name (e.g., "user-profile")
+- `version`: Schema version (default: "1.0.0")
 - `compatibility`: Schema compatibility mode ("BACKWARD", "FORWARD", "FULL", "NONE")
 - `description`: Optional human-readable description
 
 **Example:**
 ```bash
-./tests/utils/scripts/register-schema-from-file.sh user-schema.json user-profile BACKWARD "User profile schema"
+./tests/utils/scripts/register-schema-from-file.sh user-schema.json user-profile 1.0.0 BACKWARD "User profile schema"
 ```
 
 #### `register-jslt-template-from-file.sh`
-Registers a JSLT transformation template from a file for a consumer.
+Registers a JSLT transformation template from a file for a consumer and subject.
 
 **Arguments:**
 - `jslt_file`: Path to JSLT template file
 - `consumer_id`: Consumer ID to register the template for (consumer must already exist)
+- `subject`: Schema subject for the template
+- `version`: Template version (default: "1.0.0")
+- `input_subject`: Input schema subject (default: same as subject)
 - `description`: Optional description (default: "JSLT template from file")
 
 **Example:**
 ```bash
-./tests/utils/scripts/register-jslt-template-from-file.sh remove-notes.jslt mobile-app "Remove notes from publications"
+./tests/utils/scripts/register-jslt-template-from-file.sh remove-notes.jslt mobile-app user-profile 1.0.0 user-profile "Remove notes from publications"
 ```
 
 #### `transform-from-file.sh`
@@ -551,10 +479,12 @@ Transforms JSON data from a file using a registered transformation template.
 - `data_file`: Path to JSON data file to transform (must be valid JSON)
 - `consumer_id`: Consumer ID with registered transformation template
 - `subject`: Schema subject for the data (must match consumer's registered subjects)
+- `version`: Optional template version (uses active version if not specified)
 
 **Example:**
 ```bash
 ./tests/utils/scripts/transform-from-file.sh user-data.json mobile-app user-profile
+./tests/utils/scripts/transform-from-file.sh user-data.json mobile-app user-profile 1.0.0
 ```
 
 ### Schema Registration from File
@@ -578,21 +508,21 @@ Register the schema using the helper script:
 
 ```bash
 # Using the helper script
-./tests/utils/scripts/register-schema-from-file.sh user-schema.json user-profile BACKWARD "User profile schema"
+./tests/utils/scripts/register-schema-from-file.sh user-schema.json user-profile 1.0.0 BACKWARD "User profile schema"
 
 # Or manually with curl and jq
 jq -n \
-  --arg subject "user-profile" \
+  --arg version "1.0.0" \
   --arg compatibility "BACKWARD" \
   --arg description "User profile schema" \
   --argjson schema "$(cat user-schema.json)" \
   '{
-    subject: $subject,
+    version: $version,
     schema: $schema,
     compatibility: $compatibility,
     description: $description
   }' | \
-curl -X POST http://localhost:8080/api/schemas \
+curl -X POST http://localhost:8080/api/schemas/user-profile \
   -H "Content-Type: application/json" \
   -d @-
 ```
@@ -619,14 +549,22 @@ Register the template using the helper script:
 
 ```bash
 # Using the helper script
-./tests/utils/scripts/register-jslt-template-from-file.sh remove-notes.jslt mobile-app "Remove notes from publications"
+./tests/utils/scripts/register-jslt-template-from-file.sh remove-notes.jslt mobile-app user-profile 1.0.0 user-profile "Remove notes from publications"
 
 # Or manually with curl
-curl -X POST http://localhost:8080/api/consumers/templates/mobile-app \
+curl -X POST http://localhost:8080/api/consumers/mobile-app/subjects/user-profile/templates \
   -H "Content-Type: application/json" \
   -d '{
+    "version": "1.0.0",
     "engine": "jslt",
-    "expression": "'"$(cat remove-notes.jslt)"'",
+    "templateExpression": "'"$(cat remove-notes.jslt)"'",
+    "inputSchema": {
+      "subject": "user-profile"
+    },
+    "outputSchema": {
+      "subject": "user-profile",
+      "consumerId": "mobile-app"
+    },
     "description": "Remove notes from publications"
   }'
 ```
@@ -653,11 +591,11 @@ Transform the data using the helper script:
 
 # Or manually with curl and jq
 jq -n \
-  --argjson canonicalJson "$(cat user-data.json)" \
+  --argjson data "$(cat user-data.json)" \
   '{
-    canonicalJson: $canonicalJson
+    data: $data
   }' | \
-curl -X POST "http://localhost:8080/api/consumers/mobile-app/transform?subject=user-profile" \
+curl -X POST "http://localhost:8080/api/consumers/mobile-app/subjects/user-profile/transform" \
   -H "Content-Type: application/json" \
   -d @-
 ```
@@ -668,20 +606,20 @@ curl -X POST "http://localhost:8080/api/consumers/mobile-app/transform?subject=u
 
 ```bash
 # 1. Register JSLT template
-./tests/utils/scripts/register-jslt-template-from-file.sh remove-notes.jslt mobile-app "Remove notes from publications"
+./tests/utils/scripts/register-jslt-template-from-file.sh remove-notes.jslt mobile-app user-profile 1.0.0 user-profile "Remove notes from publications"
 
 # 2. Transform data using the registered template
-./tests/utils/scripts/transform-from-file.sh publication-data.json mobile-app publication-schema
+./tests/utils/scripts/transform-from-file.sh publication-data.json mobile-app user-profile
 ```
 
 #### Register Multiple Schemas
 
 ```bash
 # Product schema
-./tests/utils/scripts/register-schema-from-file.sh product-schema.json product-catalog FORWARD "Product catalog schema"
+./tests/utils/scripts/register-schema-from-file.sh product-schema.json product-catalog 1.0.0 FORWARD "Product catalog schema"
 
 # Order schema
-./tests/utils/scripts/register-schema-from-file.sh order-schema.json order-data BACKWARD "Order data schema"
+./tests/utils/scripts/register-schema-from-file.sh order-schema.json order-data 1.0.0 BACKWARD "Order data schema"
 ```
 
 #### Batch Transformations
@@ -700,22 +638,22 @@ Add to your `Makefile`:
 ```makefile
 # Register schema from file
 register-schema:
-	./tests/utils/scripts/register-schema-from-file.sh $(SCHEMA_FILE) $(SUBJECT) $(COMPATIBILITY) "$(DESCRIPTION)"
+	./tests/utils/scripts/register-schema-from-file.sh $(SCHEMA_FILE) $(SUBJECT) $(VERSION) $(COMPATIBILITY) "$(DESCRIPTION)"
 
 # Register JSLT template from file
 register-jslt-template:
-	./tests/utils/scripts/register-jslt-template-from-file.sh $(JSLT_FILE) $(CONSUMER) "$(DESCRIPTION)"
+	./tests/utils/scripts/register-jslt-template-from-file.sh $(JSLT_FILE) $(CONSUMER) $(SUBJECT) $(VERSION) $(INPUT_SUBJECT) "$(DESCRIPTION)"
 
 # Transform data from file
 transform-data:
-	./tests/utils/scripts/transform-from-file.sh $(DATA_FILE) $(CONSUMER) $(SUBJECT)
+	./tests/utils/scripts/transform-from-file.sh $(DATA_FILE) $(CONSUMER) $(SUBJECT) $(VERSION)
 ```
 
 Then use:
 
 ```bash
-make register-schema SCHEMA_FILE=user-schema.json SUBJECT=user-profile COMPATIBILITY=BACKWARD DESCRIPTION="User schema"
-make register-jslt-template JSLT_FILE=remove-notes.jslt CONSUMER=mobile-app DESCRIPTION="Remove notes"
+make register-schema SCHEMA_FILE=user-schema.json SUBJECT=user-profile VERSION=1.0.0 COMPATIBILITY=BACKWARD DESCRIPTION="User schema"
+make register-jslt-template JSLT_FILE=remove-notes.jslt CONSUMER=mobile-app SUBJECT=user-profile VERSION=1.0.0 INPUT_SUBJECT=user-profile DESCRIPTION="Remove notes"
 make transform-data DATA_FILE=user-data.json CONSUMER=mobile-app SUBJECT=user-profile
 ```
 
