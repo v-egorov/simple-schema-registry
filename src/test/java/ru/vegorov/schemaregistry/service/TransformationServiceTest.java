@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.vegorov.schemaregistry.dto.TransformationRequest;
 import ru.vegorov.schemaregistry.dto.TransformationResponse;
+import ru.vegorov.schemaregistry.dto.ConsumerResponse;
 import ru.vegorov.schemaregistry.dto.SchemaReference;
 import ru.vegorov.schemaregistry.dto.TransformationTemplateRequest;
 import ru.vegorov.schemaregistry.dto.TransformationTemplateResponse;
@@ -240,7 +241,9 @@ class TransformationServiceTest {
         template.setInputSchema(inputSchema);
         template.setOutputSchema(outputSchema);
 
-        when(consumerService.consumerExists("consumer-1")).thenReturn(true);
+        ConsumerResponse consumerResponse = new ConsumerResponse(1L, "consumer-1", "Test Consumer", "Test consumer", null, null);
+
+        when(consumerService.getConsumer("consumer-1")).thenReturn(consumerResponse);
         when(templateRepository.findByConsumerIdAndSubjectAndIsActiveTrue("consumer-1", "test-subject"))
             .thenReturn(Optional.of(template));
         when(jsltEngine.transform(canonicalJson, ".")).thenReturn(transformedJson);
@@ -281,7 +284,9 @@ class TransformationServiceTest {
         template.setInputSchema(inputSchema);
         template.setOutputSchema(outputSchema);
 
-        when(consumerService.consumerExists("consumer-1")).thenReturn(true);
+        ConsumerResponse consumerResponse = new ConsumerResponse(1L, "consumer-1", "Test Consumer", "Test consumer", null, null);
+
+        when(consumerService.getConsumer("consumer-1")).thenReturn(consumerResponse);
         when(templateRepository.findByConsumerIdAndSubjectAndVersion("consumer-1", "test-subject", "2.0.0"))
             .thenReturn(Optional.of(template));
         when(jsltEngine.transform(canonicalJson, ".")).thenReturn(transformedJson);

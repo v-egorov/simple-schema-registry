@@ -111,7 +111,6 @@ class SchemaRegistryServiceTest {
 
         // Schema that requires id and name
         Map<String, Object> schemaJson = new HashMap<>();
-        schemaJson.put("$schema", "http://json-schema.org/draft-07/schema#");
         schemaJson.put("type", "object");
         Map<String, Object> properties = new HashMap<>();
         Map<String, Object> idProp = new HashMap<>();
@@ -155,7 +154,6 @@ class SchemaRegistryServiceTest {
 
         // Schema that requires id and name
         Map<String, Object> schemaJson = new HashMap<>();
-        schemaJson.put("$schema", "http://json-schema.org/draft-07/schema#");
         schemaJson.put("type", "object");
         Map<String, Object> properties = new HashMap<>();
         Map<String, Object> idProp = new HashMap<>();

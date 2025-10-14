@@ -301,7 +301,7 @@ public class SchemaRegistryService {
         // Perform validation
         try {
             String schemaJsonString = objectMapper.writeValueAsString(schemaEntity.getSchemaJson());
-            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
+            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
             JsonSchema schema = factory.getSchema(schemaJsonString);
 
             java.util.Set<ValidationMessage> validationMessages = schema.validate(jsonData);

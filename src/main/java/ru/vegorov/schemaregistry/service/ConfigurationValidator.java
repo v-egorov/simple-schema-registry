@@ -66,7 +66,6 @@ public class ConfigurationValidator {
     private JsonSchema createRouterConfigSchema() {
         String schemaJson = """
             {
-                "$schema": "https://json-schema.org/draft/2020-12/schema",
                 "type": "object",
                 "properties": {
                     "type": {
@@ -112,7 +111,7 @@ public class ConfigurationValidator {
             }
             """;
 
-        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
         return factory.getSchema(schemaJson);
     }
 
@@ -122,7 +121,6 @@ public class ConfigurationValidator {
     private JsonSchema createPipelineConfigSchema() {
         String schemaJson = """
             {
-                "$schema": "https://json-schema.org/draft/2020-12/schema",
                 "type": "object",
                 "properties": {
                     "type": {
@@ -175,7 +173,7 @@ public class ConfigurationValidator {
             }
             """;
 
-        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
         return factory.getSchema(schemaJson);
     }
 
