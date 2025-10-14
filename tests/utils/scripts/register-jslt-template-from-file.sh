@@ -70,7 +70,7 @@ PAYLOAD=$(jq -n \
     '{
         version: $version,
         engine: "jslt",
-        templateExpression: $expression,
+        expression: $expression,
         inputSchema: {
             subject: $inputSubject
         },
@@ -88,7 +88,7 @@ HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
 RESPONSE_BODY=$(echo "$RESPONSE" | head -n -1)
 
 # Check response
-if [ "$HTTP_CODE" -eq 200 ]; then
+if [ "$HTTP_CODE" -eq 201 ]; then
     log_success "JSLT template registered successfully"
     echo "Response:"
     echo "$RESPONSE_BODY" | jq '.'

@@ -236,8 +236,8 @@ docs: ## Open API documentation in browser
 	@echo "OpenAPI Spec: http://localhost:8080/api-docs"
 
 # Utility script targets
-register-schema: ## Register a schema from file (SCHEMA_FILE, SUBJECT, VERSION, COMPATIBILITY, DESCRIPTION required)
-	./tests/utils/scripts/register-schema-from-file.sh $(SCHEMA_FILE) $(SUBJECT) $(VERSION) $(COMPATIBILITY) "$(DESCRIPTION)"
+register-schema: ## Register a schema from file (SCHEMA_FILE, SUBJECT, COMPATIBILITY, DESCRIPTION required)
+	./tests/utils/scripts/register-schema-from-file.sh $(SCHEMA_FILE) $(SUBJECT) $(COMPATIBILITY) "$(DESCRIPTION)"
 
 register-jslt-template: ## Register a JSLT template from file (JSLT_FILE, CONSUMER, SUBJECT, VERSION, INPUT_SUBJECT, DESCRIPTION required)
 	./tests/utils/scripts/register-jslt-template-from-file.sh $(JSLT_FILE) $(CONSUMER) $(SUBJECT) $(VERSION) $(INPUT_SUBJECT) "$(DESCRIPTION)"

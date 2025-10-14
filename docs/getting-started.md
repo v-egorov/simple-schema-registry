@@ -447,13 +447,12 @@ Registers a JSON schema from a file with the Schema Registry.
 **Arguments:**
 - `schema_file`: Path to JSON schema file (must be valid JSON)
 - `subject`: Schema subject name (e.g., "user-profile")
-- `version`: Schema version (default: "1.0.0")
 - `compatibility`: Schema compatibility mode ("BACKWARD", "FORWARD", "FULL", "NONE")
 - `description`: Optional human-readable description
 
 **Example:**
 ```bash
-./tests/utils/scripts/register-schema-from-file.sh user-schema.json user-profile 1.0.0 BACKWARD "User profile schema"
+./tests/utils/scripts/register-schema-from-file.sh user-schema.json user-profile BACKWARD "User profile schema"
 ```
 
 #### `register-jslt-template-from-file.sh`
@@ -512,12 +511,12 @@ Register the schema using the helper script:
 
 # Or manually with curl and jq
 jq -n \
-  --arg version "1.0.0" \
+  --arg subject "user-profile" \
   --arg compatibility "BACKWARD" \
   --arg description "User profile schema" \
   --argjson schema "$(cat user-schema.json)" \
   '{
-    version: $version,
+    subject: $subject,
     schema: $schema,
     compatibility: $compatibility,
     description: $description
@@ -652,7 +651,7 @@ transform-data:
 Then use:
 
 ```bash
-make register-schema SCHEMA_FILE=user-schema.json SUBJECT=user-profile VERSION=1.0.0 COMPATIBILITY=BACKWARD DESCRIPTION="User schema"
+make register-schema SCHEMA_FILE=user-schema.json SUBJECT=user-profile COMPATIBILITY=BACKWARD DESCRIPTION="User schema"
 make register-jslt-template JSLT_FILE=remove-notes.jslt CONSUMER=mobile-app SUBJECT=user-profile VERSION=1.0.0 INPUT_SUBJECT=user-profile DESCRIPTION="Remove notes"
 make transform-data DATA_FILE=user-data.json CONSUMER=mobile-app SUBJECT=user-profile
 ```

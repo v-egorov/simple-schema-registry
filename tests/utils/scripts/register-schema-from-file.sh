@@ -3,12 +3,11 @@
 # Schema Registration from File
 # Registers a JSON schema from a file with the Schema Registry API
 #
-# Usage: ./register-schema-from-file.sh <schema_file> <subject> [version] [compatibility] [description]
+# Usage: ./register-schema-from-file.sh <schema_file> <subject> [compatibility] [description]
 #
 # Arguments:
 #   schema_file: Path to JSON schema file
 #   subject: Schema subject name
-#   version: Schema version (default: 1.0.0)
 #   compatibility: Schema compatibility mode (default: BACKWARD)
 #   description: Optional schema description
 #
@@ -32,16 +31,15 @@ fi
 
 # Validate arguments
 if [ $# -lt 2 ]; then
-    log_error "Usage: $0 <schema_file> <subject> [version] [compatibility] [description]"
-    log_error "Example: $0 user-schema.json user-profile 1.0.0 BACKWARD 'User profile schema'"
+    log_error "Usage: $0 <schema_file> <subject> [compatibility] [description]"
+    log_error "Example: $0 user-schema.json user-profile BACKWARD 'User profile schema'"
     exit 1
 fi
 
 SCHEMA_FILE="$1"
 SUBJECT="$2"
-VERSION="${3:-1.0.0}"
-COMPATIBILITY="${4:-BACKWARD}"
-DESCRIPTION="${5:-Schema registered from file}"
+COMPATIBILITY="${3:-BACKWARD}"
+DESCRIPTION="${4:-Schema registered from file}"
 
 # Validate schema file exists
 if [ ! -f "$SCHEMA_FILE" ]; then
@@ -57,17 +55,16 @@ fi
 
 log_info "Registering schema from file: $SCHEMA_FILE"
 log_info "Subject: $SUBJECT"
-log_info "Version: $VERSION"
 log_info "Compatibility: $COMPATIBILITY"
 
 # Construct JSON payload using jq
 PAYLOAD=$(jq -n \
-    --arg version "$VERSION" \
+    --arg subject "$SUBJECT" \
     --arg compatibility "$COMPATIBILITY" \
     --arg description "$DESCRIPTION" \
     --argjson schema "$(cat "$SCHEMA_FILE")" \
     '{
-        version: $version,
+        subject: $subject,
         schema: $schema,
         compatibility: $compatibility,
         description: $description

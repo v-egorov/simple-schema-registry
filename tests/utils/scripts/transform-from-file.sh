@@ -67,7 +67,7 @@ fi
 PAYLOAD=$(jq -n \
     --argjson data "$(cat "$DATA_FILE")" \
     '{
-        data: $data
+        canonicalJson: $data
     }')
 
 # Build URL with optional version
