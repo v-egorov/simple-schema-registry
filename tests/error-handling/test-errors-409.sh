@@ -39,7 +39,6 @@ echo
 echo "Test 2: Schema compatibility conflict"
 # Create initial schema
 initial_schema='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -52,7 +51,6 @@ create_test_schema "test-compatibility-conflict" "$initial_schema"
 
 # Try to register incompatible schema (remove required field)
 incompatible_schema='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -61,7 +59,7 @@ incompatible_schema='{
     "required": ["id"]
 }'
 
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/test-compatibility-conflict" "{
     \"subject\": \"test-compatibility-conflict\",
     \"schema\": $incompatible_schema,
     \"compatibility\": \"BACKWARD\",
@@ -85,7 +83,6 @@ echo
 echo "Test 3: Schema registration with strict compatibility requirements"
 # Create schema with FORWARD compatibility
 create_test_schema "test-forward-compat" '{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "productId": {"type": "string"},
@@ -96,7 +93,6 @@ create_test_schema "test-forward-compat" '{
 
 # Try to add a field that might break forward compatibility
 forward_incompatible='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "productId": {"type": "string"},
@@ -106,7 +102,7 @@ forward_incompatible='{
     "required": ["productId", "category"]
 }'
 
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/test-forward-compat" "{
     \"subject\": \"test-forward-compat\",
     \"schema\": $forward_incompatible,
     \"compatibility\": \"FORWARD\",
@@ -149,7 +145,7 @@ echo "Test 5: Rapid schema registration attempts"
 subject="test-concurrent-schema"
 
 # Register first version
-response1=$(post_request "/api/schemas" "{
+response1=$(post_request "/api/schemas/$subject" "{
     \"subject\": \"$subject\",
     \"schema\": {
         \"type\": \"object\",
@@ -159,7 +155,7 @@ response1=$(post_request "/api/schemas" "{
 http_code1=$(echo "$response1" | tail -n1)
 
 # Immediately try to register again (should not conflict with itself)
-response2=$(post_request "/api/schemas" "{
+response2=$(post_request "/api/schemas/$subject" "{
     \"subject\": \"$subject\",
     \"schema\": {
         \"type\": \"object\",
@@ -188,7 +184,7 @@ create_test_schema "test-none-compat" '{
 }'
 
 # Try any change with NONE compatibility
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/test-none-compat" "{
     \"subject\": \"test-none-compat\",
     \"schema\": {
         \"type\": \"object\",

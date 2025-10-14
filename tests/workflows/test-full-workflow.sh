@@ -36,7 +36,6 @@ echo "=== Phase 2: Schema Registration ==="
 echo "Registering schema: $WORKFLOW_SUBJECT"
 
 schema='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "userId": {"type": "integer"},
@@ -48,7 +47,7 @@ schema='{
     "required": ["userId", "fullName"]
 }'
 
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$WORKFLOW_SUBJECT" "{
     \"subject\": \"$WORKFLOW_SUBJECT\",
     \"schema\": $schema,
     \"compatibility\": \"BACKWARD\",

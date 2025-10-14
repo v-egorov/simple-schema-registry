@@ -13,21 +13,18 @@ echo
 echo "Setup: Creating test schemas with different subjects..."
 
 schema1='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {"userId": {"type": "integer"}},
     "required": ["userId"]
 }'
 
 schema2='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {"productId": {"type": "string"}},
     "required": ["productId"]
 }'
 
 schema3='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {"orderId": {"type": "string"}},
     "required": ["orderId"]
@@ -82,7 +79,6 @@ fi
 echo
 echo "Test 5: Add version to existing subject"
 schema_v2='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "userId": {"type": "integer"},
@@ -91,7 +87,7 @@ schema_v2='{
     "required": ["userId"]
 }'
 
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/test-user-subject" "{
     \"subject\": \"test-user-subject\",
     \"schema\": $schema_v2,
     \"compatibility\": \"BACKWARD\",

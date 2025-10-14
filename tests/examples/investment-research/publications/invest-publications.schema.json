@@ -1,5 +1,4 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/schemas/invest-publications.schema.json",
   "title": "Investment Publications",
   "description": "Schema for investment analytics publications with hierarchy: publication → chapter → block → view",

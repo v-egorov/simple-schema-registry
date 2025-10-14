@@ -27,7 +27,6 @@ setup_test_schemas() {
 
     # User profile schema
     local user_schema='{
-        "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "properties": {
             "id": {"type": "integer"},
@@ -41,7 +40,6 @@ setup_test_schemas() {
 
     # Product schema
     local product_schema='{
-        "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "properties": {
             "productId": {"type": "string"},
@@ -55,7 +53,6 @@ setup_test_schemas() {
 
     # Order schema
     local order_schema='{
-        "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "properties": {
             "orderId": {"type": "string"},
@@ -115,7 +112,6 @@ setup_user_scenario() {
 
     create_test_consumer "test-mobile-app" "Test Mobile App"
     create_test_schema "test-user-profile" '{
-        "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "properties": {
             "id": {"type": "integer"},
@@ -134,7 +130,6 @@ setup_product_scenario() {
 
     create_test_consumer "test-web-dashboard" "Test Web Dashboard"
     create_test_schema "test-product" '{
-        "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "properties": {
             "productId": {"type": "string"},

@@ -13,7 +13,6 @@ echo
 echo "Setup: Creating base schema for compatibility testing..."
 
 base_schema='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -29,7 +28,6 @@ create_test_schema "test-compatibility" "$base_schema"
 echo
 echo "Test 1: Check backward compatible schema (adding optional field)"
 compatible_schema='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -55,7 +53,6 @@ assert_contains "$response_body" '"message"' "Should contain compatibility messa
 echo
 echo "Test 2: Check incompatible schema (removing required field)"
 incompatible_schema='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -177,7 +174,6 @@ echo
 echo "Test 7: Test compatibility with FORWARD mode schema"
 # First create a schema with FORWARD compatibility
 forward_schema='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "productId": {"type": "string"},
@@ -190,7 +186,6 @@ create_test_schema "test-forward-compat" "$forward_schema"
 
 # Test forward compatibility
 forward_test_schema='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "productId": {"type": "string"},

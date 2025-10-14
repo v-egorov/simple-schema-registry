@@ -13,7 +13,6 @@ echo
 echo "Setup: Creating test schema with multiple versions..."
 
 schema_data='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -26,7 +25,6 @@ create_test_schema "test-specific-version" "$schema_data"
 
 # Create version 2
 schema_v2='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -36,7 +34,7 @@ schema_v2='{
     "required": ["id"]
 }'
 
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/test-specific-version" "{
     \"subject\": \"test-specific-version\",
     \"schema\": $schema_v2,
     \"compatibility\": \"BACKWARD\",
@@ -112,8 +110,8 @@ fi
 # Test 7: Verify response structure matches registration
 echo
 echo "Test 7: Verify response structure consistency"
-v1_response=$(get_request "/api/schemas/test-specific-version/1" | head -n -1)
-v2_response=$(get_request "/api/schemas/test-specific-version/2" | head -n -1)
+v1_response=$(get_request "/api/schemas/test-specific-version/versions/1.0.0" | head -n -1)
+v2_response=$(get_request "/api/schemas/test-specific-version/versions/1.0.1" | head -n -1)
 
 # Both should have the same subject and structure
 v1_subject=$(echo "$v1_response" | grep -o '"subject":"[^"]*"' | head -1)

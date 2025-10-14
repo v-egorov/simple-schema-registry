@@ -22,7 +22,6 @@ create_test_consumer "$EVOLUTION_CONSUMER" "Evolution Test Consumer"
 
 # Initial schema (v1)
 initial_schema='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -31,7 +30,7 @@ initial_schema='{
     "required": ["id", "name"]
 }'
 
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$EVOLUTION_SUBJECT" "{
     \"subject\": \"$EVOLUTION_SUBJECT\",
     \"schema\": $initial_schema,
     \"compatibility\": \"BACKWARD\",
@@ -48,7 +47,6 @@ echo "Adding optional field (backward compatible)"
 
 # Schema v2 - add optional field
 v2_schema='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -69,7 +67,7 @@ assert_response "$compat_http_code" 200 "Compatibility check should succeed"
 assert_contains "$compat_body" '"compatible":true' "V2 should be backward compatible"
 
 # Register v2
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$EVOLUTION_SUBJECT" "{
     \"subject\": \"$EVOLUTION_SUBJECT\",
     \"schema\": $v2_schema,
     \"compatibility\": \"BACKWARD\",
@@ -178,7 +176,6 @@ echo "Testing rejection of incompatible schema changes"
 
 # Try incompatible change (make required field optional)
 incompatible_schema='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -208,7 +205,7 @@ if [ "$compat_http_code" -eq 200 ]; then
 fi
 
 # Try to register anyway
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$EVOLUTION_SUBJECT" "{
     \"subject\": \"$EVOLUTION_SUBJECT\",
     \"schema\": $incompatible_schema,
     \"compatibility\": \"BACKWARD\",

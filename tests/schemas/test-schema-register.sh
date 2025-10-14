@@ -13,9 +13,8 @@ echo
 echo "Test 1: Register valid schema"
 timestamp=$(date +%s)
 subject1="test-user-profile-$timestamp"
-schema_data='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
+ schema_data='{
+     "type": "object",
     "properties": {
         "id": {"type": "integer"},
         "name": {"type": "string"},
@@ -44,9 +43,8 @@ assert_contains "$response_body" '"updatedAt"' "Should contain updatedAt timesta
 # Test 2: Register schema version 2 for same subject
 echo
 echo "Test 2: Register schema version 2"
-schema_data_v2='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
+ schema_data_v2='{
+     "type": "object",
     "properties": {
         "id": {"type": "integer"},
         "name": {"type": "string"},
@@ -77,7 +75,7 @@ subject3="test-product-$timestamp"
 response=$(post_request "/api/schemas/$subject3" "{
     \"subject\": \"$subject3\",
     \"schema\": {
-        \"\$schema\": \"http://json-schema.org/draft-07/schema#\",
+
         \"type\": \"object\",
         \"properties\": {
             \"productId\": {\"type\": \"string\"},

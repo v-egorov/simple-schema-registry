@@ -32,7 +32,7 @@ assert_response "$http_code" 400 "Should reject consumer registration without co
 # Test 3: Invalid JSON in schema registration
 echo
 echo "Test 3: Invalid JSON schema in schema registration"
-response=$(post_request "/api/schemas" '{
+response=$(post_request "/api/schemas/test-invalid-schema" '{
     "subject": "test-invalid-schema",
     "schema": {"type": "invalid_type", "properties": "not_an_object"}
 }')
@@ -50,18 +50,15 @@ else
     ((TESTS_FAILED++))
 fi
 
-# Test 4: Missing subject in schema registration
+# Test 4: Missing schema in schema registration
 echo
-echo "Test 4: Missing subject in schema registration"
-response=$(post_request "/api/schemas" '{
-    "schema": {
-        "type": "object",
-        "properties": {"id": {"type": "string"}}
-    }
+echo "Test 4: Missing schema in schema registration"
+response=$(post_request "/api/schemas/test-missing-schema" '{
+    "subject": "test-missing-schema"
 }')
 http_code=$(echo "$response" | tail -n1)
 
-assert_response "$http_code" 400 "Should reject schema registration without subject"
+assert_response "$http_code" 400 "Should reject schema registration without schema"
 
 # Test 5: Invalid JSON in transformation request
 echo

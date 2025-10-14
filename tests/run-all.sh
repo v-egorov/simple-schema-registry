@@ -164,13 +164,13 @@ run_test_script() {
 
     if [ "$VERBOSE" = true ]; then
         # Run with verbose output
-        if ! bash "$script_path"; then
+        if ! BASE_URL="$BASE_URL" bash "$script_path"; then
             log_error "$script_name failed"
             return 1
         fi
     else
         # Capture output
-        if output=$(bash "$script_path" 2>&1); then
+        if output=$(BASE_URL="$BASE_URL" bash "$script_path" 2>&1); then
             log_success "$script_name completed"
         else
             log_error "$script_name failed"

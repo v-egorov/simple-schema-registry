@@ -18,7 +18,6 @@ echo "Setup: Creating test schemas with multiple versions for subject: $subject_
 
 # Version 1
 schema_v1='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -31,7 +30,6 @@ create_test_schema "$subject_name" "$schema_v1"
 
 # Version 2
 schema_v2='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -41,7 +39,7 @@ schema_v2='{
     "required": ["id"]
 }'
 
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$subject_name" "{
     \"subject\": \"$subject_name\",
     \"schema\": $schema_v2,
     \"compatibility\": \"BACKWARD\",
@@ -51,7 +49,6 @@ assert_response "$(echo "$response" | tail -n1)" 201 "Version 2 creation should 
 
 # Version 3
 schema_v3='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -62,7 +59,7 @@ schema_v3='{
     "required": ["id"]
 }'
 
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$subject_name" "{
     \"subject\": \"$subject_name\",
     \"schema\": $schema_v3,
     \"compatibility\": \"BACKWARD\",

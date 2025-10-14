@@ -65,11 +65,11 @@ assert_json_field() {
     ((TESTS_RUN++))
 
     # Extract field value using grep and sed (simple JSON parsing)
-    local actual_value=$(echo "$json_response" | grep -o "\"$field\": *\"[^\"]*\"" | sed "s/\"$field\": *\"//;s/\"$//" 2>/dev/null)
+    local actual_value=$(echo "$json_response" | grep -o "\"$field\": *\"[^\"]*\"" | head -1 | sed "s/\"$field\": *\"//;s/\"$//" 2>/dev/null)
 
     # If not found as string, try as number or boolean
     if [ -z "$actual_value" ]; then
-        actual_value=$(echo "$json_response" | grep -o "\"$field\": *[^,}]*" | sed "s/\"$field\": *//" 2>/dev/null)
+        actual_value=$(echo "$json_response" | grep -o "\"$field\": *[^,}]*" | head -1 | sed "s/\"$field\": *//" 2>/dev/null)
     fi
 
     if [ "$actual_value" = "$expected_value" ]; then

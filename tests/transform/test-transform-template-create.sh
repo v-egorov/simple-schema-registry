@@ -109,7 +109,7 @@ fi
 echo
 echo "Test 4: Create template with missing expression field"
 response=$(post_request "/api/consumers/$consumer_id/subjects/$subject/templates" "{
-    \"version\": \"1.0.0\",
+    \"version\": \"3.0.0\",
     \"engine\": \"jslt\",
     \"inputSchema\": {
         \"subject\": \"$subject\"
@@ -126,10 +126,8 @@ echo "Response: $response_body"
 assert_response "$http_code" 400 "Should reject template creation without expression field"
 
 # Test 5: Create template with invalid engine
-echo
-echo "Test 5: Create template with invalid engine"
 response=$(post_request "/api/consumers/$consumer_id/subjects/$subject/templates" "{
-    \"version\": \"1.0.0\",
+    \"version\": \"4.0.0\",
     \"engine\": \"invalid\",
     \"expression\": \". | {id: .userId}\",
     \"inputSchema\": {
@@ -155,10 +153,8 @@ else
 fi
 
 # Test 6: Create template with empty expression
-echo
-echo "Test 6: Create template with empty expression"
 response=$(post_request "/api/consumers/$consumer_id/subjects/$subject/templates" "{
-    \"version\": \"1.0.0\",
+    \"version\": \"5.0.0\",
     \"engine\": \"jslt\",
     \"expression\": \"\",
     \"inputSchema\": {

@@ -15,7 +15,6 @@ timestamp=$(date +%s)
 subject1="test-latest-version-$timestamp"
 
 schema_v1='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -28,7 +27,6 @@ create_test_schema "$subject1" "$schema_v1"
 
 # Create version 2
 schema_v2='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -38,7 +36,7 @@ schema_v2='{
     "required": ["id"]
 }'
 
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$subject1" "{
     \"subject\": \"$subject1\",
     \"schema\": $schema_v2,
     \"compatibility\": \"BACKWARD\",
@@ -48,7 +46,6 @@ assert_response "$(echo "$response" | tail -n1)" 201 "Version 2 creation should 
 
 # Create version 3
 schema_v3='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -59,7 +56,7 @@ schema_v3='{
     "required": ["id"]
 }'
 
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$subject1" "{
     \"subject\": \"$subject1\",
     \"schema\": $schema_v3,
     \"compatibility\": \"BACKWARD\",
@@ -100,7 +97,6 @@ echo
 echo "Test 3: Get latest for single version subject"
 subject3="test-single-version-$timestamp"
 single_schema='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {"productId": {"type": "string"}},
     "required": ["productId"]
@@ -108,7 +104,7 @@ single_schema='{
 
 create_test_schema "$subject3" "$single_schema"
 
-response=$(get_request "/api/schemas/$subject3/latest")
+response=$(get_request "/api/schemas/$subject3")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
@@ -128,7 +124,6 @@ assert_response "$http_code" 404 "Should return 404 for non-existent subject"
 echo
 echo "Test 5: Verify latest updates after new version"
 schema_v4='{
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "id": {"type": "integer"},
@@ -140,7 +135,7 @@ schema_v4='{
     "required": ["id"]
 }'
 
-response=$(post_request "/api/schemas" "{
+response=$(post_request "/api/schemas/$subject1" "{
     \"subject\": \"$subject1\",
     \"schema\": $schema_v4,
     \"compatibility\": \"BACKWARD\",
@@ -161,7 +156,7 @@ assert_contains "$response_body" '"address"' "Should contain address field from 
 echo
 echo "Test 6: Compare latest with specific version 4"
 specific_v4=$(get_request "/api/schemas/$subject1/versions/1.0.3" | head -n -1)
-latest_response=$(get_request "/api/schemas/$subject1/latest" | head -n -1)
+latest_response=$(get_request "/api/schemas/$subject1" | head -n -1)
 
 # They should be identical (except possibly timestamps)
 v4_version=$(echo "$specific_v4" | grep -o '"version":[0-9]*')
