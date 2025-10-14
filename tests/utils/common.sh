@@ -233,48 +233,99 @@ create_test_schema() {
     fi
 }
 
-create_test_template() {
+create_test_consumer_schema() {
     local consumer_id="$1"
-    local template="$2"
-    local engine="${3:-JSLT}"
+    local subject="$2"
+    local schema_data="$3"
 
-    # Escape quotes in template for JSON
-    local escaped_template=$(echo "$template" | sed 's/"/\\"/g')
-
-    local response=$(post_request "/api/consumers/templates/$consumer_id" "{
-        \"expression\": \"$escaped_template\",
-        \"engine\": \"$engine\"
+    local response=$(post_request "/api/consumers/$consumer_id/schemas/$subject" "{
+        \"subject\": \"$subject\",
+        \"schema\": $schema_data,
+        \"compatibility\": \"BACKWARD\",
+        \"description\": \"Test consumer schema for $consumer_id\"
     }")
 
     local http_code=$(echo "$response" | tail -n1)
     local response_body=$(echo "$response" | head -n -1)
 
-    if [ "$http_code" -eq 200 ]; then
-        log_info "Created test template for consumer: $consumer_id"
+    if [ "$http_code" -eq 201 ]; then
+        log_info "Created test consumer schema: $consumer_id/$subject"
         echo "$response_body"
     else
-        log_error "Failed to create test template for consumer: $consumer_id (HTTP $http_code)"
+        log_error "Failed to create test consumer schema: $consumer_id/$subject (HTTP $http_code)"
+        echo ""
+    fi
+}
+
+create_test_template() {
+    local consumer_id="$1"
+    local subject="$2"
+    local template="$3"
+    local engine="${4:-jslt}"
+    local input_subject="${5:-$subject}"
+    local output_consumer_id="${6:-$consumer_id}"
+    local version="${7:-1.0.0}"
+
+    # Escape quotes in template for JSON
+    local escaped_template=$(echo "$template" | sed 's/"/\\"/g')
+
+    local response=$(post_request "/api/consumers/$consumer_id/subjects/$subject/templates" "{
+        \"version\": \"$version\",
+        \"engine\": \"$engine\",
+        \"expression\": \"$escaped_template\",
+        \"inputSchema\": {
+            \"subject\": \"$input_subject\"
+        },
+        \"outputSchema\": {
+            \"subject\": \"$subject\",
+            \"consumerId\": \"$output_consumer_id\"
+        },
+        \"description\": \"Test template for $consumer_id\"
+    }")
+
+    local http_code=$(echo "$response" | tail -n1)
+    local response_body=$(echo "$response" | head -n -1)
+
+    if [ "$http_code" -eq 201 ]; then
+        log_info "Created test template for consumer: $consumer_id, subject: $subject"
+        echo "$response_body"
+    else
+        log_error "Failed to create test template for consumer: $consumer_id, subject: $subject (HTTP $http_code)"
+        log_error "Response: $response_body"
         echo ""
     fi
 }
 
 create_router_template() {
     local consumer_id="$1"
-    local router_config="$2"
+    local subject="$2"
+    local router_config="$3"
+    local input_subject="${4:-$subject}"
+    local output_consumer_id="${5:-$consumer_id}"
+    local version="${6:-1.0.0}"
 
-    local response=$(post_request "/api/consumers/templates/$consumer_id" "{
+    local response=$(post_request "/api/consumers/$consumer_id/subjects/$subject/templates" "{
+        \"version\": \"$version\",
         \"engine\": \"router\",
-        \"routerConfig\": $router_config
+        \"routerConfig\": $router_config,
+        \"inputSchema\": {
+            \"subject\": \"$input_subject\"
+        },
+        \"outputSchema\": {
+            \"subject\": \"$subject\",
+            \"consumerId\": \"$output_consumer_id\"
+        },
+        \"description\": \"Router test template for $consumer_id\"
     }")
 
     local http_code=$(echo "$response" | tail -n1)
     local response_body=$(echo "$response" | head -n -1)
 
-    if [ "$http_code" -eq 200 ]; then
-        log_info "Created router template for consumer: $consumer_id"
+    if [ "$http_code" -eq 201 ]; then
+        log_info "Created router template for consumer: $consumer_id, subject: $subject"
         echo "$response_body"
     else
-        log_error "Failed to create router template for consumer: $consumer_id (HTTP $http_code)"
+        log_error "Failed to create router template for consumer: $consumer_id, subject: $subject (HTTP $http_code)"
         log_error "Response: $response_body"
         echo ""
     fi
@@ -282,21 +333,34 @@ create_router_template() {
 
 create_pipeline_template() {
     local consumer_id="$1"
-    local pipeline_config="$2"
+    local subject="$2"
+    local pipeline_config="$3"
+    local input_subject="${4:-$subject}"
+    local output_consumer_id="${5:-$consumer_id}"
+    local version="${6:-1.0.0}"
 
-    local response=$(post_request "/api/consumers/templates/$consumer_id" "{
+    local response=$(post_request "/api/consumers/$consumer_id/subjects/$subject/templates" "{
+        \"version\": \"$version\",
         \"engine\": \"pipeline\",
-        \"pipelineConfig\": $pipeline_config
+        \"pipelineConfig\": $pipeline_config,
+        \"inputSchema\": {
+            \"subject\": \"$input_subject\"
+        },
+        \"outputSchema\": {
+            \"subject\": \"$subject\",
+            \"consumerId\": \"$output_consumer_id\"
+        },
+        \"description\": \"Pipeline test template for $consumer_id\"
     }")
 
     local http_code=$(echo "$response" | tail -n1)
     local response_body=$(echo "$response" | head -n -1)
 
-    if [ "$http_code" -eq 200 ]; then
-        log_info "Created pipeline template for consumer: $consumer_id"
+    if [ "$http_code" -eq 201 ]; then
+        log_info "Created pipeline template for consumer: $consumer_id, subject: $subject"
         echo "$response_body"
     else
-        log_error "Failed to create pipeline template for consumer: $consumer_id (HTTP $http_code)"
+        log_error "Failed to create pipeline template for consumer: $consumer_id, subject: $subject (HTTP $http_code)"
         echo ""
     fi
 }

@@ -3,12 +3,13 @@
 # Data Transformation from File
 # Transforms JSON data from a file using the Schema Registry API
 #
-# Usage: ./transform-from-file.sh <data_file> <consumer_id> <subject>
+# Usage: ./transform-from-file.sh <data_file> <consumer_id> <subject> [version]
 #
 # Arguments:
 #   data_file: Path to JSON data file to transform
 #   consumer_id: Consumer ID that has transformation template
 #   subject: Schema subject for the data
+#   version: Optional template version (uses active version if not specified)
 #
 # Prerequisites:
 #   - jq must be installed
@@ -31,15 +32,17 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # Validate arguments
-if [ $# -ne 3 ]; then
-    log_error "Usage: $0 <data_file> <consumer_id> <subject>"
+if [ $# -lt 3 ] || [ $# -gt 4 ]; then
+    log_error "Usage: $0 <data_file> <consumer_id> <subject> [version]"
     log_error "Example: $0 user-data.json mobile-app user-profile"
+    log_error "Example: $0 user-data.json mobile-app user-profile 1.0.0"
     exit 1
 fi
 
 DATA_FILE="$1"
 CONSUMER_ID="$2"
 SUBJECT="$3"
+VERSION="$4"
 
 # Validate data file exists
 if [ ! -f "$DATA_FILE" ]; then
@@ -56,17 +59,26 @@ fi
 log_info "Transforming data from file: $DATA_FILE"
 log_info "Consumer: $CONSUMER_ID"
 log_info "Subject: $SUBJECT"
+if [ -n "$VERSION" ]; then
+    log_info "Version: $VERSION"
+fi
 
 # Construct JSON payload using jq
 PAYLOAD=$(jq -n \
-    --argjson canonicalJson "$(cat "$DATA_FILE")" \
+    --argjson data "$(cat "$DATA_FILE")" \
     '{
-        canonicalJson: $canonicalJson
+        data: $data
     }')
+
+# Build URL with optional version
+URL="/api/consumers/$CONSUMER_ID/subjects/$SUBJECT/transform"
+if [ -n "$VERSION" ]; then
+    URL="${URL}/versions/$VERSION"
+fi
 
 # Make API call
 log_info "Sending transformation request..."
-RESPONSE=$(post_request "/api/consumers/$CONSUMER_ID/transform?subject=$SUBJECT" "$PAYLOAD")
+RESPONSE=$(post_request "$URL" "$PAYLOAD")
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
 RESPONSE_BODY=$(echo "$RESPONSE" | head -n -1)
 

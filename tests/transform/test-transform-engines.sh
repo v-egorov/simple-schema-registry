@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Transform Engines Tests
-# Tests the GET /api/transform/engines endpoint
+# Tests the GET /api/consumers/engines endpoint
 
 source "$(dirname "$0")/../utils/common.sh"
 
@@ -11,7 +11,7 @@ echo "==============================="
 # Test 1: Get available transformation engines
 echo
 echo "Test 1: Get available transformation engines"
-response=$(get_request "/api/transform/engines")
+response=$(get_request "/api/consumers/engines")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
@@ -57,7 +57,7 @@ fi
 # Test 5: Verify response consistency across calls
 echo
 echo "Test 5: Verify response consistency"
-response2=$(get_request "/api/transform/engines")
+response2=$(get_request "/api/consumers/engines")
 http_code2=$(echo "$response2" | tail -n1)
 response_body2=$(echo "$response2" | head -n -1)
 
@@ -85,7 +85,7 @@ fi
 echo
 echo "Test 7: Test with different accept headers"
 # This tests if the endpoint respects content negotiation
-response=$(curl -s -w "\n%{http_code}" -H "Accept: application/xml" "$BASE_URL/api/transform/engines" 2>/dev/null)
+response=$(curl -s -w "\n%{http_code}" -H "Accept: application/xml" "$BASE_URL/api/consumers/engines" 2>/dev/null)
 http_code=$(echo "$response" | tail -n1)
 
 # Should return 406 for unsupported content type
@@ -101,7 +101,7 @@ fi
 echo
 echo "Test 8: Basic performance check"
 start_time=$(date +%s%3N)
-response=$(get_request "/api/transform/engines")
+response=$(get_request "/api/consumers/engines")
 end_time=$(date +%s%3N)
 http_code=$(echo "$response" | tail -n1)
 
