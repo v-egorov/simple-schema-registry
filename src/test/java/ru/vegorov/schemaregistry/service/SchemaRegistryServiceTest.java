@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import ru.vegorov.schemaregistry.dto.CompatibilityCheckRequest;
+import ru.vegorov.schemaregistry.dto.CompatibilityCheckResponse;
 import ru.vegorov.schemaregistry.dto.SchemaRegistrationRequest;
 import ru.vegorov.schemaregistry.dto.SchemaResponse;
 import ru.vegorov.schemaregistry.dto.SchemaValidationRequest;
@@ -189,5 +191,136 @@ class SchemaRegistryServiceTest {
         assertThat(response.getSubject()).isEqualTo("test-subject");
         assertThat(response.getSchemaVersion()).isEqualTo("1.0.0");
         assertThat(response.getErrors()).isNullOrEmpty();
+    }
+
+    @Test
+    void checkCanonicalSchemaCompatibility_shouldReturnCompatibleWhenNoExistingSchema() {
+        // Given
+        Map<String, Object> newSchema = new HashMap<>();
+        newSchema.put("type", "object");
+
+        CompatibilityCheckRequest request = new CompatibilityCheckRequest(newSchema, "test-subject");
+
+        when(schemaRepository.findBySubjectAndSchemaType("test-subject", SchemaType.canonical))
+            .thenReturn(java.util.Collections.emptyList());
+
+        // When
+        CompatibilityCheckResponse response = schemaService.checkCanonicalSchemaCompatibility(request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.isCompatible()).isTrue();
+        assertThat(response.getMessage()).isEqualTo("No existing schema to check against");
+    }
+
+    @Test
+    void checkCanonicalSchemaCompatibility_shouldCheckCompatibilityAgainstLatestVersion() {
+        // Given
+        Map<String, Object> existingSchema = new HashMap<>();
+        existingSchema.put("type", "object");
+        Map<String, Object> existingProperties = new HashMap<>();
+        Map<String, Object> idProp = new HashMap<>();
+        idProp.put("type", "integer");
+        existingProperties.put("id", idProp);
+        existingSchema.put("properties", existingProperties);
+        existingSchema.put("required", java.util.Arrays.asList("id"));
+
+        SchemaEntity existingEntity = new SchemaEntity();
+        existingEntity.setSubject("test-subject");
+        existingEntity.setSchemaType(SchemaType.canonical);
+        existingEntity.setVersion("1.0.0");
+        existingEntity.setCompatibility("BACKWARD");
+        existingEntity.setSchemaJson(existingSchema);
+
+        Map<String, Object> newSchema = new HashMap<>();
+        newSchema.put("type", "object");
+        Map<String, Object> newProperties = new HashMap<>();
+        Map<String, Object> idPropNew = new HashMap<>();
+        idPropNew.put("type", "integer");
+        newProperties.put("id", idPropNew);
+        Map<String, Object> nameProp = new HashMap<>();
+        nameProp.put("type", "string");
+        newProperties.put("name", nameProp);
+        newSchema.put("properties", newProperties);
+        newSchema.put("required", java.util.Arrays.asList("id"));
+
+        CompatibilityCheckRequest request = new CompatibilityCheckRequest(newSchema, "test-subject");
+
+        when(schemaRepository.findBySubjectAndSchemaType("test-subject", SchemaType.canonical))
+            .thenReturn(java.util.List.of(existingEntity));
+
+        // When
+        CompatibilityCheckResponse response = schemaService.checkCanonicalSchemaCompatibility(request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.isCompatible()).isTrue(); // Stubbed to return true
+        assertThat(response.getMessage()).isEqualTo("Schema is compatible");
+    }
+
+    @Test
+    void checkConsumerOutputSchemaCompatibility_shouldReturnCompatibleWhenNoExistingSchema() {
+        // Given
+        Map<String, Object> newSchema = new HashMap<>();
+        newSchema.put("type", "object");
+
+        CompatibilityCheckRequest request = new CompatibilityCheckRequest(newSchema, "test-subject");
+
+        when(schemaRepository.findBySubjectAndSchemaTypeAndConsumerId("test-subject", SchemaType.consumer_output, "consumer-1"))
+            .thenReturn(java.util.Collections.emptyList());
+
+        // When
+        CompatibilityCheckResponse response = schemaService.checkConsumerOutputSchemaCompatibility("consumer-1", request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.isCompatible()).isTrue();
+        assertThat(response.getMessage()).isEqualTo("No existing consumer output schema to check against");
+    }
+
+    @Test
+    void checkConsumerOutputSchemaCompatibility_shouldCheckCompatibilityAgainstLatestVersion() {
+        // Given
+        Map<String, Object> existingSchema = new HashMap<>();
+        existingSchema.put("type", "object");
+        Map<String, Object> existingProperties = new HashMap<>();
+        Map<String, Object> idProp = new HashMap<>();
+        idProp.put("type", "integer");
+        existingProperties.put("id", idProp);
+        existingSchema.put("properties", existingProperties);
+        existingSchema.put("required", java.util.Arrays.asList("id"));
+
+        SchemaEntity existingEntity = new SchemaEntity();
+        existingEntity.setSubject("test-subject");
+        existingEntity.setSchemaType(SchemaType.consumer_output);
+        existingEntity.setConsumerId("consumer-1");
+        existingEntity.setVersion("1.0.0");
+        existingEntity.setCompatibility("BACKWARD");
+        existingEntity.setSchemaJson(existingSchema);
+
+        Map<String, Object> newSchema = new HashMap<>();
+        newSchema.put("type", "object");
+        Map<String, Object> newProperties = new HashMap<>();
+        Map<String, Object> idPropNew = new HashMap<>();
+        idPropNew.put("type", "integer");
+        newProperties.put("id", idPropNew);
+        Map<String, Object> nameProp = new HashMap<>();
+        nameProp.put("type", "string");
+        newProperties.put("name", nameProp);
+        newSchema.put("properties", newProperties);
+        newSchema.put("required", java.util.Arrays.asList("id"));
+
+        CompatibilityCheckRequest request = new CompatibilityCheckRequest(newSchema, "test-subject");
+
+        when(schemaRepository.findBySubjectAndSchemaTypeAndConsumerId("test-subject", SchemaType.consumer_output, "consumer-1"))
+            .thenReturn(java.util.List.of(existingEntity));
+
+        // When
+        CompatibilityCheckResponse response = schemaService.checkConsumerOutputSchemaCompatibility("consumer-1", request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.isCompatible()).isTrue(); // Stubbed to return true
+        assertThat(response.getMessage()).isEqualTo("Consumer output schema is compatible");
     }
 }

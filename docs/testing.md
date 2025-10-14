@@ -4,19 +4,47 @@ This guide explains the testing strategy, execution order, and best practices fo
 
 ## Test Overview
 
-The project uses a comprehensive integration testing approach that validates the entire system end-to-end. Tests are organized into logical suites with specific execution dependencies.
+The project uses a comprehensive testing strategy combining unit tests, integration tests, and end-to-end validation. Tests are organized into logical suites with specific execution dependencies.
+
+### Testing Strategy
+
+- **Unit Tests**: Individual component testing using JUnit 5 and Mockito
+- **Integration Tests**: Full system validation with real database and HTTP calls
+- **API Tests**: REST endpoint validation with various scenarios
+- **Workflow Tests**: End-to-end business process validation
 
 ## Test Architecture
 
 ### Test Types
 
+- **Unit Tests**: Individual component testing with mocked dependencies
 - **Integration Tests**: Full system validation with real database and HTTP calls
 - **API Tests**: REST endpoint validation with various scenarios
 - **Workflow Tests**: End-to-end business process validation
 
 ### Test Organization
 
-Tests are organized in the `tests/` directory:
+#### Unit Tests (`src/test/java/`)
+
+Unit tests are located in the standard Maven test directory:
+
+```
+src/test/java/
+└── ru/vegorov/schemaregistry/
+    ├── SchemaRegistryApplicationTests.java    # Application context tests
+    ├── service/
+    │   ├── SchemaRegistryServiceTest.java     # Service layer unit tests
+    │   ├── TransformationServiceTest.java     # Transformation logic tests
+    │   ├── TransformationVersionServiceTest.java
+    │   ├── JsltTransformationEngineTest.java
+    │   ├── PipelineTransformationEngineTest.java
+    │   └── RouterTransformationEngineTest.java
+    └── repository/                            # Repository layer tests (if any)
+```
+
+#### Integration Tests (`tests/`)
+
+Integration tests are organized in the `tests/` directory:
 
 ```
 tests/
@@ -37,24 +65,30 @@ tests/
 Tests **MUST** be executed in the following sequence due to data dependencies:
 
 ### 1. Health Tests (`tests/health/`)
+
 **Purpose**: Validate basic service availability and health endpoints
 **Dependencies**: None
 **Tests**:
+
 - `test-health.sh` - Basic health checks and service endpoints
 - `test-actuator.sh` - Spring Boot Actuator endpoints
 
 ### 2. Consumer Tests (`tests/consumers/`)
+
 **Purpose**: Test consumer registration and management
 **Dependencies**: Service must be healthy
 **Tests**:
+
 - `test-consumer-register.sh` - Consumer registration
 - `test-consumer-get.sh` - Consumer retrieval
 - `test-consumer-list.sh` - Consumer listing
 
 ### 3. Schema Tests (`tests/schemas/`)
+
 **Purpose**: Test schema registration, versioning, and compatibility
 **Dependencies**: Consumers must exist for testing
 **Tests**:
+
 - `test-schema-register.sh` - Schema registration with versioning
 - `test-schema-get-specific.sh` - Retrieve specific schema versions
 - `test-schema-get-latest.sh` - Get latest schema versions
@@ -62,10 +96,31 @@ Tests **MUST** be executed in the following sequence due to data dependencies:
 - `test-schema-subjects.sh` - Schema subject management
 - `test-schema-compatibility.sh` - Compatibility checking
 
+#### Schema Compatibility Testing
+
+The project includes comprehensive compatibility testing at both unit and integration levels:
+
+**Unit Tests** (`SchemaRegistryServiceTest.java`):
+
+- `checkCanonicalSchemaCompatibility_shouldReturnCompatibleWhenNoExistingSchema`
+- `checkCanonicalSchemaCompatibility_shouldCheckCompatibilityAgainstLatestVersion`
+- `checkConsumerOutputSchemaCompatibility_shouldReturnCompatibleWhenNoExistingSchema`
+- `checkConsumerOutputSchemaCompatibility_shouldCheckCompatibilityAgainstLatestVersion`
+
+**Integration Tests** (`test-schema-compatibility.sh`):
+
+- Basic compatibility scenarios (backward, forward, full)
+- Draft-04 specific compatibility tests
+- Invalid schema handling
+
+**⚠️ Important Note**: Schema compatibility validation is currently **stubbed** and returns `true` for all compatibility checks. This provides a complete testing framework for when proper compatibility logic is implemented using JSON Schema compatibility libraries.
+
 ### 4. Transform Tests (`tests/transform/`)
+
 **Purpose**: Test data transformation templates and engines
 **Dependencies**: Schemas and consumers must exist
 **Tests**:
+
 - `test-transform-template-create.sh` - Template creation/update
 - `test-transform-template-get.sh` - Template retrieval
 - `test-transform-data.sh` - Data transformation execution
@@ -74,26 +129,43 @@ Tests **MUST** be executed in the following sequence due to data dependencies:
 - `test-transform-pipeline.sh` - Pipeline engine functionality
 
 ### 5. Workflow Tests (`tests/workflows/`)
+
 **Purpose**: End-to-end business process validation
 **Dependencies**: All previous components must be functional
 **Tests**:
+
 - `test-full-workflow.sh` - Complete user journey
 - `test-schema-evolution.sh` - Schema evolution scenarios
 
 ### 6. Error Handling Tests (`tests/error-handling/`)
+
 **Purpose**: Validate error conditions and edge cases
 **Dependencies**: Full system setup required
 **Tests**:
+
 - `test-errors-400.sh` - Bad request validation
 - `test-errors-404.sh` - Not found scenarios
 - `test-errors-409.sh` - Conflict resolution
 
 ## Running Tests
 
+### Unit Tests
+
+```bash
+# Run all unit tests
+mvn test
+
+# Run specific test class
+mvn test -Dtest=SchemaRegistryServiceTest
+
+# Run specific test method
+mvn test -Dtest=SchemaRegistryServiceTest#checkCanonicalSchemaCompatibility_shouldReturnCompatibleWhenNoExistingSchema
+```
+
 ### Full Test Suite
 
 ```bash
-# Run all tests in correct order
+# Run all tests (unit + integration) in correct order
 make test
 
 # Or use the test runner directly
@@ -154,6 +226,17 @@ consumer_id="test-consumer-$timestamp"
 - Database state is maintained between test suites
 - Dependencies are explicitly managed through execution order
 
+### Compatibility Test Data
+
+Schema compatibility tests use dedicated test schemas located in `tests/examples/compatibility/`:
+
+- `draft04-base-schema.json` - Basic draft-04 schema with required fields
+- `draft04-backward-compatible-update.json` - Schema adding optional fields (backward compatible)
+- `draft04-backward-incompatible-update.json` - Schema removing required fields (backward incompatible)
+- `draft04-invalid-schema.json` - Schema with draft-06 features invalid for draft-04
+
+These schemas are used to test compatibility validation logic and draft-04 specific scenarios.
+
 ## Test Utilities
 
 ### Common Functions (`tests/utils/common.sh`)
@@ -189,6 +272,7 @@ assert_contains "$response_body" '"createdAt"' "Should contain timestamp"
 ### Common Issues
 
 1. **Service Not Ready**
+
    ```bash
    # Check service health
    curl http://localhost:8080/actuator/health
@@ -198,6 +282,7 @@ assert_contains "$response_body" '"createdAt"' "Should contain timestamp"
    ```
 
 2. **Database Connection Issues**
+
    ```bash
    # Check database
    docker-compose exec db pg_isready -U schema_user -d schema_registry
@@ -207,6 +292,7 @@ assert_contains "$response_body" '"createdAt"' "Should contain timestamp"
    ```
 
 3. **Test Order Violations**
+
    ```bash
    # Always run in dependency order
    ./tests/run-all.sh --health-only  # First
@@ -215,6 +301,7 @@ assert_contains "$response_body" '"createdAt"' "Should contain timestamp"
    ```
 
 4. **Data Conflicts**
+
    ```bash
    # Tests use unique timestamps - no cleanup needed
    # If issues persist, restart with clean database
@@ -224,17 +311,20 @@ assert_contains "$response_body" '"createdAt"' "Should contain timestamp"
 ### Debugging Steps
 
 1. **Check Service Logs**
+
    ```bash
    docker-compose logs -f app
    ```
 
 2. **Run Individual Tests**
+
    ```bash
    bash tests/health/test-health.sh
    bash tests/schemas/test-schema-register.sh
    ```
 
 3. **Verify Prerequisites**
+
    ```bash
    # Ensure service is healthy
    curl http://localhost:8080/actuator/health
@@ -244,6 +334,7 @@ assert_contains "$response_body" '"createdAt"' "Should contain timestamp"
    ```
 
 4. **Test API Manually**
+
    ```bash
    # Test consumer creation
    curl -X POST http://localhost:8080/api/consumers \
@@ -253,15 +344,52 @@ assert_contains "$response_body" '"createdAt"' "Should contain timestamp"
 
 ## Test Development
 
-### Adding New Tests
+### Adding Unit Tests
+
+1. **Create Test Class**
+
+   ```bash
+   # Follow Maven convention: src/test/java/.../ServiceNameTest.java
+   touch src/test/java/ru/vegorov/schemaregistry/service/NewServiceTest.java
+   ```
+
+2. **Follow Unit Test Structure**
+
+   ```java
+   @ExtendWith(MockitoExtension.class)
+   class NewServiceTest {
+
+       @Mock
+       private Dependency dependency;
+
+       @InjectMocks
+       private NewService service;
+
+       @Test
+       void testMethod_shouldReturnExpectedResult() {
+           // Given
+           when(dependency.someMethod()).thenReturn(expectedValue);
+
+           // When
+           var result = service.methodUnderTest();
+
+           // Then
+           assertThat(result).isEqualTo(expectedValue);
+       }
+   }
+   ```
+
+### Adding Integration Tests
 
 1. **Create Test File**
+
    ```bash
    touch tests/new-feature/test-new-feature.sh
    chmod +x tests/new-feature/test-new-feature.sh
    ```
 
 2. **Follow Test Structure**
+
    ```bash
    #!/bin/bash
    source "$(dirname "$0")/../utils/common.sh"
@@ -341,9 +469,11 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
-          distribution: 'temurin'
-      - name: Run tests
+          java-version: "17"
+          distribution: "temurin"
+      - name: Run unit tests
+        run: mvn test
+      - name: Run integration tests
         run: make test
 ```
 
@@ -357,4 +487,4 @@ See the [Troubleshooting Guide](troubleshooting.md) for detailed solutions to co
 - [API Reference](api-reference.md) - Complete API documentation
 - [Troubleshooting](troubleshooting.md) - Common issues and solutions
 - [Architecture](architecture.md) - System design and components</content>
-</xai:function_call<parameter name="filePath">docs/testing.md
+
