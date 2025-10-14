@@ -3,6 +3,12 @@
 # End-to-End Example Automation Script
 # This script demonstrates the complete workflow of the JSON Schema Registry and Transformation Service
 # using investment publications data.
+#
+# Features:
+# - Idempotent: Can be run multiple times safely (handles existing resources)
+# - Creates new versions for schemas and templates if they already exist
+# - Saves transformation output to a local file for review and comparison
+# - Validates both input and output data against appropriate schemas
 
 set -e
 
@@ -110,12 +116,20 @@ register_canonical_schema() {
         return 1
     fi
 
-    local response=$(post_request "/api/schemas/invest-publications" "@$EXAMPLES_DIR/invest-publications.schema.json")
+    local response=$(post_request "/api/schemas/invest-publications" "{
+        \"subject\": \"invest-publications\",
+        \"schema\": $(cat "$EXAMPLES_DIR/invest-publications.schema.json" | jq -c .),
+        \"compatibility\": \"BACKWARD\",
+        \"description\": \"Test canonical schema for investment publications\"
+    }")
     local http_code=$(echo "$response" | tail -n1)
     local response_body=$(echo "$response" | head -n -1)
 
     if [ "$http_code" -eq 201 ]; then
-        log_success "Canonical schema registered successfully"
+        log_success "Canonical schema registered successfully (new version created)"
+        return 0
+    elif [ "$http_code" -eq 409 ]; then
+        log_warning "Canonical schema already exists with same content - this is expected"
         return 0
     else
         log_error "Failed to register canonical schema (HTTP $http_code): $response_body"
@@ -138,6 +152,9 @@ register_consumer() {
     if [ "$http_code" -eq 201 ]; then
         log_success "Consumer registered successfully"
         return 0
+    elif [ "$http_code" -eq 409 ]; then
+        log_warning "Consumer 'mobile-app' already exists - this is expected"
+        return 0
     else
         log_error "Failed to register consumer (HTTP $http_code): $response_body"
         return 1
@@ -153,12 +170,20 @@ register_consumer_schema() {
         return 1
     fi
 
-    local response=$(post_request "/api/consumers/mobile-app/schemas/invest-publications" "@$EXAMPLES_DIR/invest-publications-no-notes.schema.json")
+    local response=$(post_request "/api/consumers/mobile-app/schemas/invest-publications" "{
+        \"subject\": \"invest-publications\",
+        \"schema\": $(cat "$EXAMPLES_DIR/invest-publications-no-notes.schema.json" | jq -c .),
+        \"compatibility\": \"BACKWARD\",
+        \"description\": \"Test consumer schema for mobile app\"
+    }")
     local http_code=$(echo "$response" | tail -n1)
     local response_body=$(echo "$response" | head -n -1)
 
     if [ "$http_code" -eq 201 ]; then
-        log_success "Consumer output schema registered successfully"
+        log_success "Consumer output schema registered successfully (new version created)"
+        return 0
+    elif [ "$http_code" -eq 409 ]; then
+        log_warning "Consumer schema already exists with same content - this is expected"
         return 0
     else
         log_error "Failed to register consumer schema (HTTP $http_code): $response_body"
@@ -192,11 +217,15 @@ register_transformation_template() {
         },
         \"description\": \"Remove all internal notes from investment publications for mobile app consumption\"
     }")
+
     local http_code=$(echo "$response" | tail -n1)
     local response_body=$(echo "$response" | head -n -1)
 
     if [ "$http_code" -eq 201 ]; then
-        log_success "JSLT transformation template registered successfully"
+        log_success "JSLT transformation template registered successfully (new version created)"
+        return 0
+    elif [ "$http_code" -eq 409 ]; then
+        log_warning "Transformation template already exists with same content - this is expected"
         return 0
     else
         log_error "Failed to register transformation template (HTTP $http_code): $response_body"
@@ -241,6 +270,10 @@ transform_and_validate() {
         return 1
     fi
 
+    # Define output file path
+    local output_file="$PROJECT_ROOT/transformed-output.json"
+    log_info "Transformation output will be saved to: $output_file"
+
     # Transform the data
     local transform_payload="{\"subject\": \"invest-publications\", \"canonicalJson\": $(cat "$EXAMPLES_DIR/all-elements-with-all-values.json")}"
     local response=$(post_request "/api/consumers/mobile-app/subjects/invest-publications/transform" "$transform_payload")
@@ -250,11 +283,18 @@ transform_and_validate() {
     if [ "$http_code" -eq 200 ]; then
         log_success "Data transformation completed successfully"
 
-        # Extract transformed JSON for validation
+        # Extract and save transformed JSON to file
         local transformed_json=$(echo "$response_body" | jq -r '.transformedJson')
+        echo "$transformed_json" > "$output_file"
+        log_success "Transformed data saved to $output_file"
 
-        # Validate against consumer schema
-        local validation_response=$(post_request "/api/consumers/mobile-app/schemas/invest-publications/validate" "{\"data\": $transformed_json}")
+        # Show file size for verification
+        local file_size=$(wc -c < "$output_file")
+        log_info "Output file size: ${file_size} bytes"
+
+        # Validate against consumer schema using the saved file
+        log_info "Validating transformed output against consumer schema..."
+        local validation_response=$(post_request "/api/consumers/mobile-app/schemas/invest-publications/validate" "@$output_file")
         local validation_http_code=$(echo "$validation_response" | tail -n1)
         local validation_body=$(echo "$validation_response" | head -n -1)
 
@@ -262,9 +302,12 @@ transform_and_validate() {
             local is_valid=$(echo "$validation_body" | jq -r '.valid')
             if [ "$is_valid" = "true" ]; then
                 log_success "Output data validation passed"
+                log_info "You can review the transformed output in: $output_file"
+                log_info "Compare with original input: $EXAMPLES_DIR/all-elements-with-all-values.json"
                 return 0
             else
                 log_error "Output data validation failed: $validation_body"
+                log_info "Check the transformed output file for details: $output_file"
                 return 1
             fi
         else
@@ -282,6 +325,8 @@ main() {
     echo "========================================"
     echo "JSON Schema Registry - End-to-End Example"
     echo "========================================"
+    echo "This script is idempotent and can be run multiple times safely."
+    echo "It will create new versions of existing resources as needed."
     echo
 
     # Check prerequisites
@@ -355,14 +400,21 @@ main() {
     log_success "🎉 End-to-end example completed successfully!"
     echo
     echo "Summary:"
-    echo "- Registered canonical schema for investment publications"
-    echo "- Created mobile-app consumer"
-    echo "- Registered consumer-specific output schema (without notes)"
-    echo "- Created JSLT transformation template to remove notes"
+    echo "- Registered canonical schema for investment publications (new version if existing)"
+    echo "- Created mobile-app consumer (skipped if already exists)"
+    echo "- Registered consumer-specific output schema (new version if existing)"
+    echo "- Created JSLT transformation template to remove notes (new version if existing)"
     echo "- Validated input data against canonical schema"
     echo "- Successfully transformed data and validated output"
     echo
-    echo "You can now explore the API further or run individual test scripts."
+    echo "Output files:"
+    echo "- Transformed data: $PROJECT_ROOT/transformed-output.json"
+    echo "- Original input: $EXAMPLES_DIR/all-elements-with-all-values.json"
+    echo
+    echo "You can now:"
+    echo "- Compare the transformed output with the original input"
+    echo "- Explore the API further or run individual test scripts"
+    echo "- Re-run this script (it handles existing resources gracefully)"
 }
 
 # Run main function

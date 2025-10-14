@@ -342,6 +342,8 @@ curl -X POST http://localhost:8080/api/consumers/mobile-app/subjects/invest-publ
 
 ### Expected Response (200 OK)
 
+The transformation will return the data with all "notes" fields removed. The response includes the transformed JSON:
+
 ```json
 {
   "transformedJson": {
@@ -429,6 +431,8 @@ curl -X POST http://localhost:8080/api/consumers/mobile-app/subjects/invest-publ
 }
 ```
 
+**Note**: When using the automation script, the transformed JSON will be automatically saved to `transformed-output.json` in the project root for review and comparison with the original input data.
+
 ### Validation Against Consumer Schema
 
 To validate that the transformed output conforms to the consumer schema:
@@ -437,8 +441,10 @@ To validate that the transformed output conforms to the consumer schema:
 curl -X POST http://localhost:8080/api/consumers/mobile-app/schemas/invest-publications/validate \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
-  -d '{"transformedJson": {"publications": [{"id": "pub_full_example_001", "title": "Полноценный пример публикации для тестирования", "type": "research_note", "chapters": [{"id": "ch_001", "title": "Глава 1", "blocks": [{"id": "block_001", "title": "Блок 1", "views": [{"type": "text", "content": "Текстовый контент внутри блокa 1."}]}]}]}]}}'
+  -d @transformed-output.json
 ```
+
+Or using the automation script, this validation is performed automatically using the saved output file.
 
 Expected Response:
 ```json
@@ -457,11 +463,20 @@ For convenience, you can use the provided automation script to run this entire e
 ./tests/utils/scripts/run-end-to-end-example.sh
 ```
 
-This script will:
-1. Start the required services (PostgreSQL)
-2. Register all schemas, consumers, and templates
-3. Validate and transform sample data
-4. Verify the results
+This script is **idempotent** and can be run multiple times safely. It will:
+
+1. Check service health and wait for availability
+2. Register canonical schema (creates new version if existing)
+3. Register consumer (skips if already exists)
+4. Register consumer output schema (creates new version if existing)
+5. Register JSLT transformation template (creates new version if existing)
+6. Validate input data against canonical schema
+7. Transform data and save output to `transformed-output.json`
+8. Validate transformed output against consumer schema using the saved file
+
+**Output Files:**
+- `transformed-output.json` - The result of data transformation (overwrites existing file)
+- Compare with `tests/examples/investment-research/publications/all-elements-with-all-values.json`
 
 ## Key Concepts Demonstrated
 
@@ -485,3 +500,5 @@ This script will:
 - Check service health: `curl http://localhost:8080/actuator/health`
 - View application logs for detailed error information
 - Use the test scripts in `tests/` for individual component testing
+- Check the `transformed-output.json` file for transformation results
+- Compare input and output files to verify transformation logic
