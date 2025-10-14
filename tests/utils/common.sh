@@ -189,13 +189,11 @@ create_test_consumer() {
     local consumer_id="$1"
     local name="$2"
     local description="${3:-Test consumer}"
-    local subjects="${4:-[\"test-subject\"]}"
 
     local response=$(post_request "/api/consumers" "{
         \"consumerId\": \"$consumer_id\",
         \"name\": \"$name\",
-        \"description\": \"$description\",
-        \"subjects\": $subjects
+        \"description\": \"$description\"
     }")
 
     local http_code=$(echo "$response" | tail -n1)

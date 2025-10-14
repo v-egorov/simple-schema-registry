@@ -19,8 +19,7 @@ echo "Test 1: Register valid consumer"
 response=$(post_request "/api/consumers" "{
     \"consumerId\": \"$CONSUMER_1\",
     \"name\": \"Test Mobile App\",
-    \"description\": \"Test consumer for mobile applications\",
-    \"subjects\": [\"user-profile\", \"order-data\"]
+    \"description\": \"Test consumer for mobile applications\"
 }")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
@@ -37,8 +36,7 @@ echo
 echo "Test 2: Register consumer with minimal required data"
 response=$(post_request "/api/consumers" "{
     \"consumerId\": \"$CONSUMER_2\",
-    \"name\": \"Minimal Consumer\",
-    \"subjects\": [\"minimal-subject\"]
+    \"name\": \"Minimal Consumer\"
 }")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
@@ -53,8 +51,7 @@ echo "Test 3: Attempt duplicate consumer registration"
 response=$(post_request "/api/consumers" "{
     \"consumerId\": \"$CONSUMER_1\",
     \"name\": \"Duplicate Mobile App\",
-    \"description\": \"This should fail\",
-    \"subjects\": [\"duplicate-subject\"]
+    \"description\": \"This should fail\"
 }")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
