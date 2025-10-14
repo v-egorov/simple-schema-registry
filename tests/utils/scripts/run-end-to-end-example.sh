@@ -195,8 +195,10 @@ register_transformation_template() {
         return 1
     fi
 
-    # Use a simple JSLT expression for testing - just pass through
-    local escaped_jslt="." 
+    # Read the actual JSLT transformation from file
+    local jslt_content=$(cat "$EXAMPLES_DIR/remove-all-notes.jslt")
+    # Escape for JSON embedding (escape quotes and backslashes)
+    local escaped_jslt=$(echo "$jslt_content" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr -d '\n')
 
     local json_payload="{
         \"version\": \"1.0.$TIMESTAMP\",
