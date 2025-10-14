@@ -1,6 +1,6 @@
 # JSON Schema Registry and Transformation Service - Development Makefile
 
-.PHONY: help build clean test up down logs db-migrate db-seed restart shell db-connect db-status db-tables db-size db-schemas-count db-schemas-recent db-schemas-subjects db-schemas-versions db-consumers-list db-consumers-active db-consumers-stats db-templates-list db-templates-engines db-templates-recent db-indexes db-locks db-connections db-vacuum-analyze db-reindex db-cleanup-test-data db-schema-evolution db-compatibility-checks db-orphaned-data db-export-schema db-backup db-activity
+.PHONY: help build clean test up down logs db-migrate db-seed restart shell db-connect db-status db-tables db-size db-schemas-count db-schemas-recent db-schemas-subjects db-schemas-versions db-consumers-list db-consumers-active db-consumers-stats db-templates-list db-templates-engines db-templates-recent db-indexes db-locks db-connections db-vacuum-analyze db-reindex db-cleanup-test-data db-schema-evolution db-compatibility-checks db-orphaned-data db-export-schema db-backup db-activity register-schema register-jslt-template transform-data
 
 # Default target
 help: ## Show this help message
@@ -234,6 +234,16 @@ health: ## Check service health
 docs: ## Open API documentation in browser
 	@echo "API Documentation: http://localhost:8080/swagger-ui.html"
 	@echo "OpenAPI Spec: http://localhost:8080/api-docs"
+
+# Utility script targets
+register-schema: ## Register a schema from file (SCHEMA_FILE, SUBJECT, VERSION, COMPATIBILITY, DESCRIPTION required)
+	./tests/utils/scripts/register-schema-from-file.sh $(SCHEMA_FILE) $(SUBJECT) $(VERSION) $(COMPATIBILITY) "$(DESCRIPTION)"
+
+register-jslt-template: ## Register a JSLT template from file (JSLT_FILE, CONSUMER, SUBJECT, VERSION, INPUT_SUBJECT, DESCRIPTION required)
+	./tests/utils/scripts/register-jslt-template-from-file.sh $(JSLT_FILE) $(CONSUMER) $(SUBJECT) $(VERSION) $(INPUT_SUBJECT) "$(DESCRIPTION)"
+
+transform-data: ## Transform data from file (DATA_FILE, CONSUMER, SUBJECT, VERSION optional)
+	./tests/utils/scripts/transform-from-file.sh $(DATA_FILE) $(CONSUMER) $(SUBJECT) $(VERSION)
 
 # Quick start
 start: build up ## Build and start all services
