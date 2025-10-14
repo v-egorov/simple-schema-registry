@@ -166,6 +166,8 @@ curl -X POST http://localhost:8080/api/consumers \
   }'
 ```
 
+**Note**: Consumers no longer require pre-declaring subjects. Subject access is determined by the transformation templates registered for each consumer-subject pair.
+
 Response:
 ```json
 {
@@ -882,8 +884,7 @@ curl -X POST http://localhost:8080/api/consumers \
   -d '{
     "consumerId": "mobile-app",
     "name": "Mobile Shopping App",
-    "description": "iOS and Android e-commerce app",
-    "subjects": ["user-profile", "product-catalog", "order-data"]
+    "description": "iOS and Android e-commerce app"
   }'
 
 # Web dashboard consumer
@@ -892,8 +893,7 @@ curl -X POST http://localhost:8080/api/consumers \
   -d '{
     "consumerId": "web-dashboard",
     "name": "Admin Dashboard",
-    "description": "Internal admin dashboard",
-    "subjects": ["user-profile", "product-catalog", "order-data", "analytics-data"]
+    "description": "Internal admin dashboard"
   }'
 
 # Analytics platform consumer
@@ -902,8 +902,7 @@ curl -X POST http://localhost:8080/api/consumers \
   -d '{
     "consumerId": "analytics-platform",
     "name": "Analytics Platform",
-    "description": "Data analytics and reporting platform",
-    "subjects": ["user-profile", "product-catalog", "order-data"]
+    "description": "Data analytics and reporting platform"
   }'
 ```
 

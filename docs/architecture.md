@@ -201,6 +201,9 @@ CREATE TABLE consumers (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
+-- Note: Subjects are no longer stored in consumers.
+-- Subject access is determined by registered transformation templates.
+
 -- Transformation templates with versioning and schema relationships
 CREATE TABLE transformation_templates (
     id BIGSERIAL PRIMARY KEY,
@@ -233,6 +236,10 @@ CREATE TABLE transformation_templates (
 - `idx_transformation_templates_active` - Optimized active template retrieval
 - `idx_transformation_templates_version` - Fast version-specific queries
 - `unique_active_template` - Ensures only one active version per consumer-subject pair
+
+### Subject Management
+
+Subjects are not pre-declared in consumer registrations. Instead, consumers can register transformation templates for any subject, and the available subjects for a consumer are determined by the templates that have been registered.
 
 ## Transformation Engine Architecture
 
