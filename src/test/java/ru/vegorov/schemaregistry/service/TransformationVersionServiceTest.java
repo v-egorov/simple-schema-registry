@@ -227,7 +227,7 @@ class TransformationVersionServiceTest {
 
         List<TransformationTemplateEntity> templates = Arrays.asList(template1, template2);
 
-        when(templateRepository.findByConsumerIdAndSubjectOrderByVersionDesc("consumer-1", "test-subject"))
+        when(templateRepository.findByConsumerIdAndSubject("consumer-1", "test-subject"))
             .thenReturn(templates);
 
         // When

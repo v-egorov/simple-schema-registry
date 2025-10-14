@@ -183,8 +183,10 @@ public class TransformationService {
      * Get the latest version for a consumer and subject
      */
     private String getLatestVersionForConsumerAndSubject(String consumerId, String subject) {
-        return templateRepository.findFirstByConsumerIdAndSubjectOrderByVersionDesc(consumerId, subject)
+        List<TransformationTemplateEntity> entities = templateRepository.findByConsumerIdAndSubject(consumerId, subject);
+        return entities.stream()
             .map(TransformationTemplateEntity::getVersion)
+            .max(this::compareSemver)
             .orElse("0.0.0");
     }
 
@@ -233,8 +235,9 @@ public class TransformationService {
      */
     @Transactional(readOnly = true)
     public List<TransformationTemplateResponse> getTemplateVersions(String consumerId, String subject) {
-        List<TransformationTemplateEntity> entities = templateRepository.findByConsumerIdAndSubjectOrderByVersionDesc(consumerId, subject);
+        List<TransformationTemplateEntity> entities = templateRepository.findByConsumerIdAndSubject(consumerId, subject);
         return entities.stream()
+            .sorted((a, b) -> compareSemver(b.getVersion(), a.getVersion())) // Sort descending
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
@@ -296,15 +299,18 @@ public class TransformationService {
                 if (ref.getConsumerId() != null) {
                     throw new IllegalArgumentException("Consumer ID should not be specified for canonical schemas");
                 }
-                schema = schemaRepository.findFirstBySubjectAndSchemaTypeOrderByVersionDesc(ref.getSubject(), expectedType)
+                List<SchemaEntity> entities = schemaRepository.findBySubjectAndSchemaType(ref.getSubject(), expectedType);
+                schema = entities.stream()
+                    .max((a, b) -> compareSemver(a.getVersion(), b.getVersion()))
                     .orElseThrow(() -> new ResourceNotFoundException(
                         String.format("No canonical schemas found for subject: %s", ref.getSubject())));
             } else { // consumer_output
                 if (ref.getConsumerId() == null) {
                     throw new IllegalArgumentException("Consumer ID is required for consumer output schemas");
                 }
-                schema = schemaRepository.findFirstBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc(
-                        ref.getSubject(), expectedType, ref.getConsumerId())
+                List<SchemaEntity> entities = schemaRepository.findBySubjectAndSchemaTypeAndConsumerId(ref.getSubject(), expectedType, ref.getConsumerId());
+                schema = entities.stream()
+                    .max((a, b) -> compareSemver(a.getVersion(), b.getVersion()))
                     .orElseThrow(() -> new ResourceNotFoundException(
                         String.format("No consumer output schemas found for subject: %s, consumer: %s",
                             ref.getSubject(), ref.getConsumerId())));
@@ -350,6 +356,20 @@ public class TransformationService {
             entity.getDescription(),
             entity.getCreatedAt(),
             entity.getUpdatedAt()
-        );
+         );
+     }
+
+    /**
+     * Compare two semver strings
+     */
+    private int compareSemver(String v1, String v2) {
+        String[] parts1 = v1.split("\\.");
+        String[] parts2 = v2.split("\\.");
+        for (int i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+            int p1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+            int p2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+            if (p1 != p2) return Integer.compare(p1, p2);
+        }
+        return 0;
     }
-}
+ }

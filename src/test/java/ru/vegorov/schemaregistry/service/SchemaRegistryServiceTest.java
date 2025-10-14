@@ -57,7 +57,7 @@ class SchemaRegistryServiceTest {
         savedEntity.setVersion("1.0.0");
         savedEntity.setSchemaJson(schemaJson);
 
-        when(schemaRepository.findBySubjectAndSchemaTypeOrderByVersionDesc("test-subject", SchemaType.canonical))
+        when(schemaRepository.findBySubjectAndSchemaType("test-subject", SchemaType.canonical))
             .thenReturn(java.util.Collections.emptyList());
         when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
 
@@ -91,7 +91,7 @@ class SchemaRegistryServiceTest {
         savedEntity.setVersion("1.0.0");
         savedEntity.setSchemaJson(schemaJson);
 
-        when(schemaRepository.findBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc("test-subject", SchemaType.consumer_output, "consumer-1"))
+        when(schemaRepository.findBySubjectAndSchemaTypeAndConsumerId("test-subject", SchemaType.consumer_output, "consumer-1"))
             .thenReturn(java.util.Collections.emptyList());
         when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
 
@@ -133,8 +133,8 @@ class SchemaRegistryServiceTest {
 
         SchemaValidationRequest request = new SchemaValidationRequest("test-subject", validJson);
 
-        when(schemaRepository.findFirstBySubjectAndSchemaTypeOrderByVersionDesc("test-subject", SchemaType.canonical))
-            .thenReturn(Optional.of(schemaEntity));
+        when(schemaRepository.findBySubjectAndSchemaType("test-subject", SchemaType.canonical))
+            .thenReturn(java.util.List.of(schemaEntity));
 
         // When
         SchemaValidationResponse response = schemaService.validateJson(request);
@@ -177,8 +177,8 @@ class SchemaRegistryServiceTest {
 
         SchemaValidationRequest request = new SchemaValidationRequest("test-subject", validJson);
 
-        when(schemaRepository.findFirstBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc("test-subject", SchemaType.consumer_output, "consumer-1"))
-            .thenReturn(Optional.of(schemaEntity));
+        when(schemaRepository.findBySubjectAndSchemaTypeAndConsumerId("test-subject", SchemaType.consumer_output, "consumer-1"))
+            .thenReturn(java.util.List.of(schemaEntity));
 
         // When
         SchemaValidationResponse response = schemaService.validateJsonAgainstConsumerOutputSchema(request, "consumer-1");

@@ -17,9 +17,15 @@ public interface TransformationTemplateRepository extends JpaRepository<Transfor
     // ===== NEW METHODS FOR VERSIONING SYSTEM =====
 
     /**
-     * Find all transformation templates for a consumer and subject ordered by version descending
+     * Find all transformation templates for a consumer and subject ordered by version descending (deprecated - use application-level sorting)
      */
+    @Deprecated
     List<TransformationTemplateEntity> findByConsumerIdAndSubjectOrderByVersionDesc(String consumerId, String subject);
+
+    /**
+     * Find all transformation templates for a consumer and subject
+     */
+    List<TransformationTemplateEntity> findByConsumerIdAndSubject(String consumerId, String subject);
 
     /**
      * Find a specific transformation template version for a consumer and subject
@@ -32,8 +38,9 @@ public interface TransformationTemplateRepository extends JpaRepository<Transfor
     Optional<TransformationTemplateEntity> findByConsumerIdAndSubjectAndIsActiveTrue(String consumerId, String subject);
 
     /**
-     * Find the latest transformation template for a consumer and subject (by version)
+     * Find the latest transformation template for a consumer and subject (by version) (deprecated - use application-level sorting)
      */
+    @Deprecated
     Optional<TransformationTemplateEntity> findFirstByConsumerIdAndSubjectOrderByVersionDesc(String consumerId, String subject);
 
     /**
@@ -64,15 +71,28 @@ public interface TransformationTemplateRepository extends JpaRepository<Transfor
     List<String> findAllConsumerIds();
 
     /**
-     * Get all versions for a consumer and subject ordered by version descending
+     * Get all versions for a consumer and subject ordered by version descending (deprecated - use application-level sorting)
      */
+    @Deprecated
     @Query("SELECT t.version FROM TransformationTemplateEntity t WHERE t.consumerId = :consumerId AND t.subject = :subject ORDER BY t.version DESC")
     List<String> findVersionsByConsumerIdAndSubject(@Param("consumerId") String consumerId, @Param("subject") String subject);
 
     /**
-     * Find all transformation templates for a consumer (across all subjects)
+     * Get all versions for a consumer and subject
      */
+    @Query("SELECT t.version FROM TransformationTemplateEntity t WHERE t.consumerId = :consumerId AND t.subject = :subject")
+    List<String> findVersionsByConsumerIdAndSubjectUnordered(@Param("consumerId") String consumerId, @Param("subject") String subject);
+
+    /**
+     * Find all transformation templates for a consumer (across all subjects) (deprecated - use application-level sorting)
+     */
+    @Deprecated
     List<TransformationTemplateEntity> findByConsumerIdOrderBySubjectAscVersionDesc(String consumerId);
+
+    /**
+     * Find all transformation templates for a consumer (across all subjects) ordered by subject ascending
+     */
+    List<TransformationTemplateEntity> findByConsumerIdOrderBySubjectAsc(String consumerId);
 
     /**
      * Count transformation templates for a consumer and subject

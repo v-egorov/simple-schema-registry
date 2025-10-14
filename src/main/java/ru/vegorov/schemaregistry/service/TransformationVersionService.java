@@ -94,8 +94,9 @@ public class TransformationVersionService {
      */
     @Transactional(readOnly = true)
     public List<TransformationTemplateResponse> getVersionHistory(String consumerId, String subject) {
-        List<TransformationTemplateEntity> entities = templateRepository.findByConsumerIdAndSubjectOrderByVersionDesc(consumerId, subject);
+        List<TransformationTemplateEntity> entities = templateRepository.findByConsumerIdAndSubject(consumerId, subject);
         return entities.stream()
+            .sorted((a, b) -> compareSemver(b.getVersion(), a.getVersion())) // Sort descending
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
@@ -176,6 +177,20 @@ public class TransformationVersionService {
             entity.getDescription(),
             entity.getCreatedAt(),
             entity.getUpdatedAt()
-        );
+         );
+     }
+
+    /**
+     * Compare two semver strings
+     */
+    private int compareSemver(String v1, String v2) {
+        String[] parts1 = v1.split("\\.");
+        String[] parts2 = v2.split("\\.");
+        for (int i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+            int p1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+            int p2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+            if (p1 != p2) return Integer.compare(p1, p2);
+        }
+        return 0;
     }
-}
+ }

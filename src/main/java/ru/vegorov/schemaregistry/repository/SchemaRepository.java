@@ -14,9 +14,15 @@ import java.util.Optional;
 public interface SchemaRepository extends JpaRepository<SchemaEntity, Long> {
 
     /**
-     * Find all schemas for a given subject ordered by version descending
+     * Find all schemas for a given subject ordered by version descending (deprecated - use application-level sorting)
      */
+    @Deprecated
     List<SchemaEntity> findBySubjectOrderByVersionDesc(String subject);
+
+    /**
+     * Find all schemas for a given subject
+     */
+    List<SchemaEntity> findBySubject(String subject);
 
     /**
      * Find a specific schema version for a subject
@@ -24,8 +30,9 @@ public interface SchemaRepository extends JpaRepository<SchemaEntity, Long> {
     Optional<SchemaEntity> findBySubjectAndVersion(String subject, String version);
 
     /**
-     * Find the latest version of a schema for a subject
+     * Find the latest version of a schema for a subject (deprecated - use application-level sorting)
      */
+    @Deprecated
     Optional<SchemaEntity> findFirstBySubjectOrderByVersionDesc(String subject);
 
     /**
@@ -52,13 +59,25 @@ public interface SchemaRepository extends JpaRepository<SchemaEntity, Long> {
     // ===== NEW METHODS FOR SCHEMA TYPES AND CONSUMER RELATIONSHIPS =====
 
     /**
-     * Find all canonical schemas for a subject ordered by version descending
+     * Find all canonical schemas for a subject
      */
-    List<SchemaEntity> findBySubjectAndSchemaTypeOrderByVersionDesc(String subject, SchemaType schemaType);
+    List<SchemaEntity> findBySubjectAndSchemaType(String subject, SchemaType schemaType);
 
     /**
      * Find all consumer output schemas for a specific consumer and subject
      */
+    List<SchemaEntity> findBySubjectAndSchemaTypeAndConsumerId(String subject, SchemaType schemaType, String consumerId);
+
+    /**
+     * Find all canonical schemas for a subject ordered by version descending (deprecated - use application-level sorting)
+     */
+    @Deprecated
+    List<SchemaEntity> findBySubjectAndSchemaTypeOrderByVersionDesc(String subject, SchemaType schemaType);
+
+    /**
+     * Find all consumer output schemas for a specific consumer and subject (deprecated - use application-level sorting)
+     */
+    @Deprecated
     List<SchemaEntity> findBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc(String subject, SchemaType schemaType, String consumerId);
 
     /**
@@ -72,13 +91,15 @@ public interface SchemaRepository extends JpaRepository<SchemaEntity, Long> {
     Optional<SchemaEntity> findBySubjectAndSchemaTypeAndConsumerIdAndVersion(String subject, SchemaType schemaType, String consumerId, String version);
 
     /**
-     * Find the latest canonical schema for a subject
+     * Find the latest canonical schema for a subject (deprecated - use application-level sorting)
      */
+    @Deprecated
     Optional<SchemaEntity> findFirstBySubjectAndSchemaTypeOrderByVersionDesc(String subject, SchemaType schemaType);
 
     /**
-     * Find the latest consumer output schema for a consumer and subject
+     * Find the latest consumer output schema for a consumer and subject (deprecated - use application-level sorting)
      */
+    @Deprecated
     Optional<SchemaEntity> findFirstBySubjectAndSchemaTypeAndConsumerIdOrderByVersionDesc(String subject, SchemaType schemaType, String consumerId);
 
     /**
