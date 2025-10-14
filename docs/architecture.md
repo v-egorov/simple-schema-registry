@@ -178,7 +178,7 @@ CREATE TABLE schemas (
     subject VARCHAR(255) NOT NULL,
     schema_type VARCHAR(50) NOT NULL DEFAULT 'canonical' CHECK (schema_type IN ('canonical', 'consumer_output')),
     consumer_id VARCHAR(255),  -- NULL for canonical schemas, required for consumer_output
-    version INTEGER NOT NULL,
+    version VARCHAR(50) NOT NULL,  -- Semver format (e.g., "1.0.0")
     schema_json JSONB NOT NULL,
     compatibility VARCHAR(50) NOT NULL DEFAULT 'BACKWARD',
     description TEXT,
