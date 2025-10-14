@@ -1,378 +1,685 @@
 {
-  "$id": "https://example.com/schemas/invest-publications.schema.json",
   "title": "Investment Publications",
-  "description": "Schema for investment analytics publications with hierarchy: publication → chapter → block → view",
+  "description": "Schema for investment analytics publications (draft-04 compatible)",
   "type": "object",
-  "additionalProperties": false,
   "properties": {
     "publications": {
       "type": "array",
-      "minItems": 1,
-      "items": { "$ref": "#/$defs/publication" }
-    }
-  },
-  "required": ["publications"],
-
-  "$defs": {
-    "id": {
-      "description": "Stable unique identifier within system scope",
-      "type": "string",
-      "minLength": 1,
-      "pattern": "^[A-Za-z0-9._:-]+$"
-    },
-
-    "summary": {
-      "description": "Short abstract/summary (plain text or limited markup)",
-      "type": "string",
-      "maxLength": 5000
-    },
-
-    "subtitle": {
-      "description": "Optional subtitle for additional context",
-      "type": "string",
-      "maxLength": 500
-    },
-
-    "note": {
-      "description": "Internal note for authoring/review workflows; not for end readers",
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "id": { "$ref": "#/$defs/id" },
-        "author": { "type": "string", "minLength": 1 },
-        "role": {
-          "type": "string",
-          "description": "Author role: author/editor/reviewer/etc."
-        },
-        "timestamp": { "type": "string", "format": "date-time" },
-        "status": { "type": "string", "enum": ["open", "resolved", "closed"] },
-        "text": { "type": "string", "minLength": 1 }
-      },
-      "required": ["id", "author", "timestamp", "text"]
-    },
-
-    "notes": {
-      "description": "Internal notes linked to any node in the hierarchy",
-      "type": "array",
-      "items": { "$ref": "#/$defs/note" }
-    },
-
-    "metadata": {
-      "description": "Domain metadata for investment analytics (extensible)",
-      "type": "object",
-      "additionalProperties": true,
-      "properties": {
-        "assetClasses": {
-          "type": "array",
-          "items": {
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "description": "Stable unique identifier within system scope"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "subtitle": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Optional subtitle for additional context"
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "Short abstract/summary (plain text or limited markup)"
+          },
+          "type": {
             "type": "string",
             "enum": [
-              "Equities",
-              "Bonds",
-              "Commodities",
-              "REITs",
-              "FX",
-              "Derivatives",
-              "Alternatives",
-              "Cash"
+              "quarterly_report",
+              "thematic_report",
+              "strategy_note",
+              "market_commentary",
+              "research_note"
             ]
           },
-          "uniqueItems": true
-        },
-        "companies": {
-          "description": "Company names or tickers; system may validate externally",
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "instruments": {
-          "type": "array",
-          "items": {
+          "targetAudience": {
             "type": "string",
-            "enum": [
-              "Stocks",
-              "Bonds",
-              "ETF",
-              "Options",
-              "Futures",
-              "Funds",
-              "Notes",
-              "Swaps"
-            ]
+            "enum": ["institutional", "retail", "internal"]
           },
-          "uniqueItems": true
-        },
-        "sectors": {
-          "type": "array",
-          "items": {
+          "status": {
             "type": "string",
-            "enum": [
-              "Energy",
-              "Materials",
-              "Industrials",
-              "Consumer Discretionary",
-              "Consumer Staples",
-              "Health Care",
-              "Financials",
-              "Information Technology",
-              "Communication Services",
-              "Utilities",
-              "Real Estate"
-            ]
+            "enum": ["draft", "in_review", "approved", "published", "archived"]
           },
-          "uniqueItems": true
-        },
-        "regions": {
-          "type": "array",
-          "items": {
+          "version": {
             "type": "string",
-            "enum": [
-              "Global",
-              "US",
-              "Europe",
-              "APAC",
-              "EMEA",
-              "LATAM",
-              "Emerging Markets",
-              "China",
-              "Japan"
-            ]
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
           },
-          "uniqueItems": true
-        },
-        "riskProfile": {
-          "type": "string",
-          "enum": ["Conservative", "Moderate", "Aggressive"]
-        },
-        "timeHorizon": {
-          "type": "string",
-          "enum": ["Short-term", "Medium-term", "Long-term"]
-        },
-        "tags": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true,
-          "maxItems": 100
-        }
-      }
-    },
-
-    "view:text": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "type": { "const": "text" },
-        "content": {
-          "description": "Rich text (HTML/Markdown) or plain text depending on editor policy",
-          "type": "string",
-          "minLength": 1
-        },
-        "notes": { "$ref": "#/$defs/notes" }
-      },
-      "required": ["type", "content"]
-    },
-
-    "view:image": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "type": { "const": "image" },
-        "mediaType": {
-          "type": "string",
-          "enum": [
-            "image/png",
-            "image/jpeg",
-            "image/gif",
-            "image/webp",
-            "image/svg+xml"
-          ]
-        },
-        "base64": {
-          "type": "string",
-          "contentEncoding": "base64",
-          "minLength": 1
-        },
-        "alt": { "type": "string" },
-        "caption": { "type": "string" },
-        "notes": { "$ref": "#/$defs/notes" }
-      },
-      "required": ["type", "mediaType", "base64"]
-    },
-
-    "view:chart": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "type": { "const": "chart" },
-        "spec": {
-          "description": "JSON specification for chart (e.g., Vega/Vega-Lite/ECharts/Highcharts)",
-          "type": "object"
-        },
-        "caption": { "type": "string" },
-        "notes": { "$ref": "#/$defs/notes" }
-      },
-      "required": ["type", "spec"]
-    },
-
-    "view:table": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "type": { "const": "table" },
-        "columns": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "key": { "type": "string", "minLength": 1 },
-              "title": { "type": "string", "minLength": 1 },
-              "type": {
-                "type": "string",
-                "enum": ["string", "number", "date", "boolean"]
-              },
-              "format": { "type": "string" }
+          "language": {
+            "type": "string",
+            "minLength": 2
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
             },
-            "required": ["key", "title", "type"]
+            "uniqueItems": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": ["string", "null"]
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "assetClasses": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "Equities",
+                    "Bonds",
+                    "Commodities",
+                    "REITs",
+                    "FX",
+                    "Derivatives",
+                    "Alternatives",
+                    "Cash"
+                  ]
+                },
+                "uniqueItems": true
+              },
+              "companies": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true,
+                "description": "Company names or tickers; system may validate externally"
+              },
+              "instruments": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "Stocks",
+                    "Bonds",
+                    "ETF",
+                    "Options",
+                    "Futures",
+                    "Funds",
+                    "Notes",
+                    "Swaps"
+                  ]
+                },
+                "uniqueItems": true
+              },
+              "sectors": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "Energy",
+                    "Materials",
+                    "Industrials",
+                    "Consumer Discretionary",
+                    "Consumer Staples",
+                    "Health Care",
+                    "Financials",
+                    "Information Technology",
+                    "Communication Services",
+                    "Utilities",
+                    "Real Estate"
+                  ]
+                },
+                "uniqueItems": true
+              },
+              "regions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "Global",
+                    "US",
+                    "Europe",
+                    "APAC",
+                    "EMEA",
+                    "LATAM",
+                    "Emerging Markets",
+                    "China",
+                    "Japan"
+                  ]
+                },
+                "uniqueItems": true
+              },
+              "riskProfile": {
+                "type": "string",
+                "enum": ["Conservative", "Moderate", "Aggressive"]
+              },
+              "timeHorizon": {
+                "type": "string",
+                "enum": ["Short-term", "Medium-term", "Long-term"]
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true,
+                "maxItems": 100
+              }
+            },
+            "description": "Domain metadata for investment analytics (extensible)"
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[A-Za-z0-9._:-]+$",
+                  "description": "Stable unique identifier within system scope"
+                },
+                "author": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "role": {
+                  "type": "string",
+                  "description": "Author role: author/editor/reviewer/etc."
+                },
+                "timestamp": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["open", "resolved", "closed"]
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": ["id", "author", "timestamp", "text"],
+              "description": "Internal note for authoring/review workflows; not for end readers"
+            },
+            "description": "Internal notes linked to any node in the hierarchy"
+          },
+          "chapters": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[A-Za-z0-9._:-]+$",
+                  "description": "Stable unique identifier within system scope"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "subtitle": {
+                  "type": "string",
+                  "maxLength": 500,
+                  "description": "Optional subtitle for additional context"
+                },
+                "summary": {
+                  "type": "string",
+                  "maxLength": 5000,
+                  "description": "Short abstract/summary (plain text or limited markup)"
+                },
+                "metadata": {
+                  "type": "object",
+                  "properties": {
+                    "assetClasses": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "Equities",
+                          "Bonds",
+                          "Commodities",
+                          "REITs",
+                          "FX",
+                          "Derivatives",
+                          "Alternatives",
+                          "Cash"
+                        ]
+                      },
+                      "uniqueItems": true
+                    },
+                    "companies": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "uniqueItems": true,
+                      "description": "Company names or tickers; system may validate externally"
+                    },
+                    "instruments": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "Stocks",
+                          "Bonds",
+                          "ETF",
+                          "Options",
+                          "Futures",
+                          "Funds",
+                          "Notes",
+                          "Swaps"
+                        ]
+                      },
+                      "uniqueItems": true
+                    },
+                    "sectors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "Energy",
+                          "Materials",
+                          "Industrials",
+                          "Consumer Discretionary",
+                          "Consumer Staples",
+                          "Health Care",
+                          "Financials",
+                          "Information Technology",
+                          "Communication Services",
+                          "Utilities",
+                          "Real Estate"
+                        ]
+                      },
+                      "uniqueItems": true
+                    },
+                    "regions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "Global",
+                          "US",
+                          "Europe",
+                          "APAC",
+                          "EMEA",
+                          "LATAM",
+                          "Emerging Markets",
+                          "China",
+                          "Japan"
+                        ]
+                      },
+                      "uniqueItems": true
+                    },
+                    "riskProfile": {
+                      "type": "string",
+                      "enum": ["Conservative", "Moderate", "Aggressive"]
+                    },
+                    "timeHorizon": {
+                      "type": "string",
+                      "enum": ["Short-term", "Medium-term", "Long-term"]
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "uniqueItems": true,
+                      "maxItems": 100
+                    }
+                  },
+                  "description": "Domain metadata for investment analytics (extensible)"
+                },
+                "notes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^[A-Za-z0-9._:-]+$",
+                        "description": "Stable unique identifier within system scope"
+                      },
+                      "author": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "role": {
+                        "type": "string",
+                        "description": "Author role: author/editor/reviewer/etc."
+                      },
+                      "timestamp": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": ["open", "resolved", "closed"]
+                      },
+                      "text": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["id", "author", "timestamp", "text"],
+                    "description": "Internal note for authoring/review workflows; not for end readers"
+                  },
+                  "description": "Internal notes linked to any node in the hierarchy"
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "type": "string"
+                },
+                "authors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "uniqueItems": true
+                },
+                "language": {
+                  "type": "string",
+                  "minLength": 2
+                },
+                "blocks": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^[A-Za-z0-9._:-]+$",
+                        "description": "Stable unique identifier within system scope"
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "subtitle": {
+                        "type": "string",
+                        "maxLength": 500,
+                        "description": "Optional subtitle for additional context"
+                      },
+                      "summary": {
+                        "type": "string",
+                        "maxLength": 5000,
+                        "description": "Short abstract/summary (plain text or limited markup)"
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "properties": {
+                          "assetClasses": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "Equities",
+                                "Bonds",
+                                "Commodities",
+                                "REITs",
+                                "FX",
+                                "Derivatives",
+                                "Alternatives",
+                                "Cash"
+                              ]
+                            },
+                            "uniqueItems": true
+                          },
+                          "companies": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "uniqueItems": true,
+                            "description": "Company names or tickers; system may validate externally"
+                          },
+                          "instruments": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "Stocks",
+                                "Bonds",
+                                "ETF",
+                                "Options",
+                                "Futures",
+                                "Funds",
+                                "Notes",
+                                "Swaps"
+                              ]
+                            },
+                            "uniqueItems": true
+                          },
+                          "sectors": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "Energy",
+                                "Materials",
+                                "Industrials",
+                                "Consumer Discretionary",
+                                "Consumer Staples",
+                                "Health Care",
+                                "Financials",
+                                "Information Technology",
+                                "Communication Services",
+                                "Utilities",
+                                "Real Estate"
+                              ]
+                            },
+                            "uniqueItems": true
+                          },
+                          "regions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "Global",
+                                "US",
+                                "Europe",
+                                "APAC",
+                                "EMEA",
+                                "LATAM",
+                                "Emerging Markets",
+                                "China",
+                                "Japan"
+                              ]
+                            },
+                            "uniqueItems": true
+                          },
+                          "riskProfile": {
+                            "type": "string",
+                            "enum": ["Conservative", "Moderate", "Aggressive"]
+                          },
+                          "timeHorizon": {
+                            "type": "string",
+                            "enum": ["Short-term", "Medium-term", "Long-term"]
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "uniqueItems": true,
+                            "maxItems": 100
+                          }
+                        },
+                        "description": "Domain metadata for investment analytics (extensible)"
+                      },
+                      "notes": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1,
+                              "pattern": "^[A-Za-z0-9._:-]+$",
+                              "description": "Stable unique identifier within system scope"
+                            },
+                            "author": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "role": {
+                              "type": "string",
+                              "description": "Author role: author/editor/reviewer/etc."
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": ["open", "resolved", "closed"]
+                            },
+                            "text": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["id", "author", "timestamp", "text"],
+                          "description": "Internal note for authoring/review workflows; not for end readers"
+                        },
+                        "description": "Internal notes linked to any node in the hierarchy"
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      },
+                      "updatedAt": {
+                        "type": "string"
+                      },
+                      "authors": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "uniqueItems": true
+                      },
+                      "language": {
+                        "type": "string",
+                        "minLength": 2
+                      },
+                      "type": {
+                        "type": "string",
+                        "enum": ["textual", "figure", "table", "composite", "custom"],
+                        "description": "Optional classifier for block kind"
+                      },
+                      "views": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": ["text", "image", "chart", "table"]
+                            },
+                            "content": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "Rich text (HTML/Markdown) or plain text depending on editor policy"
+                            },
+                            "mediaType": {
+                              "type": "string",
+                              "enum": [
+                                "image/png",
+                                "image/jpeg",
+                                "image/gif",
+                                "image/webp",
+                                "image/svg+xml"
+                              ]
+                            },
+                            "base64": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "alt": {
+                              "type": "string"
+                            },
+                            "caption": {
+                              "type": "string"
+                            },
+                            "spec": {
+                              "type": "object",
+                              "description": "JSON specification for chart (e.g., Vega/Vega-Lite/ECharts/Highcharts)"
+                            },
+                            "columns": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "key": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "title": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "type": {
+                                    "type": "string",
+                                    "enum": ["string", "number", "date", "boolean"]
+                                  },
+                                  "format": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["key", "title", "type"]
+                              }
+                            },
+                            "rows": {
+                              "type": "array",
+                              "items": {
+                                "type": "object"
+                              }
+                            }
+                          },
+                          "required": ["type"],
+                          "description": "Content-only leaf. Metadata only in parent levels."
+                        },
+                        "description": "Ordered content pieces of the block"
+                      }
+                    },
+                    "required": ["id", "title", "views"],
+                    "description": "Content block within a chapter"
+                  }
+                },
+                "order": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Optional explicit ordering index"
+                }
+              },
+              "required": ["id", "title", "blocks"],
+              "description": "Chapter within a publication"
+            }
           }
         },
-        "rows": {
-          "type": "array",
-          "items": { "type": "object", "additionalProperties": true }
-        },
-        "caption": { "type": "string" },
-        "notes": { "$ref": "#/$defs/notes" }
-      },
-      "required": ["type", "columns", "rows"]
-    },
-
-    "view": {
-      "description": "Content-only leaf. Metadata only in parent levels.",
-      "oneOf": [
-        { "$ref": "#/$defs/view:text" },
-        { "$ref": "#/$defs/view:image" },
-        { "$ref": "#/$defs/view:chart" },
-        { "$ref": "#/$defs/view:table" }
-      ]
-    },
-
-    "baseNode": {
-      "description": "Common structural fields for publication/chapter/block",
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "id": { "$ref": "#/$defs/id" },
-        "title": { "type": "string", "minLength": 1 },
-        "subtitle": { "$ref": "#/$defs/subtitle" },
-        "summary": { "$ref": "#/$defs/summary" },
-        "metadata": { "$ref": "#/$defs/metadata" },
-        "notes": { "$ref": "#/$defs/notes" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" },
-        "authors": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "language": { "type": "string", "minLength": 2 }
-      },
-      "required": ["id", "title"]
-    },
-
-    "block": {
-      "allOf": [
-        { "$ref": "#/$defs/baseNode" },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "description": "Optional classifier for block kind",
-              "type": "string",
-              "enum": ["textual", "figure", "table", "composite", "custom"]
-            },
-            "views": {
-              "description": "Ordered content pieces of the block",
-              "type": "array",
-              "minItems": 1,
-              "items": { "$ref": "#/$defs/view" }
-            }
-          },
-          "required": ["views"]
-        }
-      ]
-    },
-
-    "chapter": {
-      "allOf": [
-        { "$ref": "#/$defs/baseNode" },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "blocks": {
-              "type": "array",
-              "minItems": 1,
-              "items": { "$ref": "#/$defs/block" }
-            },
-            "order": {
-              "description": "Optional explicit ordering index",
-              "type": "integer",
-              "minimum": 0
-            }
-          },
-          "required": ["blocks"]
-        }
-      ]
-    },
-
-    "publication": {
-      "allOf": [
-        { "$ref": "#/$defs/baseNode" },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "quarterly_report",
-                "thematic_report",
-                "strategy_note",
-                "market_commentary",
-                "research_note"
-              ]
-            },
-            "targetAudience": {
-              "type": "string",
-              "enum": ["institutional", "retail", "internal"]
-            },
-            "chapters": {
-              "type": "array",
-              "minItems": 1,
-              "items": { "$ref": "#/$defs/chapter" }
-            },
-            "version": {
-              "type": "string",
-              "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
-            },
-            "status": {
-              "type": "string",
-              "enum": [
-                "draft",
-                "in_review",
-                "approved",
-                "published",
-                "archived"
-              ]
-            },
-            "publishedAt": { "type": "string", "format": "date-time" }
-          },
-          "required": ["type", "chapters"]
-        }
-      ]
+        "required": ["id", "title", "type", "chapters"],
+        "description": "Individual publication"
+      }
     }
-  }
+  },
+  "required": ["publications"]
 }
-
