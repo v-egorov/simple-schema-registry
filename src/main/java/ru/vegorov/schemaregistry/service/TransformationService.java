@@ -58,8 +58,8 @@ public class TransformationService {
 
         String subject = request.getSubject();
 
-        // Validate consumer is registered for the subject
-        consumerService.validateConsumerSubject(consumerId, subject);
+        // Validate consumer exists
+        consumerService.getConsumer(consumerId);
 
         // Get transformation template - use specific version if provided, otherwise use active
         TransformationTemplateEntity template;

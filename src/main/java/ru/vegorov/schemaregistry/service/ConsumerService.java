@@ -9,9 +9,7 @@ import ru.vegorov.schemaregistry.exception.ConflictException;
 import ru.vegorov.schemaregistry.exception.ResourceNotFoundException;
 import ru.vegorov.schemaregistry.repository.ConsumerRepository;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,13 +31,10 @@ public class ConsumerService {
                 String.format("Consumer with ID '%s' already exists", request.getConsumerId()));
         }
 
-        Set<String> subjects = request.getSubjects() != null ?
-            new HashSet<>(request.getSubjects()) : new HashSet<>();
         ConsumerEntity entity = new ConsumerEntity(
             request.getConsumerId(),
             request.getName(),
-            request.getDescription(),
-            subjects
+            request.getDescription()
         );
 
         ConsumerEntity savedEntity = consumerRepository.save(entity);
@@ -76,30 +71,7 @@ public class ConsumerService {
         return consumerRepository.existsByConsumerId(consumerId);
     }
 
-    /**
-     * Validate that consumer is registered for the given subject
-     */
-    @Transactional(readOnly = true)
-    public void validateConsumerSubject(String consumerId, String subject) {
-        ConsumerEntity entity = consumerRepository.findByConsumerId(consumerId)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                String.format("Consumer not found: %s", consumerId)));
-        if (!entity.getSubjects().contains(subject)) {
-            throw new ResourceNotFoundException(
-                String.format("Consumer '%s' is not registered for subject '%s'", consumerId, subject));
-        }
-    }
 
-    /**
-     * Get consumers registered for a specific subject
-     */
-    @Transactional(readOnly = true)
-    public List<ConsumerResponse> getConsumersBySubject(String subject) {
-        List<ConsumerEntity> entities = consumerRepository.findBySubject(subject);
-        return entities.stream()
-            .map(this::mapToResponse)
-            .collect(Collectors.toList());
-    }
 
     /**
      * Map entity to response DTO
@@ -111,8 +83,7 @@ public class ConsumerService {
             entity.getName(),
             entity.getDescription(),
             entity.getCreatedAt(),
-            entity.getUpdatedAt(),
-            entity.getSubjects()
+            entity.getUpdatedAt()
         );
     }
 }

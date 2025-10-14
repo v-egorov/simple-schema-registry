@@ -240,7 +240,7 @@ class TransformationServiceTest {
         template.setInputSchema(inputSchema);
         template.setOutputSchema(outputSchema);
 
-        doNothing().when(consumerService).validateConsumerSubject("consumer-1", "test-subject");
+        when(consumerService.consumerExists("consumer-1")).thenReturn(true);
         when(templateRepository.findByConsumerIdAndSubjectAndIsActiveTrue("consumer-1", "test-subject"))
             .thenReturn(Optional.of(template));
         when(jsltEngine.transform(canonicalJson, ".")).thenReturn(transformedJson);
@@ -281,7 +281,7 @@ class TransformationServiceTest {
         template.setInputSchema(inputSchema);
         template.setOutputSchema(outputSchema);
 
-        doNothing().when(consumerService).validateConsumerSubject("consumer-1", "test-subject");
+        when(consumerService.consumerExists("consumer-1")).thenReturn(true);
         when(templateRepository.findByConsumerIdAndSubjectAndVersion("consumer-1", "test-subject", "2.0.0"))
             .thenReturn(Optional.of(template));
         when(jsltEngine.transform(canonicalJson, ".")).thenReturn(transformedJson);
