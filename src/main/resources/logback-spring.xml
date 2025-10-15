@@ -2,10 +2,10 @@
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
-    <!-- Console appender with colored output -->
+    <!-- Console appender with colored output and MDC context -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%clr(%d{ISO8601}){faint} %clr([%thread]){blue} %clr(%-5level) %clr([%logger{36}]){cyan} - %msg%n</pattern>
+            <pattern>%clr(%d{ISO8601}){faint} %clr([%thread]){blue} %clr(%-5level) %clr([%logger{36}]){cyan} %clr([correlationId=%X{correlationId:-}]){yellow} %clr([operation=%X{operation:-}]){green} - %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -19,11 +19,29 @@
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{ISO8601} [%thread] %-5level [%logger{36}] - %msg%n</pattern>
+            <pattern>%d{ISO8601} [%thread] %-5level [%logger{36}] [correlationId=%X{correlationId:-}] [operation=%X{operation:-}] - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- Application logs -->
+    <!-- Application business logic logs -->
+    <logger name="ru.vegorov.schemaregistry.service" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- Application controllers logs -->
+    <logger name="ru.vegorov.schemaregistry.controller" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- Application exceptions logs -->
+    <logger name="ru.vegorov.schemaregistry.exception" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- Application logs (catch-all) -->
     <logger name="ru.vegorov" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>

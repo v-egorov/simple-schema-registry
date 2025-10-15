@@ -1,5 +1,8 @@
 package ru.vegorov.schemaregistry.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -18,8 +21,18 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @Value("${app.logging.business-operations.enabled:true}")
+    private boolean businessLoggingEnabled;
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
+        if (businessLoggingEnabled) {
+            logger.warn("Resource not found: message={}, correlationId={}",
+                ex.getMessage(), org.slf4j.MDC.get("correlationId"));
+        }
+
         ErrorResponse error = new ErrorResponse(
             HttpStatus.NOT_FOUND.value(),
             "Resource Not Found",
@@ -31,6 +44,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex) {
+        if (businessLoggingEnabled) {
+            logger.warn("Resource conflict: message={}, correlationId={}",
+                ex.getMessage(), org.slf4j.MDC.get("correlationId"));
+        }
+
         ErrorResponse error = new ErrorResponse(
             HttpStatus.CONFLICT.value(),
             "Conflict",
@@ -53,6 +71,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(SchemaValidationException.class)
     public ResponseEntity<ErrorResponse> handleSchemaValidation(SchemaValidationException ex) {
+        if (businessLoggingEnabled) {
+            logger.error("Schema validation error: message={}, correlationId={}",
+                ex.getMessage(), org.slf4j.MDC.get("correlationId"), ex);
+        }
+
         ErrorResponse error = new ErrorResponse(
             HttpStatus.BAD_REQUEST.value(),
             "Schema Validation Error",
@@ -118,6 +141,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+        logger.error("Unexpected error occurred: message={}, correlationId={}",
+            ex.getMessage(), org.slf4j.MDC.get("correlationId"), ex);
+
         ErrorResponse error = new ErrorResponse(
             HttpStatus.INTERNAL_SERVER_ERROR.value(),
             "Internal Server Error",

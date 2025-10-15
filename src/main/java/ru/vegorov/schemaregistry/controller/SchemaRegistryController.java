@@ -4,9 +4,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 import ru.vegorov.schemaregistry.dto.CompatibilityCheckRequest;
 import ru.vegorov.schemaregistry.dto.CompatibilityCheckResponse;
 import ru.vegorov.schemaregistry.dto.SchemaRegistrationRequest;
@@ -22,7 +28,12 @@ import java.util.List;
 @Tag(name = "Schema Registry", description = "Schema management and compatibility checking")
 public class SchemaRegistryController {
 
+    private static final Logger logger = LoggerFactory.getLogger(SchemaRegistryController.class);
+
     private final SchemaRegistryService schemaService;
+
+    @Value("${app.logging.requests.enabled:true}")
+    private boolean requestLoggingEnabled;
 
     public SchemaRegistryController(SchemaRegistryService schemaService) {
         this.schemaService = schemaService;
@@ -36,13 +47,34 @@ public class SchemaRegistryController {
             @Parameter(description = "Schema subject") @PathVariable String subject,
             @Valid @RequestBody SchemaRegistrationRequest request) {
 
-        // Ensure the subject in path matches the request
-        if (!subject.equals(request.getSubject())) {
-            return ResponseEntity.badRequest().build();
-        }
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "registerCanonicalSchema");
+        MDC.put("subject", subject);
 
-        SchemaResponse response = schemaService.registerCanonicalSchema(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing canonical schema registration request");
+            }
+
+            // Ensure the subject in path matches the request
+            if (!subject.equals(request.getSubject())) {
+                if (requestLoggingEnabled) {
+                    logger.warn("Subject mismatch in request: pathSubject={}, requestSubject={}", subject, request.getSubject());
+                }
+                return ResponseEntity.badRequest().build();
+            }
+
+            SchemaResponse response = schemaService.registerCanonicalSchema(request);
+
+            if (requestLoggingEnabled) {
+                logger.info("Canonical schema registration completed successfully: status={}", HttpStatus.CREATED.value());
+            }
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @GetMapping("/schemas/{subject}/versions")
@@ -76,13 +108,34 @@ public class SchemaRegistryController {
             @Parameter(description = "Schema subject") @PathVariable String subject,
             @Valid @RequestBody CompatibilityCheckRequest request) {
 
-        // Ensure the subject in path matches the request
-        if (!subject.equals(request.getSubject())) {
-            return ResponseEntity.badRequest().build();
-        }
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "checkCanonicalSchemaCompatibility");
+        MDC.put("subject", subject);
 
-        CompatibilityCheckResponse response = schemaService.checkCanonicalSchemaCompatibility(request);
-        return ResponseEntity.ok(response);
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing canonical schema compatibility check request");
+            }
+
+            // Ensure the subject in path matches the request
+            if (!subject.equals(request.getSubject())) {
+                if (requestLoggingEnabled) {
+                    logger.warn("Subject mismatch in compatibility check request: pathSubject={}, requestSubject={}", subject, request.getSubject());
+                }
+                return ResponseEntity.badRequest().build();
+            }
+
+            CompatibilityCheckResponse response = schemaService.checkCanonicalSchemaCompatibility(request);
+
+            if (requestLoggingEnabled) {
+                logger.info("Canonical schema compatibility check completed: compatible={}", response.isCompatible());
+            }
+
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @PostMapping("/schemas/{subject}/validate")

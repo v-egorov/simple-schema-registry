@@ -6,8 +6,14 @@ import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
+import java.time.Instant;
 import ru.vegorov.schemaregistry.dto.CompatibilityCheckRequest;
 import ru.vegorov.schemaregistry.dto.CompatibilityCheckResponse;
 import ru.vegorov.schemaregistry.dto.SchemaRegistrationRequest;
@@ -29,8 +35,19 @@ import java.util.stream.Collectors;
 @Transactional
 public class SchemaRegistryService {
 
+    private static final Logger logger = LoggerFactory.getLogger(SchemaRegistryService.class);
+
     private final SchemaRepository schemaRepository;
     private final ObjectMapper objectMapper;
+
+    @Value("${app.logging.business-operations.enabled:true}")
+    private boolean businessLoggingEnabled;
+
+    @Value("${app.logging.performance.enabled:true}")
+    private boolean performanceLoggingEnabled;
+
+    @Value("${app.logging.performance.slow-threshold-ms:1000}")
+    private long slowThresholdMs;
 
     public SchemaRegistryService(SchemaRepository schemaRepository, ObjectMapper objectMapper) {
         this.schemaRepository = schemaRepository;
@@ -41,23 +58,58 @@ public class SchemaRegistryService {
      * Register a new canonical schema or create a new version
      */
     public SchemaResponse registerCanonicalSchema(SchemaRegistrationRequest request) {
+        Instant start = performanceLoggingEnabled ? Instant.now() : null;
         String subject = request.getSubject();
 
-        // Get the next version number for canonical schemas
-        String nextVersion = getNextVersionForCanonicalSchema(subject);
+        if (businessLoggingEnabled) {
+            logger.info("Registering canonical schema: subject={}, compatibility={}",
+                subject, request.getCompatibility());
+        }
 
-        // Create new canonical schema entity
-        SchemaEntity schemaEntity = new SchemaEntity(
-            subject,
-            SchemaType.canonical,
-            nextVersion,
-            request.getSchema(),
-            request.getCompatibility(),
-            request.getDescription()
-        );
+        try {
+            // Get the next version number for canonical schemas
+            String nextVersion = getNextVersionForCanonicalSchema(subject);
 
-        SchemaEntity savedEntity = schemaRepository.save(schemaEntity);
-        return mapToResponse(savedEntity);
+            if (businessLoggingEnabled) {
+                logger.debug("Calculated next version for canonical schema: subject={}, version={}",
+                    subject, nextVersion);
+            }
+
+            // Create new canonical schema entity
+            SchemaEntity schemaEntity = new SchemaEntity(
+                subject,
+                SchemaType.canonical,
+                nextVersion,
+                request.getSchema(),
+                request.getCompatibility(),
+                request.getDescription()
+            );
+
+            SchemaEntity savedEntity = schemaRepository.save(schemaEntity);
+
+            if (businessLoggingEnabled) {
+                logger.info("Canonical schema registered successfully: subject={}, version={}, id={}",
+                    subject, nextVersion, savedEntity.getId());
+            }
+
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                if (duration > slowThresholdMs) {
+                    logger.warn("Slow schema registration detected: subject={}, duration={}ms", subject, duration);
+                } else {
+                    logger.debug("Schema registration performance: subject={}, duration={}ms", subject, duration);
+                }
+            }
+
+            return mapToResponse(savedEntity);
+        } catch (Exception e) {
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                logger.error("Schema registration failed: subject={}, duration={}ms, error={}",
+                    subject, duration, e.getMessage(), e);
+            }
+            throw e;
+        }
     }
 
     /**
@@ -91,11 +143,22 @@ public class SchemaRegistryService {
      */
     @Transactional(readOnly = true)
     public List<SchemaResponse> getCanonicalSchemasBySubject(String subject) {
+        if (businessLoggingEnabled) {
+            logger.debug("Retrieving all canonical schema versions: subject={}", subject);
+        }
+
         List<SchemaEntity> entities = schemaRepository.findBySubjectAndSchemaType(subject, SchemaType.canonical);
-        return entities.stream()
+
+        List<SchemaResponse> responses = entities.stream()
             .sorted((a, b) -> compareSemver(b.getVersion(), a.getVersion())) // Sort descending
             .map(this::mapToResponse)
             .collect(Collectors.toList());
+
+        if (businessLoggingEnabled) {
+            logger.debug("Retrieved {} canonical schema versions: subject={}", responses.size(), subject);
+        }
+
+        return responses;
     }
 
     /**
@@ -172,11 +235,19 @@ public class SchemaRegistryService {
     @Transactional(readOnly = true)
     public CompatibilityCheckResponse checkCanonicalSchemaCompatibility(CompatibilityCheckRequest request) {
         String subject = request.getSubject();
+
+        if (businessLoggingEnabled) {
+            logger.info("Checking canonical schema compatibility: subject={}", subject);
+        }
+
         List<SchemaEntity> entities = schemaRepository.findBySubjectAndSchemaType(subject, SchemaType.canonical);
         Optional<SchemaEntity> latestSchemaOpt = entities.stream()
             .max((a, b) -> compareSemver(a.getVersion(), b.getVersion()));
 
         if (latestSchemaOpt.isEmpty()) {
+            if (businessLoggingEnabled) {
+                logger.info("No existing canonical schema found for compatibility check: subject={}", subject);
+            }
             // If no existing schema, it's compatible
             return new CompatibilityCheckResponse(true, "No existing schema to check against");
         }
@@ -184,12 +255,22 @@ public class SchemaRegistryService {
         SchemaEntity latestSchema = latestSchemaOpt.get();
         String compatibilityMode = latestSchema.getCompatibility();
 
+        if (businessLoggingEnabled) {
+            logger.debug("Checking compatibility against existing schema: subject={}, existingVersion={}, mode={}",
+                subject, latestSchema.getVersion(), compatibilityMode);
+        }
+
         // For now, implement basic compatibility checking
         // In a real implementation, this would use proper JSON Schema compatibility algorithms
         boolean compatible = checkSchemaCompatibility(latestSchema.getSchemaJson(),
-                                                     request.getSchema(), compatibilityMode);
+                                                      request.getSchema(), compatibilityMode);
 
         String message = compatible ? "Schema is compatible" : "Schema is not compatible";
+
+        if (businessLoggingEnabled) {
+            logger.info("Schema compatibility check completed: subject={}, compatible={}, mode={}",
+                subject, compatible, compatibilityMode);
+        }
 
         return new CompatibilityCheckResponse(compatible, message);
     }
@@ -282,6 +363,11 @@ public class SchemaRegistryService {
         String subject = request.getSubject();
         JsonNode jsonData = request.getJsonData();
 
+        if (businessLoggingEnabled) {
+            logger.info("Validating JSON against {} schema: subject={}, dataSize={}",
+                schemaType, subject, jsonData.size());
+        }
+
         // Get the schema to validate against
         SchemaEntity schemaEntity;
             if (request.getVersion() != null) {
@@ -327,14 +413,28 @@ public class SchemaRegistryService {
             java.util.Set<ValidationMessage> validationMessages = schema.validate(jsonData);
 
             if (validationMessages.isEmpty()) {
+                if (businessLoggingEnabled) {
+                    logger.info("JSON validation successful: subject={}, schemaVersion={}, schemaType={}",
+                        subject, schemaEntity.getVersion(), schemaType);
+                }
                 return new SchemaValidationResponse(true, subject, schemaEntity.getVersion());
             } else {
                 List<String> errors = validationMessages.stream()
                     .map(ValidationMessage::getMessage)
                     .collect(Collectors.toList());
+
+                if (businessLoggingEnabled) {
+                    logger.warn("JSON validation failed: subject={}, schemaVersion={}, schemaType={}, errorCount={}",
+                        subject, schemaEntity.getVersion(), schemaType, errors.size());
+                }
+
                 return new SchemaValidationResponse(false, subject, schemaEntity.getVersion(), errors);
             }
         } catch (Exception e) {
+            if (businessLoggingEnabled) {
+                logger.error("JSON validation error: subject={}, schemaVersion={}, schemaType={}, error={}",
+                    subject, schemaEntity.getVersion(), schemaType, e.getMessage(), e);
+            }
             throw new SchemaValidationException("Failed to validate JSON against schema: " + e.getMessage());
         }
     }

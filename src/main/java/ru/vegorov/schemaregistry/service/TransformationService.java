@@ -1,9 +1,14 @@
 package ru.vegorov.schemaregistry.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import ru.vegorov.schemaregistry.dto.SchemaReference;
 import ru.vegorov.schemaregistry.dto.TransformationRequest;
@@ -26,6 +31,8 @@ import java.util.stream.Collectors;
 @Transactional
 public class TransformationService {
 
+    private static final Logger logger = LoggerFactory.getLogger(TransformationService.class);
+
     private final TransformationTemplateRepository templateRepository;
     private final SchemaRepository schemaRepository;
     private final JsltTransformationEngine jsltEngine;
@@ -34,6 +41,15 @@ public class TransformationService {
     private final ConsumerService consumerService;
     private final ObjectMapper objectMapper;
     private final JsltFunctionRegistry functionRegistry;
+
+    @Value("${app.logging.business-operations.enabled:true}")
+    private boolean businessLoggingEnabled;
+
+    @Value("${app.logging.performance.enabled:true}")
+    private boolean performanceLoggingEnabled;
+
+    @Value("${app.logging.performance.slow-threshold-ms:1000}")
+    private long slowThresholdMs;
 
     public TransformationService(TransformationTemplateRepository templateRepository,
                                  SchemaRepository schemaRepository,
@@ -59,7 +75,13 @@ public class TransformationService {
     public TransformationResponse transform(String consumerId, TransformationRequest request)
         throws TransformationException {
 
+        Instant start = performanceLoggingEnabled ? Instant.now() : null;
         String subject = request.getSubject();
+
+        if (businessLoggingEnabled) {
+            logger.info("Starting transformation: consumer={}, subject={}, requestedVersion={}",
+                consumerId, subject, request.getTransformationVersion());
+        }
 
         // Validate consumer exists
         consumerService.getConsumer(consumerId);
@@ -77,24 +99,66 @@ public class TransformationService {
                     String.format("No active transformation template found for consumer: %s, subject: %s", consumerId, subject)));
         }
 
+        if (businessLoggingEnabled) {
+            logger.debug("Using transformation template: consumer={}, subject={}, templateVersion={}, engine={}",
+                consumerId, subject, template.getVersion(), template.getEngine());
+        }
+
         // Get the appropriate engine (currently only JSLT is supported)
         TransformationEngine engine = getEngine(template.getEngine());
 
         // Apply transformation
         Map<String, Object> transformedJson;
-        if (engine instanceof JsltTransformationEngine && functionRegistry != null) {
-            // Use JSLT engine with function registry for custom functions
-            transformedJson = ((JsltTransformationEngine) engine).transform(
-                request.getCanonicalJson(),
-                template.getTemplateExpression(),
-                functionRegistry
-            );
-        } else {
-            // Fallback to standard transformation
-            transformedJson = engine.transform(
-                request.getCanonicalJson(),
-                template.getTemplateExpression()
-            );
+        try {
+            if (engine instanceof JsltTransformationEngine && functionRegistry != null) {
+                // Use JSLT engine with function registry for custom functions
+                if (businessLoggingEnabled) {
+                    logger.debug("Applying JSLT transformation with function registry: consumer={}, subject={}",
+                        consumerId, subject);
+                }
+                transformedJson = ((JsltTransformationEngine) engine).transform(
+                    request.getCanonicalJson(),
+                    template.getTemplateExpression(),
+                    functionRegistry
+                );
+            } else {
+                // Fallback to standard transformation
+                if (businessLoggingEnabled) {
+                    logger.debug("Applying standard transformation: consumer={}, subject={}, engine={}",
+                        consumerId, subject, engine.getClass().getSimpleName());
+                }
+                transformedJson = engine.transform(
+                    request.getCanonicalJson(),
+                    template.getTemplateExpression()
+                );
+            }
+
+            if (businessLoggingEnabled) {
+                logger.info("Transformation completed successfully: consumer={}, subject={}, outputSize={}",
+                    consumerId, subject, transformedJson.size());
+            }
+
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                if (duration > slowThresholdMs) {
+                    logger.warn("Slow transformation detected: consumer={}, subject={}, engine={}, duration={}ms",
+                        consumerId, subject, template.getEngine(), duration);
+                } else {
+                    logger.debug("Transformation performance: consumer={}, subject={}, duration={}ms",
+                        consumerId, subject, duration);
+                }
+            }
+
+        } catch (Exception e) {
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                logger.error("Transformation failed: consumer={}, subject={}, engine={}, duration={}ms, error={}",
+                    consumerId, subject, template.getEngine(), duration, e.getMessage(), e);
+            } else if (businessLoggingEnabled) {
+                logger.error("Transformation failed: consumer={}, subject={}, engine={}, error={}",
+                    consumerId, subject, template.getEngine(), e.getMessage(), e);
+            }
+            throw e;
         }
 
         return new TransformationResponse(transformedJson, subject);
@@ -104,7 +168,12 @@ public class TransformationService {
      * Create a new transformation template version for a consumer and subject
      */
     public TransformationTemplateResponse createTemplateVersion(String consumerId,
-                                                               TransformationTemplateRequest request) {
+                                                                TransformationTemplateRequest request) {
+
+        if (businessLoggingEnabled) {
+            logger.info("Creating transformation template version: consumer={}, version={}, engine={}",
+                consumerId, request.getVersion(), request.getEngine());
+        }
 
         // Verify consumer exists
         if (!consumerService.consumerExists(consumerId)) {
@@ -118,6 +187,11 @@ public class TransformationService {
 
         // The subject is derived from the input schema
         String subject = inputSchema.getSubject();
+
+        if (businessLoggingEnabled) {
+            logger.debug("Resolved schemas for template creation: consumer={}, subject={}, inputSchemaId={}, outputSchemaId={}",
+                consumerId, subject, inputSchema.getId(), outputSchema.getId());
+        }
 
         // Check if this version already exists
         if (templateRepository.existsByConsumerIdAndSubjectAndVersion(consumerId, subject, request.getVersion())) {
@@ -164,13 +238,25 @@ public class TransformationService {
         boolean isValid;
         if (engine instanceof JsltTransformationEngine && functionRegistry != null) {
             // Use JSLT engine with function registry for validation
+            if (businessLoggingEnabled) {
+                logger.debug("Validating JSLT expression with function registry: consumer={}, subject={}",
+                    consumerId, subject);
+            }
             isValid = ((JsltTransformationEngine) engine).validateExpression(expression, functionRegistry);
         } else {
             // Fallback to standard validation
+            if (businessLoggingEnabled) {
+                logger.debug("Validating expression with {} engine: consumer={}, subject={}",
+                    engine.getClass().getSimpleName(), consumerId, subject);
+            }
             isValid = engine.validateExpression(expression);
         }
 
         if (!isValid) {
+            if (businessLoggingEnabled) {
+                logger.error("Invalid transformation configuration: consumer={}, subject={}, engine={}",
+                    consumerId, subject, request.getEngine());
+            }
             throw new IllegalArgumentException("Invalid transformation configuration");
         }
 
@@ -197,6 +283,11 @@ public class TransformationService {
         // If this is active, deactivate other versions
         if (isActive) {
             deactivateOtherVersions(consumerId, subject, request.getVersion());
+        }
+
+        if (businessLoggingEnabled) {
+            logger.info("Transformation template version created successfully: consumer={}, subject={}, version={}, active={}",
+                consumerId, subject, request.getVersion(), isActive);
         }
 
         return mapToResponse(savedEntity);
