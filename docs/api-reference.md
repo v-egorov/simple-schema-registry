@@ -919,6 +919,42 @@ Activate a specific version of a transformation template.
 
 **Endpoint**: `PUT /api/consumers/{consumerId}/subjects/{subject}/templates/versions/{version}/activate`
 
+#### Activation Logic and Flow
+
+The activation process follows these steps:
+
+1. **Version Validation**: Checks if the requested transformation template version exists for the specified consumer and subject pair. Returns 404 if not found.
+
+2. **Active Status Check**: If the requested version is already active (`isActive = true`), returns the current template without changes.
+
+3. **Current Version Deactivation**: If a different version is currently active:
+   - Sets the currently active version's `isActive` flag to `false`
+   - Uses `saveAndFlush()` to ensure immediate database commit
+   - This prevents constraint violations during the activation step
+
+4. **New Version Activation**: Sets the requested version's `isActive` flag to `true` and saves the changes.
+
+5. **Database Constraints**: A unique partial index ensures only one version can be active per consumer-subject pair at the database level.
+
+#### New Version Creation and Activation Flow
+
+When creating transformation templates:
+
+1. **First Template Auto-Activation**: The very first template created for a consumer-subject pair is automatically activated
+
+2. **Subsequent Templates Inactive**: All additional versions for the same consumer-subject pair are created as inactive by default
+
+3. **Manual Activation Required**: New versions (after the first) require explicit activation via the activate endpoint
+
+4. **Reasoning for Manual Activation** (not Auto-Activation):
+   - **Safety**: Prevents accidental activation of untested or incomplete transformations
+   - **Control**: Allows operators to validate transformations before making them active
+   - **Rollback Capability**: Easy to switch between versions without creating new ones
+   - **Audit Trail**: Clear record of when versions were activated for compliance
+   - **Testing**: Allows staging and testing of new versions before production activation
+
+4. **Version Management**: Operators can maintain multiple versions and switch between them as needed for different scenarios (A/B testing, gradual rollouts, emergency rollbacks).
+
 **Response** (200 OK):
 
 ```json
@@ -928,8 +964,15 @@ Activate a specific version of a transformation template.
   "subject": "user-profile",
   "version": "2.0.0",
   "engine": "jslt",
-  "inputSchema": 1,
-  "outputSchema": 2,
+  "inputSchema": {
+    "subject": "user-profile",
+    "version": "1.0.0"
+  },
+  "outputSchema": {
+    "subject": "user-profile",
+    "consumerId": "mobile-app",
+    "version": "1.0.0"
+  },
   "isActive": true,
   "templateExpression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus, lastLogin: .lastLoginDate}",
   "configuration": null,
@@ -938,6 +981,19 @@ Activate a specific version of a transformation template.
   "updatedAt": "2024-01-15T11:00:00"
 }
 ```
+
+**Error Responses**:
+
+- **404 Not Found**: When the specified transformation template version doesn't exist
+  ```json
+  {
+    "timestamp": "2024-01-15T11:00:00",
+    "status": 404,
+    "error": "Not Found",
+    "message": "Transformation template version not found: consumer=mobile-app, subject=user-profile, version=3.0.0",
+    "path": "/api/consumers/mobile-app/subjects/user-profile/templates/versions/3.0.0/activate"
+  }
+  ```
 
 ### Deactivate Template Version
 

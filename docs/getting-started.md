@@ -326,6 +326,41 @@ curl -X POST http://localhost:8080/api/consumers/analytics-platform/subjects/use
 
 ### 4. Transform Data with Different Engines
 
+#### Template Versioning and Activation
+
+Templates support versioning for gradual rollouts and rollbacks:
+
+- **First Template**: Automatically activated when created
+- **Additional Versions**: Created as inactive by default, requiring explicit activation
+
+Create and activate a new version:
+
+```bash
+# Create a new version (inactive by default)
+curl -X POST http://localhost:8080/api/consumers/mobile-app/subjects/user-profile/templates \
+  -H "Content-Type: application/json" \
+  -d '{
+    "version": "2.0.0",
+    "engine": "jslt",
+    "templateExpression": "{ \"userId\": .userId, \"name\": .fullName, \"email\": .email, \"status\": .accountStatus }",
+    "inputSchema": { "subject": "user-profile" },
+    "outputSchema": { "subject": "user-profile", "consumerId": "mobile-app" },
+    "description": "Enhanced mobile app transformation with status"
+  }'
+
+# Activate the new version (deactivates previous version automatically)
+curl -X PUT http://localhost:8080/api/consumers/mobile-app/subjects/user-profile/templates/versions/2.0.0/activate
+
+# Verify active version
+curl http://localhost:8080/api/consumers/mobile-app/subjects/user-profile/templates/active
+```
+
+**Why Manual Activation?** Unlike some systems that auto-activate new versions, this design provides:
+- **Safety**: Test transformations before production activation
+- **Control**: Gradual rollouts and A/B testing capabilities
+- **Rollback**: Quick switching between versions for emergencies
+- **Audit**: Clear activation history for compliance
+
 #### JSLT Engine Transformation
 Transform canonical data for the mobile app consumer:
 

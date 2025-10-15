@@ -152,6 +152,25 @@ This document provides a detailed implementation plan for the transformation ver
 - [x] Implement getAvailableVersions()
 - [x] Add schema compatibility validation methods
 
+##### activateVersion() Implementation Details
+
+The `activateVersion()` method implements atomic version switching with the following logic:
+
+1. **Version Existence Check**: Validates the requested version exists for the consumer-subject pair
+2. **Active Status Check**: Returns early if the version is already active (no-op operation)
+3. **Current Version Deactivation**: Finds and deactivates any currently active version using `saveAndFlush()` for immediate database commit
+4. **New Version Activation**: Activates the requested version and saves changes
+5. **Database Constraints**: Relies on partial unique index ensuring only one active version per consumer-subject pair
+
+**Why Manual Activation (No Auto-Activation)**:
+- **Safety First**: Prevents untested transformations from being automatically activated
+- **Operational Control**: Allows validation and testing before production deployment
+- **Rollback Capability**: Enables quick switching between versions for emergency scenarios
+- **Audit Compliance**: Maintains clear activation history for regulatory requirements
+- **Staged Rollouts**: Supports gradual deployment strategies and A/B testing
+
+**Note**: This is NOT auto-versioning (automatic version number assignment). Users must explicitly specify semantic version numbers for each template.
+
 ### Phase 5: Controller Layer Updates
 **Status**: ✅ Completed
 
