@@ -251,6 +251,34 @@ Shared utilities for all tests:
 - `create_test_schema` - Schema creation helper
 - `create_test_template` - Template creation helper
 
+### Schema Registration Utilities
+
+#### `register-schema-from-file.sh`
+Registers JSON schemas from files with automatic schema type detection:
+
+**Canonical Schema Registration:**
+```bash
+./register-schema-from-file.sh schema.json subject-name BACKWARD "description"
+# Registers to: POST /api/schemas/subject-name
+```
+
+**Consumer Output Schema Registration:**
+```bash
+./register-schema-from-file.sh schema.json subject-name consumer-123 BACKWARD "description"
+# Registers to: POST /api/consumers/consumer-123/schemas/subject-name
+```
+
+**Parameter Detection:**
+- **2 parameters**: `file subject` → Canonical schema (BACKWARD compatibility)
+- **3 parameters**: `file subject compatibility` → Canonical schema
+- **4+ parameters**: `file subject consumer_id ...` → Consumer output schema
+
+**Features:**
+- Automatic JSON validation of schema files
+- Consumer ID format validation (letters, numbers, hyphens, underscores)
+- Comprehensive error handling and logging
+- Supports all compatibility modes (BACKWARD, FORWARD, FULL)
+
 ### Assertions
 
 Tests use comprehensive assertions:

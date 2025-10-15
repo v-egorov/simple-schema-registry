@@ -1,0 +1,63 @@
+{
+    "$schema": "https://json-schema.org/draft-04/schema",
+    "type": "object",
+    "title": "Input Schema with Nested additionalMetadataFields",
+    "properties": {
+      "id": {
+        "type": "integer",
+        "description": "Unique identifier"
+      },
+      "name": {
+        "type": "string",
+        "description": "Entity name"
+      },
+      "details": {
+        "type": "object",
+        "description": "Nested details object containing metadata",
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "Category classification"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status"
+          },
+          "additionalMetadataFields": {
+            "type": "array",
+            "description": "Array of key-value metadata pairs",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Metadata field identifier"
+                },
+                "val": {
+                  "type": "string",
+                  "description": "Metadata field value (as string)"
+                }
+              },
+              "required": ["id", "val"],
+              "additionalProperties": false
+            }
+          },
+          "lastUpdated": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": ["category", "additionalMetadataFields"],
+        "additionalProperties": false
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Creation timestamp"
+      }
+    },
+    "required": ["id", "name", "details"],
+    "additionalProperties": false
+  }
+  

@@ -1,0 +1,59 @@
+{
+    "$schema": "https://json-schema.org/draft-04/schema",
+    "type": "object",
+    "title": "Output Schema with Transformed forecastToday",
+    "properties": {
+      "id": {
+        "type": "integer",
+        "description": "Unique identifier (preserved from input)"
+      },
+      "name": {
+        "type": "string",
+        "description": "Entity name (preserved from input)"
+      },
+      "details": {
+        "type": "object",
+        "description": "Transformed details object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "Category classification (preserved from input)"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status (preserved from input)"
+          },
+          "lastUpdated": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp (preserved from input)"
+          },
+          "forecastToday": {
+            "type": "object",
+            "description": "Transformed forecast data (created if forecastTodayValue exists in input)",
+            "properties": {
+              "value": {
+                "type": "number",
+                "description": "Forecast value converted from string to number"
+              },
+              "direction": {
+                "type": "string",
+                "description": "Forecast direction (flat, up, down)"
+              }
+            },
+            "required": ["value", "direction"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["category"],
+        "additionalProperties": false
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Creation timestamp (preserved from input)"
+      }
+    },
+    "required": ["id", "name", "details"],
+    "additionalProperties": false
+  }

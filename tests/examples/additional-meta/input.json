@@ -1,0 +1,28 @@
+{
+    "id": 12345,
+    "name": "Financial Instrument ABC",
+    "details": {
+      "category": "equity",
+      "status": "active",
+      "additionalMetadataFields": [
+        {
+          "id": "forecastTodayValue",
+          "val": "77.85"
+        },
+        {
+          "id": "forecastTodayDirection",
+          "val": "up"
+        },
+        {
+          "id": "riskLevel",
+          "val": "medium"
+        },
+        {
+          "id": "lastAnalyzed",
+          "val": "2025-10-14T20:30:00Z"
+        }
+      ],
+      "lastUpdated": "2025-10-14T22:15:00Z"
+    },
+    "createdAt": "2025-10-01T10:00:00Z"
+  }
