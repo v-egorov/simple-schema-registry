@@ -33,14 +33,16 @@ public class TransformationService {
     private final PipelineTransformationEngine pipelineEngine;
     private final ConsumerService consumerService;
     private final ObjectMapper objectMapper;
+    private final JsltFunctionRegistry functionRegistry;
 
     public TransformationService(TransformationTemplateRepository templateRepository,
-                                SchemaRepository schemaRepository,
-                                JsltTransformationEngine jsltEngine,
-                                RouterTransformationEngine routerEngine,
-                                PipelineTransformationEngine pipelineEngine,
-                                ConsumerService consumerService,
-                                ObjectMapper objectMapper) {
+                                 SchemaRepository schemaRepository,
+                                 JsltTransformationEngine jsltEngine,
+                                 RouterTransformationEngine routerEngine,
+                                 PipelineTransformationEngine pipelineEngine,
+                                 ConsumerService consumerService,
+                                 ObjectMapper objectMapper,
+                                 JsltFunctionRegistry functionRegistry) {
         this.templateRepository = templateRepository;
         this.schemaRepository = schemaRepository;
         this.jsltEngine = jsltEngine;
@@ -48,6 +50,7 @@ public class TransformationService {
         this.pipelineEngine = pipelineEngine;
         this.consumerService = consumerService;
         this.objectMapper = objectMapper;
+        this.functionRegistry = functionRegistry;
     }
 
     /**
@@ -78,10 +81,21 @@ public class TransformationService {
         TransformationEngine engine = getEngine(template.getEngine());
 
         // Apply transformation
-        Map<String, Object> transformedJson = engine.transform(
-            request.getCanonicalJson(),
-            template.getTemplateExpression()
-        );
+        Map<String, Object> transformedJson;
+        if (engine instanceof JsltTransformationEngine && functionRegistry != null) {
+            // Use JSLT engine with function registry for custom functions
+            transformedJson = ((JsltTransformationEngine) engine).transform(
+                request.getCanonicalJson(),
+                template.getTemplateExpression(),
+                functionRegistry
+            );
+        } else {
+            // Fallback to standard transformation
+            transformedJson = engine.transform(
+                request.getCanonicalJson(),
+                template.getTemplateExpression()
+            );
+        }
 
         return new TransformationResponse(transformedJson, subject);
     }
@@ -147,7 +161,16 @@ public class TransformationService {
 
         // Validate the transformation expression/configuration
         TransformationEngine engine = getEngine(request.getEngine());
-        if (!engine.validateExpression(expression)) {
+        boolean isValid;
+        if (engine instanceof JsltTransformationEngine && functionRegistry != null) {
+            // Use JSLT engine with function registry for validation
+            isValid = ((JsltTransformationEngine) engine).validateExpression(expression, functionRegistry);
+        } else {
+            // Fallback to standard validation
+            isValid = engine.validateExpression(expression);
+        }
+
+        if (!isValid) {
             throw new IllegalArgumentException("Invalid transformation configuration");
         }
 

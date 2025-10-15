@@ -6,9 +6,6 @@
     "category": .details.category,
     "status": .details.status,
     "lastUpdated": .details.lastUpdated,
-    "forecastToday": if (.details.additionalMetadataFields) {
-      "value": number(.details.additionalMetadataFields[0].val),
-      "direction": .details.additionalMetadataFields[1].val
-    } else null
+    "forecastToday": extract_forecast_today(.details.additionalMetadataFields)
   }
 }

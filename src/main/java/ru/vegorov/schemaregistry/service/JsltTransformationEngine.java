@@ -34,9 +34,28 @@ public class JsltTransformationEngine implements TransformationEngine {
     @Override
     public Map<String, Object> transform(Map<String, Object> inputJson, String expression)
         throws TransformationException {
+        return transform(inputJson, expression, null);
+    }
+
+    /**
+     * Transform JSON data using JSLT expression with optional custom functions.
+     *
+     * @param inputJson Input JSON data as Map
+     * @param expression JSLT expression string
+     * @param functionRegistry Optional function registry for custom functions
+     * @return Transformed JSON data as Map
+     * @throws TransformationException if transformation fails
+     */
+    public Map<String, Object> transform(Map<String, Object> inputJson, String expression, JsltFunctionRegistry functionRegistry)
+        throws TransformationException {
         try {
-            // Parse the JSLT expression
-            Expression jsltExpression = Parser.compileString(expression);
+            // Parse the JSLT expression with custom functions if registry is provided
+            Expression jsltExpression;
+            if (functionRegistry != null && !functionRegistry.getFunctionNames().isEmpty()) {
+                jsltExpression = Parser.compileString(expression, functionRegistry.getAllFunctions());
+            } else {
+                jsltExpression = Parser.compileString(expression);
+            }
 
             // Convert input Map to JsonNode
             JsonNode inputNode = objectMapper.valueToTree(inputJson);
@@ -56,11 +75,28 @@ public class JsltTransformationEngine implements TransformationEngine {
 
     @Override
     public boolean validateExpression(String expression) {
+        return validateExpression(expression, null);
+    }
+
+    /**
+     * Validate JSLT expression with optional function registry.
+     *
+     * @param expression JSLT expression to validate
+     * @param functionRegistry Optional function registry for validation
+     * @return true if expression is valid
+     */
+    public boolean validateExpression(String expression, JsltFunctionRegistry functionRegistry) {
         if (expression == null || expression.trim().isEmpty()) {
             return false;
         }
         try {
-            Parser.compileString(expression);
+            Expression jsltExpression;
+            if (functionRegistry != null && !functionRegistry.getFunctionNames().isEmpty()) {
+                jsltExpression = Parser.compileString(expression, functionRegistry.getAllFunctions());
+            } else {
+                jsltExpression = Parser.compileString(expression);
+            }
+
             return true;
         } catch (JsltException e) {
             // Expected: Invalid JSLT syntax

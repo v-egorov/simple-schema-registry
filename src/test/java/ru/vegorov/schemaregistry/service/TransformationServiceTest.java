@@ -50,6 +50,9 @@ class TransformationServiceTest {
     @Mock
     private PipelineTransformationEngine pipelineEngine;
 
+    @Mock
+    private JsltFunctionRegistry functionRegistry;
+
     private ObjectMapper objectMapper = new ObjectMapper();
 
     private TransformationService transformationService;
@@ -63,7 +66,8 @@ class TransformationServiceTest {
             routerEngine,
             pipelineEngine,
             consumerService,
-            objectMapper
+            objectMapper,
+            functionRegistry
         );
     }
 
@@ -118,7 +122,7 @@ class TransformationServiceTest {
             .thenReturn(Optional.of(outputSchema));
         when(templateRepository.existsByConsumerIdAndSubjectAndVersion("consumer-1", "input-subject", "1.0.0")).thenReturn(false);
         when(templateRepository.existsByConsumerIdAndSubject("consumer-1", "input-subject")).thenReturn(false);
-        when(jsltEngine.validateExpression(".")).thenReturn(true);
+        when(jsltEngine.validateExpression(".", functionRegistry)).thenReturn(true);
         when(templateRepository.save(any(TransformationTemplateEntity.class))).thenReturn(savedEntity);
 
         // When
@@ -246,7 +250,7 @@ class TransformationServiceTest {
         when(consumerService.getConsumer("consumer-1")).thenReturn(consumerResponse);
         when(templateRepository.findByConsumerIdAndSubjectAndIsActiveTrue("consumer-1", "test-subject"))
             .thenReturn(Optional.of(template));
-        when(jsltEngine.transform(canonicalJson, ".")).thenReturn(transformedJson);
+        when(jsltEngine.transform(canonicalJson, ".", functionRegistry)).thenReturn(transformedJson);
 
         // When
         TransformationResponse response = transformationService.transform("consumer-1", request);
@@ -289,7 +293,7 @@ class TransformationServiceTest {
         when(consumerService.getConsumer("consumer-1")).thenReturn(consumerResponse);
         when(templateRepository.findByConsumerIdAndSubjectAndVersion("consumer-1", "test-subject", "2.0.0"))
             .thenReturn(Optional.of(template));
-        when(jsltEngine.transform(canonicalJson, ".")).thenReturn(transformedJson);
+        when(jsltEngine.transform(canonicalJson, ".", functionRegistry)).thenReturn(transformedJson);
 
         // When
         TransformationResponse response = transformationService.transform("consumer-1", request);
