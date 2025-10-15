@@ -6,9 +6,285 @@ This guide covers the implementation and usage of advanced transformation engine
 
 The service supports three transformation engines:
 
-1. **JSLT Engine** - Simple JSON-to-JSON transformations
+1. **JSLT Engine** - Simple JSON-to-JSON transformations using JSLT expressions
 2. **Router Engine** - Intelligent routing based on data characteristics
 3. **Pipeline Engine** - Sequential multi-step transformations
+
+## JSLT Engine Implementation
+
+### JSLT Basics
+
+JSLT (JSON Schema Language for Transformations) is a functional language for transforming JSON documents. It provides:
+
+- **Pattern matching** on JSON structures
+- **Functional programming constructs** (map, filter, reduce)
+- **JSON path expressions** for data access
+- **Type conversion functions** (number, string, boolean)
+
+### Core Components
+
+#### JsltTransformationEngine
+
+```java
+@Component
+public class JsltTransformationEngine implements TransformationEngine {
+
+    private final ObjectMapper objectMapper;
+
+    @Override
+    public String getName() {
+        return "jslt";
+    }
+
+    @Override
+    public Map<String, Object> transform(Map<String, Object> inputJson, String expression)
+            throws TransformationException {
+        try {
+            // Convert input to JsonNode
+            JsonNode inputNode = objectMapper.valueToTree(inputJson);
+
+            // Compile and execute JSLT expression
+            com.schibsted.spt.data.jslt.Expression jsltExpression =
+                Parser.compileString(expression);
+
+            JsonNode resultNode = jsltExpression.apply(inputNode);
+
+            // Convert result back to Map
+            return objectMapper.treeToValue(resultNode, Map.class);
+
+        } catch (JsltException | IOException e) {
+            throw new TransformationException("JSLT transformation failed: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public boolean validateExpression(String expression) {
+        try {
+            Parser.compileString(expression);
+            return true;
+        } catch (JsltException e) {
+            return false;
+        }
+    }
+}
+```
+
+### JSLT Transformation Example: Metadata Field Extraction
+
+#### Problem Statement
+
+A common transformation requirement is to extract structured data from flat metadata arrays. For example, transforming:
+
+```json
+{
+  "id": 123,
+  "name": "Test Item",
+  "details": {
+    "category": "forecast",
+    "additionalMetadataFields": [
+      {
+        "id": "forecastTodayValue",
+        "val": "77.0"
+      },
+      {
+        "id": "forecastTodayDirection",
+        "val": "flat"
+      }
+    ]
+  }
+}
+```
+
+Into:
+
+```json
+{
+  "id": 123,
+  "name": "Test Item",
+  "details": {
+    "category": "forecast",
+    "forecastToday": {
+      "value": 77,
+      "direction": "flat"
+    }
+  }
+}
+```
+
+#### Solution: JSLT Expression
+
+```json
+{
+  "id": .id,
+  "name": .name,
+  "createdAt": .createdAt,
+  "details": {
+    "category": .details.category,
+    "status": .details.status,
+    "lastUpdated": .details.lastUpdated,
+    "forecastToday": if (.details.additionalMetadataFields) {
+      "value": number(.details.additionalMetadataFields[0].val),
+      "direction": .details.additionalMetadataFields[1].val
+    } else null
+  }
+}
+```
+
+#### How It Works
+
+1. **Preserve Main Structure**: The transformation maintains the core data structure (`id`, `name`, `createdAt`, `details`)
+
+2. **Conditional Processing**: Uses JSLT's `if/else` construct to check if `additionalMetadataFields` exists
+
+3. **Array Access**: Accesses array elements by index:
+   - `additionalMetadataFields[0]` gets the forecast value
+   - `additionalMetadataFields[1]` gets the forecast direction
+
+4. **Type Conversion**: Uses JSLT's `number()` function to convert string "77.0" to numeric 77
+
+5. **Object Construction**: Creates the new `forecastToday` object with the extracted and transformed data
+
+#### Usage Example
+
+```bash
+# Register the JSLT template
+./register-jslt-template-from-file.sh transformation.jslt mobile-app additional-meta
+
+# Test the transformation
+curl -X POST http://localhost:8080/api/consumers/mobile-app/subjects/additional-meta/transform \
+  -H "Content-Type: application/json" \
+  -d '{
+    "canonicalJson": {
+      "id": 123,
+      "details": {
+        "additionalMetadataFields": [
+          {"id": "forecastTodayValue", "val": "77.0"},
+          {"id": "forecastTodayDirection", "val": "flat"}
+        ]
+      }
+    }
+  }'
+```
+
+#### Known Limitations
+
+##### 1. Array Order Dependency
+- **Issue**: The current implementation assumes `forecastTodayValue` is at index 0 and `forecastTodayDirection` at index 1
+- **Impact**: If the array order changes, the transformation will extract wrong values
+- **Workaround**: Ensure data producers maintain consistent array ordering
+- **Future Solution**: Custom JSLT functions for ID-based filtering (see JSLT Custom Functions Implementation Plan)
+
+##### 2. Limited Array Comprehension Support
+- **Issue**: The current JSLT implementation doesn't support complex array comprehensions for filtering by ID
+- **Example**: `[for (item) in array: if (item.id == "target") item.val][0]` fails validation
+- **Impact**: Cannot dynamically find fields by ID without knowing their position
+- **Future Solution**: Extend JSLT with custom functions like `find_by_id(array, id)`
+
+##### 3. Static Field Mapping
+- **Issue**: Field names and positions are hardcoded in the JSLT expression
+- **Impact**: Changes to metadata structure require JSLT updates
+- **Workaround**: Use configuration-driven approaches with router/pipeline engines
+- **Future Solution**: Template parameterization and dynamic field mapping
+
+##### 4. No Schema Validation During Transformation
+- **Issue**: JSLT transformations don't validate output against target schema
+- **Impact**: Invalid data structures may be produced
+- **Workaround**: Use schema validation in consumer applications
+- **Future Solution**: Built-in schema validation for transformation outputs
+
+##### 5. Error Handling Limitations
+- **Issue**: JSLT expressions fail completely on any error (e.g., missing fields, type mismatches)
+- **Impact**: Robust error handling requires external logic
+- **Workaround**: Use conditional checks and default values
+- **Future Solution**: Enhanced error handling in JSLT engine
+
+#### Best Practices for JSLT Transformations
+
+##### 1. Defensive Programming
+```json
+{
+  "result": if (.input) {
+    "value": .input.value | "default",
+    "status": "success"
+  } else {
+    "status": "error",
+    "message": "Missing input"
+  }
+}
+```
+
+##### 2. Type Safety
+```json
+{
+  "processedNumber": if (.inputNumber) number(.inputNumber) else 0,
+  "processedString": if (.inputString) string(.inputString) else "",
+  "processedBoolean": if (.inputBoolean) boolean(.inputBoolean) else false
+}
+```
+
+##### 3. Array Processing
+```json
+{
+  "filteredItems": [for (.items) if (.status == "active") .],
+  "itemCount": size(.items),
+  "firstItem": .items[0] | null
+}
+```
+
+##### 4. Complex Conditions
+```json
+{
+  "category": if (.score >= 90) "excellent"
+             else if (.score >= 70) "good"
+             else if (.score >= 50) "average"
+             else "poor"
+}
+```
+
+#### Testing JSLT Transformations
+
+```java
+@Test
+void transform_metadataFields_shouldExtractForecastData() throws TransformationException {
+    Map<String, Object> input = Map.of(
+        "id", 123,
+        "details", Map.of(
+            "category", "forecast",
+            "additionalMetadataFields", List.of(
+                Map.of("id", "forecastTodayValue", "val", "77.0"),
+                Map.of("id", "forecastTodayDirection", "val", "flat")
+            )
+        )
+    );
+
+    String jsltExpression = """
+        {
+          "id": .id,
+          "details": {
+            "category": .details.category,
+            "forecastToday": if (.details.additionalMetadataFields) {
+              "value": number(.details.additionalMetadataFields[0].val),
+              "direction": .details.additionalMetadataFields[1].val
+            } else null
+          }
+        }
+        """;
+
+    Map<String, Object> result = jsltEngine.transform(input, jsltExpression);
+
+    assertNotNull(result);
+    assertEquals(123, result.get("id"));
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> details = (Map<String, Object>) result.get("details");
+    assertEquals("forecast", details.get("category"));
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> forecast = (Map<String, Object>) details.get("forecastToday");
+    assertEquals(77, forecast.get("value"));
+    assertEquals("flat", forecast.get("direction"));
+}
+```
 
 ## Engine Architecture
 
