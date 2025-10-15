@@ -19,6 +19,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -64,6 +65,90 @@ class TransformationVersionServiceTest {
 
         when(templateRepository.findByConsumerIdAndSubjectAndVersion("consumer-1", "test-subject", "2.0.0"))
             .thenReturn(Optional.of(template));
+        when(templateRepository.save(any(TransformationTemplateEntity.class))).thenReturn(savedTemplate);
+
+        // When
+        TransformationTemplateResponse response = versionService.activateVersion("consumer-1", "test-subject", "2.0.0");
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getVersion()).isEqualTo("2.0.0");
+        assertThat(response.getIsActive()).isTrue();
+        verify(templateRepository).save(any(TransformationTemplateEntity.class));
+    }
+
+    @Test
+    void activateVersion_shouldReturnAlreadyActiveVersionWithoutModification() {
+        // Given
+        SchemaEntity inputSchema = new SchemaEntity();
+        inputSchema.setId(1L);
+
+        SchemaEntity outputSchema = new SchemaEntity();
+        outputSchema.setId(2L);
+
+        TransformationTemplateEntity template = new TransformationTemplateEntity();
+        template.setId(1L);
+        template.setConsumerId("consumer-1");
+        template.setSubject("test-subject");
+        template.setVersion("1.0.0");
+        template.setIsActive(true);
+        template.setInputSchema(inputSchema);
+        template.setOutputSchema(outputSchema);
+
+        when(templateRepository.findByConsumerIdAndSubjectAndVersion("consumer-1", "test-subject", "1.0.0"))
+            .thenReturn(Optional.of(template));
+
+        // When
+        TransformationTemplateResponse response = versionService.activateVersion("consumer-1", "test-subject", "1.0.0");
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getVersion()).isEqualTo("1.0.0");
+        assertThat(response.getIsActive()).isTrue();
+        // Should not save since it's already active
+        verify(templateRepository, never()).save(any(TransformationTemplateEntity.class));
+    }
+
+    @Test
+    void activateVersion_shouldDeactivateOtherVersionsWhenActivatingNewOne() {
+        // Given
+        SchemaEntity inputSchema = new SchemaEntity();
+        inputSchema.setId(1L);
+
+        SchemaEntity outputSchema = new SchemaEntity();
+        outputSchema.setId(2L);
+
+        // Existing active version
+        TransformationTemplateEntity activeTemplate = new TransformationTemplateEntity();
+        activeTemplate.setId(1L);
+        activeTemplate.setConsumerId("consumer-1");
+        activeTemplate.setSubject("test-subject");
+        activeTemplate.setVersion("1.0.0");
+        activeTemplate.setIsActive(true);
+        activeTemplate.setInputSchema(inputSchema);
+        activeTemplate.setOutputSchema(outputSchema);
+
+        // Version to be activated
+        TransformationTemplateEntity newTemplate = new TransformationTemplateEntity();
+        newTemplate.setId(2L);
+        newTemplate.setConsumerId("consumer-1");
+        newTemplate.setSubject("test-subject");
+        newTemplate.setVersion("2.0.0");
+        newTemplate.setIsActive(false);
+        newTemplate.setInputSchema(inputSchema);
+        newTemplate.setOutputSchema(outputSchema);
+
+        TransformationTemplateEntity savedTemplate = new TransformationTemplateEntity();
+        savedTemplate.setId(2L);
+        savedTemplate.setConsumerId("consumer-1");
+        savedTemplate.setSubject("test-subject");
+        savedTemplate.setVersion("2.0.0");
+        savedTemplate.setIsActive(true);
+        savedTemplate.setInputSchema(inputSchema);
+        savedTemplate.setOutputSchema(outputSchema);
+
+        when(templateRepository.findByConsumerIdAndSubjectAndVersion("consumer-1", "test-subject", "2.0.0"))
+            .thenReturn(Optional.of(newTemplate));
         when(templateRepository.save(any(TransformationTemplateEntity.class))).thenReturn(savedTemplate);
 
         // When

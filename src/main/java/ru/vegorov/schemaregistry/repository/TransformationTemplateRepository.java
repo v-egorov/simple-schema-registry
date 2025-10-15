@@ -25,16 +25,19 @@ public interface TransformationTemplateRepository extends JpaRepository<Transfor
     /**
      * Find all transformation templates for a consumer and subject
      */
+    @Query("SELECT t FROM TransformationTemplateEntity t LEFT JOIN FETCH t.inputSchema LEFT JOIN FETCH t.outputSchema WHERE t.consumerId = :consumerId AND t.subject = :subject")
     List<TransformationTemplateEntity> findByConsumerIdAndSubject(String consumerId, String subject);
 
     /**
      * Find a specific transformation template version for a consumer and subject
      */
+    @Query("SELECT t FROM TransformationTemplateEntity t LEFT JOIN FETCH t.inputSchema LEFT JOIN FETCH t.outputSchema WHERE t.consumerId = :consumerId AND t.subject = :subject AND t.version = :version")
     Optional<TransformationTemplateEntity> findByConsumerIdAndSubjectAndVersion(String consumerId, String subject, String version);
 
     /**
      * Find the active transformation template for a consumer and subject
      */
+    @Query("SELECT t FROM TransformationTemplateEntity t LEFT JOIN FETCH t.inputSchema LEFT JOIN FETCH t.outputSchema WHERE t.consumerId = :consumerId AND t.subject = :subject AND t.isActive = true")
     Optional<TransformationTemplateEntity> findByConsumerIdAndSubjectAndIsActiveTrue(String consumerId, String subject);
 
     /**

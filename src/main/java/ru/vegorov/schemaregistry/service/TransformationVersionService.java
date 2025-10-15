@@ -10,6 +10,7 @@ import ru.vegorov.schemaregistry.exception.ResourceNotFoundException;
 import ru.vegorov.schemaregistry.repository.TransformationTemplateRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -40,8 +41,13 @@ public class TransformationVersionService {
             return mapToResponse(template);
         }
 
-        // Deactivate all other versions
-        deactivateOtherVersions(consumerId, subject, version);
+        // Deactivate the currently active version (should be only one due to unique constraint)
+        Optional<TransformationTemplateEntity> currentlyActive = templateRepository
+            .findByConsumerIdAndSubjectAndIsActiveTrue(consumerId, subject);
+        if (currentlyActive.isPresent() && !currentlyActive.get().getVersion().equals(version)) {
+            currentlyActive.get().setIsActive(false);
+            templateRepository.saveAndFlush(currentlyActive.get());
+        }
 
         // Activate this version
         template.setIsActive(true);
@@ -125,21 +131,7 @@ public class TransformationVersionService {
         templateRepository.delete(template);
     }
 
-    /**
-     * Deactivate all other versions for a consumer and subject except the specified version
-     */
-    private void deactivateOtherVersions(String consumerId, String subject, String activeVersion) {
-        List<TransformationTemplateEntity> otherVersions = templateRepository
-            .findByConsumerIdAndSubjectAndIsActiveTrue(consumerId, subject)
-            .stream()
-            .filter(template -> !template.getVersion().equals(activeVersion))
-            .collect(Collectors.toList());
 
-        for (TransformationTemplateEntity template : otherVersions) {
-            template.setIsActive(false);
-            templateRepository.save(template);
-        }
-    }
 
     /**
      * Map entity to response DTO

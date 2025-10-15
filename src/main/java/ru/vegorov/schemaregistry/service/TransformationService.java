@@ -366,9 +366,29 @@ public class TransformationService {
         String[] parts1 = v1.split("\\.");
         String[] parts2 = v2.split("\\.");
         for (int i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-            int p1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
-            int p2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
-            if (p1 != p2) return Integer.compare(p1, p2);
+            String part1 = i < parts1.length ? parts1[i] : "0";
+            String part2 = i < parts2.length ? parts2[i] : "0";
+
+            // Extract numeric part (handle suffixes like -beta)
+            String numPart1 = part1.split("-")[0];
+            String numPart2 = part2.split("-")[0];
+
+            try {
+                int p1 = Integer.parseInt(numPart1);
+                int p2 = Integer.parseInt(numPart2);
+                if (p1 != p2) return Integer.compare(p1, p2);
+            } catch (NumberFormatException e) {
+                // If not numeric, compare as strings
+                int cmp = numPart1.compareTo(numPart2);
+                if (cmp != 0) return cmp;
+            }
+
+            // If numeric parts are equal, compare suffixes
+            String suffix1 = part1.contains("-") ? part1.substring(part1.indexOf("-")) : "";
+            String suffix2 = part2.contains("-") ? part2.substring(part2.indexOf("-")) : "";
+            if (!suffix1.equals(suffix2)) {
+                return suffix1.compareTo(suffix2);
+            }
         }
         return 0;
     }
