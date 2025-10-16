@@ -171,6 +171,9 @@ public class SchemaRegistryService {
             }
 
             return mapToResponse(savedEntity);
+        } catch (ResourceNotFoundException e) {
+            // Let ResourceNotFoundException bubble up to GlobalExceptionHandler for proper 404 response
+            throw e;
         } catch (Exception e) {
             if (performanceLoggingEnabled) {
                 long duration = Duration.between(start, Instant.now()).toMillis();
