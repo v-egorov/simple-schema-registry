@@ -330,6 +330,7 @@ src/
 - [API Reference](docs/api-reference.md) - Complete API documentation with examples
 - [Architecture](docs/architecture.md) - System design and components
 - [Logging Architecture](docs/logging-architecture.md) - Comprehensive logging system design and implementation guide
+- [Exception Handling Guide](docs/exception-handling-guide.md) - Exception handling patterns and GlobalExceptionHandler implementation
 - [Transformation Extension Plan](docs/transformation-extension-plan.md) - Router and Pipeline engines design
 - [Schema Evolution Workflow](docs/schema-evolution-workflow.md) - Schema evolution with examples
 - [Deployment](docs/deployment.md) - Production deployment instructions

@@ -422,15 +422,19 @@ Services:
 
 ## Error Handling
 
+See [Exception Handling Guide](exception-handling-guide.md) for comprehensive documentation on exception handling patterns, GlobalExceptionHandler implementation, and extending the exception taxonomy.
+
 ### Global Exception Handler
 
 - Consistent error response format
 - Appropriate HTTP status codes
 - Detailed error messages for debugging
+- Correlation ID propagation for request tracing
 
 ### Custom Exceptions
 
 - `ResourceNotFoundException` - 404 responses
+- `ConflictException` - 409 responses for resource conflicts
 - `SchemaValidationException` - 400 responses for invalid schemas
 - `TransformationException` - 500 responses for transformation errors
 
