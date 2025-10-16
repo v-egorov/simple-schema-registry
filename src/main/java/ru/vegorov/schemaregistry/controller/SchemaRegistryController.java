@@ -183,13 +183,36 @@ public class SchemaRegistryController {
             @Parameter(description = "Schema subject") @PathVariable String subject,
             @Valid @RequestBody SchemaRegistrationRequest request) {
 
-        // Ensure the subject in path matches the request
-        if (!subject.equals(request.getSubject())) {
-            return ResponseEntity.badRequest().build();
-        }
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "registerConsumerOutputSchema");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
 
-        SchemaResponse response = schemaService.registerConsumerOutputSchema(consumerId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing consumer output schema registration request");
+            }
+
+            // Ensure the subject in path matches the request
+            if (!subject.equals(request.getSubject())) {
+                if (requestLoggingEnabled) {
+                    logger.warn("Subject mismatch in consumer request: pathSubject={}, requestSubject={}, consumerId={}",
+                        subject, request.getSubject(), consumerId);
+                }
+                return ResponseEntity.badRequest().build();
+            }
+
+            SchemaResponse response = schemaService.registerConsumerOutputSchema(consumerId, request);
+
+            if (requestLoggingEnabled) {
+                logger.info("Consumer output schema registration completed successfully: status={}", HttpStatus.CREATED.value());
+            }
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @GetMapping("/consumers/{consumerId}/schemas/{subject}/versions")
@@ -227,13 +250,36 @@ public class SchemaRegistryController {
             @Parameter(description = "Schema subject") @PathVariable String subject,
             @Valid @RequestBody CompatibilityCheckRequest request) {
 
-        // Ensure the subject in path matches the request
-        if (!subject.equals(request.getSubject())) {
-            return ResponseEntity.badRequest().build();
-        }
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "checkConsumerOutputSchemaCompatibility");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
 
-        CompatibilityCheckResponse response = schemaService.checkConsumerOutputSchemaCompatibility(consumerId, request);
-        return ResponseEntity.ok(response);
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing consumer output schema compatibility check request");
+            }
+
+            // Ensure the subject in path matches the request
+            if (!subject.equals(request.getSubject())) {
+                if (requestLoggingEnabled) {
+                    logger.warn("Subject mismatch in consumer compatibility check request: pathSubject={}, requestSubject={}, consumerId={}",
+                        subject, request.getSubject(), consumerId);
+                }
+                return ResponseEntity.badRequest().build();
+            }
+
+            CompatibilityCheckResponse response = schemaService.checkConsumerOutputSchemaCompatibility(consumerId, request);
+
+            if (requestLoggingEnabled) {
+                logger.info("Consumer output schema compatibility check completed: compatible={}", response.isCompatible());
+            }
+
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @PostMapping("/consumers/{consumerId}/schemas/{subject}/validate")
