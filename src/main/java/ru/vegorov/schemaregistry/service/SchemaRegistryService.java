@@ -364,8 +364,14 @@ public class SchemaRegistryService {
         JsonNode jsonData = request.getJsonData();
 
         if (businessLoggingEnabled) {
-            logger.info("Validating JSON against {} schema: subject={}, dataSize={}",
-                schemaType, subject, jsonData.size());
+            try {
+                String jsonString = objectMapper.writeValueAsString(jsonData);
+                logger.info("Validating JSON against {} schema: subject={}, dataSize={} chars",
+                    schemaType, subject, jsonString.length());
+            } catch (Exception e) {
+                logger.warn("Could not serialize JSON for size logging: subject={}, error={}", subject, e.getMessage());
+                logger.info("Validating JSON against {} schema: subject={}", schemaType, subject);
+            }
         }
 
         // Get the schema to validate against

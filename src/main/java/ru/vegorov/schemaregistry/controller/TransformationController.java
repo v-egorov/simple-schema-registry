@@ -4,6 +4,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -17,6 +21,7 @@ import ru.vegorov.schemaregistry.service.TransformationService;
 import ru.vegorov.schemaregistry.service.TransformationVersionService;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/consumers")
@@ -24,8 +29,17 @@ import java.util.List;
 @Tag(name = "JSON Transformation", description = "JSON data transformation for different consumers")
 public class TransformationController {
 
+    private static final Logger logger = LoggerFactory.getLogger(TransformationController.class);
+
+    static {
+        logger.info("TransformationController loaded");
+    }
+
     private final TransformationService transformationService;
     private final TransformationVersionService versionService;
+
+    @Value("${app.logging.requests.enabled:true}")
+    private boolean requestLoggingEnabled;
 
     public TransformationController(TransformationService transformationService,
                                   TransformationVersionService versionService) {
@@ -41,10 +55,29 @@ public class TransformationController {
             @Parameter(description = "Consumer ID") @PathVariable String consumerId,
             @Parameter(description = "Subject") @PathVariable String subject,
             @Valid @RequestBody TransformationRequest request) throws TransformationException {
-        // Set subject in request
-        request.setSubject(subject);
-        TransformationResponse response = transformationService.transform(consumerId, request);
-        return ResponseEntity.ok(response);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "transform");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
+
+        logger.info("Processing transformation request for consumer={}, subject={}", consumerId, subject);
+
+        try {
+
+            // Set subject in request
+            request.setSubject(subject);
+            TransformationResponse response = transformationService.transform(consumerId, request);
+
+            if (requestLoggingEnabled) {
+                logger.info("Transformation request completed successfully");
+            }
+
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @PostMapping("/{consumerId}/subjects/{subject}/transform/versions/{version}")
@@ -54,11 +87,31 @@ public class TransformationController {
             @Parameter(description = "Subject") @PathVariable String subject,
             @Parameter(description = "Template version") @PathVariable String version,
             @Valid @RequestBody TransformationRequest request) throws TransformationException {
-        // Set subject and version in request
-        request.setSubject(subject);
-        request.setTransformationVersion(version);
-        TransformationResponse response = transformationService.transform(consumerId, request);
-        return ResponseEntity.ok(response);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "transformWithVersion");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
+        MDC.put("version", version);
+
+        logger.info("Processing transformation request with version for consumer={}, subject={}, version={}", consumerId, subject, version);
+
+        try {
+
+            // Set subject and version in request
+            request.setSubject(subject);
+            request.setTransformationVersion(version);
+            TransformationResponse response = transformationService.transform(consumerId, request);
+
+            if (requestLoggingEnabled) {
+                logger.info("Transformation request with version completed successfully");
+            }
+
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     // ===== TEMPLATE MANAGEMENT ENDPOINTS =====

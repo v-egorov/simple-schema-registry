@@ -144,13 +144,34 @@ public class SchemaRegistryController {
             @Parameter(description = "Schema subject") @PathVariable String subject,
             @Valid @RequestBody SchemaValidationRequest request) {
 
-        // Ensure the subject in path matches the request
-        if (!subject.equals(request.getSubject())) {
-            return ResponseEntity.badRequest().build();
-        }
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "validateJsonAgainstCanonicalSchema");
+        MDC.put("subject", subject);
 
-        SchemaValidationResponse response = schemaService.validateJson(request);
-        return ResponseEntity.ok(response);
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing canonical schema validation request");
+            }
+
+            // Ensure the subject in path matches the request
+            if (!subject.equals(request.getSubject())) {
+                if (requestLoggingEnabled) {
+                    logger.warn("Subject mismatch in validation request: pathSubject={}, requestSubject={}", subject, request.getSubject());
+                }
+                return ResponseEntity.badRequest().build();
+            }
+
+            SchemaValidationResponse response = schemaService.validateJson(request);
+
+            if (requestLoggingEnabled) {
+                logger.info("Canonical schema validation request completed: valid={}", response.isValid());
+            }
+
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     // ===== CONSUMER OUTPUT SCHEMA ENDPOINTS =====
@@ -222,13 +243,36 @@ public class SchemaRegistryController {
             @Parameter(description = "Schema subject") @PathVariable String subject,
             @Valid @RequestBody SchemaValidationRequest request) {
 
-        // Ensure the subject in path matches the request
-        if (!subject.equals(request.getSubject())) {
-            return ResponseEntity.badRequest().build();
-        }
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "validateJsonAgainstConsumerOutputSchema");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
 
-        SchemaValidationResponse response = schemaService.validateJsonAgainstConsumerOutputSchema(request, consumerId);
-        return ResponseEntity.ok(response);
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing consumer output schema validation request");
+            }
+
+            // Ensure the subject in path matches the request
+            if (!subject.equals(request.getSubject())) {
+                if (requestLoggingEnabled) {
+                    logger.warn("Subject mismatch in consumer validation request: pathSubject={}, requestSubject={}, consumerId={}",
+                        subject, request.getSubject(), consumerId);
+                }
+                return ResponseEntity.badRequest().build();
+            }
+
+            SchemaValidationResponse response = schemaService.validateJsonAgainstConsumerOutputSchema(request, consumerId);
+
+            if (requestLoggingEnabled) {
+                logger.info("Consumer output schema validation request completed: valid={}", response.isValid());
+            }
+
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     // ===== GENERAL ENDPOINTS =====

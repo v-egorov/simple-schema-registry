@@ -195,7 +195,42 @@ public class SchemaRegistryController {
 
         try {
             // Business logic
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
+    }
+
+    // Fixed: All validation and transformation endpoints now set MDC context
+    @PostMapping("/schemas/{subject}/validate")
+    public ResponseEntity<SchemaValidationResponse> validateJsonAgainstCanonicalSchema(@PathVariable String subject, @RequestBody SchemaValidationRequest request) {
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "validateJsonAgainstCanonicalSchema");
+        MDC.put("subject", subject);
+
+        try {
+            // validation logic
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
+    }
+}
+
+@RestController
+public class TransformationController {
+    @PostMapping("/{consumerId}/subjects/{subject}/transform")
+    public ResponseEntity<TransformationResponse> transform(@PathVariable String consumerId, @PathVariable String subject, @RequestBody TransformationRequest request) {
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "transform");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
+
+        try {
+            // transformation logic
+            return ResponseEntity.ok(response);
         } finally {
             MDC.clear();
         }
@@ -249,8 +284,14 @@ public SchemaResponse registerCanonicalSchema(SchemaRegistrationRequest request)
 
 #### Business Operations
 ```java
-logger.info("Schema operation started: type={}, subject={}, version={}", operationType, subject, version);
-logger.info("Schema operation completed: type={}, subject={}, version={}, result={}", operationType, subject, version, result);
+logger.info("Operation completed: subject={}, version={}, result={}", operationType, subject, version, result);
+```
+
+#### Validation Operations
+```java
+// Fixed: Now logs actual JSON string length instead of JsonNode.size()
+logger.info("Validating JSON against {} schema: subject={}, dataSize={}chars", schemaType, subject, jsonString.length());
+logger.warn("JSON validation failed: subject={}, errors={}", subject, errorCount);
 ```
 
 #### Validation Operations
@@ -544,15 +585,21 @@ logger.info("User login: username={}, password={}", username, password);
 
 ### Common Issues
 
-1. **Missing Correlation IDs**
-   - Ensure MDC.put() is called before any logging
-   - Verify MDC.clear() is in finally block
+1. **Missing Correlation IDs** ✅ **FIXED**
+   - **Issue**: MDC context not set in all controller endpoints
+   - **Solution**: Added MDC setup to all validation and transformation endpoints
+   - **Result**: All requests now have unique correlation IDs for tracing
 
-2. **Performance Impact**
+2. **Incorrect Data Size Logging** ✅ **FIXED**
+   - **Issue**: `JsonNode.size()` returned child element count (often 1) instead of data size
+   - **Solution**: Changed to `objectMapper.writeValueAsString(jsonData).length()`
+   - **Result**: Logs now show meaningful character counts (e.g., "9470chars")
+
+3. **Performance Impact**
    - Check if performance logging is enabled in production
    - Adjust slow thresholds appropriately
 
-3. **Log Level Configuration**
+4. **Log Level Configuration**
    - Verify property precedence: application.properties > environment variables
    - Check for profile-specific configurations
 
