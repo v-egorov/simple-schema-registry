@@ -2,6 +2,7 @@ package ru.vegorov.schemaregistry.exception;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,8 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import ru.vegorov.schemaregistry.exception.ConflictException;
 import ru.vegorov.schemaregistry.service.TransformationException;
 
@@ -26,11 +29,39 @@ public class GlobalExceptionHandler {
     @Value("${app.logging.business-operations.enabled:true}")
     private boolean businessLoggingEnabled;
 
+    /**
+     * Get correlationId from request attributes, fallback to MDC
+     */
+    private String getCorrelationId() {
+        try {
+            if (RequestContextHolder.getRequestAttributes() != null) {
+                ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+                String correlationId = (String) requestAttributes.getAttribute("correlationId", 0);
+                if (correlationId != null) {
+                    return correlationId;
+                }
+            }
+        } catch (Exception e) {
+            // RequestContextHolder might not be available in some contexts
+        }
+        // Fallback to MDC
+        return org.slf4j.MDC.get("correlationId");
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
-        if (businessLoggingEnabled) {
-            logger.warn("Resource not found: message={}, correlationId={}",
-                ex.getMessage(), org.slf4j.MDC.get("correlationId"));
+        String correlationId = getCorrelationId();
+
+        // Set MDC context for structured logging
+        org.slf4j.MDC.put("correlationId", correlationId);
+        org.slf4j.MDC.put("operation", "exceptionHandler");
+
+        try {
+            if (businessLoggingEnabled) {
+                logger.warn("Resource not found: message={}", ex.getMessage());
+            }
+        } finally {
+            org.slf4j.MDC.clear();
         }
 
         ErrorResponse error = new ErrorResponse(
@@ -44,9 +75,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex) {
-        if (businessLoggingEnabled) {
-            logger.warn("Resource conflict: message={}, correlationId={}",
-                ex.getMessage(), org.slf4j.MDC.get("correlationId"));
+        String correlationId = getCorrelationId();
+
+        // Set MDC context for structured logging
+        org.slf4j.MDC.put("correlationId", correlationId);
+        org.slf4j.MDC.put("operation", "exceptionHandler");
+
+        try {
+            if (businessLoggingEnabled) {
+                logger.warn("Resource conflict: message={}", ex.getMessage());
+            }
+        } finally {
+            org.slf4j.MDC.clear();
         }
 
         ErrorResponse error = new ErrorResponse(
@@ -71,9 +111,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(SchemaValidationException.class)
     public ResponseEntity<ErrorResponse> handleSchemaValidation(SchemaValidationException ex) {
-        if (businessLoggingEnabled) {
-            logger.error("Schema validation error: message={}, correlationId={}",
-                ex.getMessage(), org.slf4j.MDC.get("correlationId"), ex);
+        String correlationId = getCorrelationId();
+
+        // Set MDC context for structured logging
+        org.slf4j.MDC.put("correlationId", correlationId);
+        org.slf4j.MDC.put("operation", "exceptionHandler");
+
+        try {
+            if (businessLoggingEnabled) {
+                logger.error("Schema validation error: message={}", ex.getMessage(), ex);
+            }
+        } finally {
+            org.slf4j.MDC.clear();
         }
 
         ErrorResponse error = new ErrorResponse(
@@ -141,8 +190,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
-        logger.error("Unexpected error occurred: message={}, correlationId={}",
-            ex.getMessage(), org.slf4j.MDC.get("correlationId"), ex);
+        String correlationId = getCorrelationId();
+
+        // Set MDC context for structured logging
+        org.slf4j.MDC.put("correlationId", correlationId);
+        org.slf4j.MDC.put("operation", "exceptionHandler");
+
+        try {
+            logger.error("Unexpected error occurred: message={}", ex.getMessage(), ex);
+        } finally {
+            org.slf4j.MDC.clear();
+        }
 
         ErrorResponse error = new ErrorResponse(
             HttpStatus.INTERNAL_SERVER_ERROR.value(),

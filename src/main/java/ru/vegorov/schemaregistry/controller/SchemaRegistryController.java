@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.UUID;
 import ru.vegorov.schemaregistry.dto.CompatibilityCheckRequest;
@@ -51,6 +53,10 @@ public class SchemaRegistryController {
         MDC.put("correlationId", correlationId);
         MDC.put("operation", "registerCanonicalSchema");
         MDC.put("subject", subject);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
 
         try {
             if (requestLoggingEnabled) {
@@ -113,6 +119,10 @@ public class SchemaRegistryController {
         MDC.put("operation", "checkCanonicalSchemaCompatibility");
         MDC.put("subject", subject);
 
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
         try {
             if (requestLoggingEnabled) {
                 logger.info("Processing canonical schema compatibility check request");
@@ -148,6 +158,10 @@ public class SchemaRegistryController {
         MDC.put("correlationId", correlationId);
         MDC.put("operation", "validateJsonAgainstCanonicalSchema");
         MDC.put("subject", subject);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
 
         try {
             if (requestLoggingEnabled) {
@@ -188,6 +202,10 @@ public class SchemaRegistryController {
         MDC.put("operation", "registerConsumerOutputSchema");
         MDC.put("consumerId", consumerId);
         MDC.put("subject", subject);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
 
         try {
             if (requestLoggingEnabled) {
@@ -256,6 +274,10 @@ public class SchemaRegistryController {
         MDC.put("consumerId", consumerId);
         MDC.put("subject", subject);
 
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
         try {
             if (requestLoggingEnabled) {
                 logger.info("Processing consumer output schema compatibility check request");
@@ -294,6 +316,10 @@ public class SchemaRegistryController {
         MDC.put("operation", "validateJsonAgainstConsumerOutputSchema");
         MDC.put("consumerId", consumerId);
         MDC.put("subject", subject);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
 
         try {
             if (requestLoggingEnabled) {
