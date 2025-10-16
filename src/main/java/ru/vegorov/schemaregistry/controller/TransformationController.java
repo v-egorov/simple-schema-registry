@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import ru.vegorov.schemaregistry.dto.TransformationRequest;
 import ru.vegorov.schemaregistry.dto.TransformationResponse;
 import ru.vegorov.schemaregistry.dto.TransformationTemplateRequest;
@@ -122,8 +124,32 @@ public class TransformationController {
             @Parameter(description = "Consumer ID") @PathVariable String consumerId,
             @Parameter(description = "Subject") @PathVariable String subject,
             @Valid @RequestBody TransformationTemplateRequest request) {
-        TransformationTemplateResponse response = transformationService.createTemplateVersion(consumerId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "createTemplateVersion");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing template creation request");
+            }
+
+            TransformationTemplateResponse response = transformationService.createTemplateVersion(consumerId, request);
+
+            if (requestLoggingEnabled) {
+                logger.info("Template creation completed successfully: status={}", HttpStatus.CREATED.value());
+            }
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @GetMapping("/{consumerId}/subjects/{subject}/templates")
@@ -131,8 +157,32 @@ public class TransformationController {
     public ResponseEntity<List<TransformationTemplateResponse>> getTemplateVersions(
             @Parameter(description = "Consumer ID") @PathVariable String consumerId,
             @Parameter(description = "Subject") @PathVariable String subject) {
-        List<TransformationTemplateResponse> responses = transformationService.getTemplateVersions(consumerId, subject);
-        return ResponseEntity.ok(responses);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "getTemplateVersions");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing get template versions request");
+            }
+
+            List<TransformationTemplateResponse> responses = transformationService.getTemplateVersions(consumerId, subject);
+
+            if (requestLoggingEnabled) {
+                logger.info("Get template versions completed successfully: count={}", responses.size());
+            }
+
+            return ResponseEntity.ok(responses);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @GetMapping("/{consumerId}/subjects/{subject}/templates/active")
@@ -140,8 +190,32 @@ public class TransformationController {
     public ResponseEntity<TransformationTemplateResponse> getActiveTemplate(
             @Parameter(description = "Consumer ID") @PathVariable String consumerId,
             @Parameter(description = "Subject") @PathVariable String subject) {
-        TransformationTemplateResponse response = transformationService.getActiveTemplate(consumerId, subject);
-        return ResponseEntity.ok(response);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "getActiveTemplate");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing get active template request");
+            }
+
+            TransformationTemplateResponse response = transformationService.getActiveTemplate(consumerId, subject);
+
+            if (requestLoggingEnabled) {
+                logger.info("Get active template completed successfully");
+            }
+
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @GetMapping("/{consumerId}/subjects/{subject}/templates/versions/{version}")
@@ -150,8 +224,33 @@ public class TransformationController {
             @Parameter(description = "Consumer ID") @PathVariable String consumerId,
             @Parameter(description = "Subject") @PathVariable String subject,
             @Parameter(description = "Template version") @PathVariable String version) {
-        TransformationTemplateResponse response = transformationService.getTemplateVersion(consumerId, subject, version);
-        return ResponseEntity.ok(response);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "getTemplateVersion");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
+        MDC.put("version", version);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing get template version request");
+            }
+
+            TransformationTemplateResponse response = transformationService.getTemplateVersion(consumerId, subject, version);
+
+            if (requestLoggingEnabled) {
+                logger.info("Get template version completed successfully");
+            }
+
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     // ===== VERSION MANAGEMENT ENDPOINTS =====
@@ -162,8 +261,33 @@ public class TransformationController {
             @Parameter(description = "Consumer ID") @PathVariable String consumerId,
             @Parameter(description = "Subject") @PathVariable String subject,
             @Parameter(description = "Template version") @PathVariable String version) {
-        TransformationTemplateResponse response = versionService.activateVersion(consumerId, subject, version);
-        return ResponseEntity.ok(response);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "activateTemplateVersion");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
+        MDC.put("version", version);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing activate template version request");
+            }
+
+            TransformationTemplateResponse response = versionService.activateVersion(consumerId, subject, version);
+
+            if (requestLoggingEnabled) {
+                logger.info("Activate template version completed successfully");
+            }
+
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @PutMapping("/{consumerId}/subjects/{subject}/templates/versions/{version}/deactivate")
@@ -172,8 +296,33 @@ public class TransformationController {
             @Parameter(description = "Consumer ID") @PathVariable String consumerId,
             @Parameter(description = "Subject") @PathVariable String subject,
             @Parameter(description = "Template version") @PathVariable String version) {
-        TransformationTemplateResponse response = versionService.deactivateVersion(consumerId, subject, version);
-        return ResponseEntity.ok(response);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "deactivateTemplateVersion");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
+        MDC.put("version", version);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing deactivate template version request");
+            }
+
+            TransformationTemplateResponse response = versionService.deactivateVersion(consumerId, subject, version);
+
+            if (requestLoggingEnabled) {
+                logger.info("Deactivate template version completed successfully");
+            }
+
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @DeleteMapping("/{consumerId}/subjects/{subject}/templates/versions/{version}")
@@ -182,8 +331,33 @@ public class TransformationController {
             @Parameter(description = "Consumer ID") @PathVariable String consumerId,
             @Parameter(description = "Subject") @PathVariable String subject,
             @Parameter(description = "Template version") @PathVariable String version) {
-        versionService.deleteVersion(consumerId, subject, version);
-        return ResponseEntity.noContent().build();
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "deleteTemplateVersion");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
+        MDC.put("version", version);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing delete template version request");
+            }
+
+            versionService.deleteVersion(consumerId, subject, version);
+
+            if (requestLoggingEnabled) {
+                logger.info("Delete template version completed successfully");
+            }
+
+            return ResponseEntity.noContent().build();
+        } finally {
+            MDC.clear();
+        }
     }
 
     // ===== UTILITY ENDPOINTS =====
