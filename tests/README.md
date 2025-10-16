@@ -21,7 +21,15 @@ tests/
 ├── utils/
 │   ├── common.sh               # Shared utilities and functions
 │   ├── setup.sh                # Test data setup helpers
-│   └── cleanup.sh              # Test cleanup utilities
+│   ├── cleanup.sh              # Test cleanup utilities
+│   └── scripts/
+│       ├── register-consumer.sh         # Consumer registration utility
+│       ├── register-schema-from-file.sh # Schema registration from file
+│       ├── register-jslt-template-from-file.sh # Template registration
+│       ├── validate-json-against-schema.sh # JSON validation utility
+│       ├── transform-json-to-file.sh    # JSON transformation utility
+│       ├── transform-from-file.sh       # Terminal transformation
+│       └── generate-large-investment-publications.py # Test data generator
 ├── health/
 │   ├── test-health.sh          # Basic health checks
 │   └── test-actuator.sh        # Spring Boot actuator tests

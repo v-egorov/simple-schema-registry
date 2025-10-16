@@ -4,7 +4,44 @@ This directory contains specialized scripts for validating and transforming larg
 
 ## Scripts Overview
 
-### 1. `validate-json-against-schema.sh`
+### 1. `register-consumer.sh`
+
+**Purpose**: Registers new consumers with the Schema Registry API.
+
+**Key Features**:
+- Simple consumer registration with ID, name, and description
+- Validates consumer ID format (letters, numbers, hyphens, underscores)
+- Provides clear success/error feedback
+- Integrates with existing test infrastructure
+
+**Usage**:
+```bash
+# Register a consumer with description
+./register-consumer.sh mobile-app "Mobile Application" "Consumer for mobile app data"
+
+# Register with minimal data
+./register-consumer.sh web-client "Web Client"
+```
+
+**Output Example**:
+```
+[INFO] Registering consumer: mobile-app
+[INFO] Name: Mobile Application
+[INFO] Description: Consumer for mobile app data
+[INFO] Sending registration request...
+[PASS] Consumer registered successfully
+Response:
+{
+  "id": 1,
+  "consumerId": "mobile-app",
+  "name": "Mobile Application",
+  "description": "Consumer for mobile app data",
+  "createdAt": "2025-10-16T14:47:05.914446156",
+  "updatedAt": "2025-10-16T14:47:05.914446156"
+}
+```
+
+### 2. `validate-json-against-schema.sh`
 
 **Purpose**: Validates JSON data files against canonical schemas using the Schema Registry validation endpoint.
 
@@ -43,7 +80,7 @@ Schema Version: Latest
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-### 2. `transform-json-to-file.sh`
+### 3. `transform-json-to-file.sh`
 
 **Purpose**: Transforms JSON data using consumer transformation templates and saves results to files instead of printing to terminal.
 
@@ -96,6 +133,7 @@ Status: Transformed successfully
 
 ### Service Requirements
 - Schema Registry service must be running
+- For consumer registration: Service must be accessible
 - For validation: Canonical schemas must be registered
 - For transformation: Consumer and transformation templates must be set up
 
@@ -136,6 +174,12 @@ done
 ```bash
 # Setup test environment
 ./setup.sh
+
+# Register a consumer for testing
+./register-consumer.sh test-consumer "Test Consumer" "Consumer for integration testing"
+
+# Register schema for the consumer
+./register-schema-from-file.sh consumer-schema.json test-subject test-consumer BACKWARD "Test consumer schema"
 
 # Validate test data
 ./validate-json-against-schema.sh test-data.json test-subject
@@ -196,9 +240,9 @@ time ./transform-json-to-file.sh input.json consumer subject output.json
 ```bash
 # Full test workflow example
 ./setup.sh
+./register-consumer.sh test-consumer "Test Consumer" "Consumer for testing"
 ./register-schema-from-file.sh schema.json subject
 ./validate-json-against-schema.sh test-data.json subject
-create_test_consumer "test-consumer" "Test Consumer"
 create_test_template "test-consumer" "subject" "template-expression"
 ./transform-json-to-file.sh test-data.json test-consumer subject output.json
 ./cleanup.sh
@@ -229,6 +273,9 @@ docker-compose up -d
 # Check registered resources
 curl http://localhost:8080/api/schemas
 curl http://localhost:8080/api/consumers
+
+# Register missing consumer
+./register-consumer.sh missing-consumer "Missing Consumer" "Consumer that was not found"
 ```
 
 **"File too large"**
