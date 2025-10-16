@@ -64,6 +64,10 @@ public class TransformationController {
         MDC.put("consumerId", consumerId);
         MDC.put("subject", subject);
 
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
         logger.info("Processing transformation request for consumer={}, subject={}", consumerId, subject);
 
         try {
@@ -96,6 +100,10 @@ public class TransformationController {
         MDC.put("consumerId", consumerId);
         MDC.put("subject", subject);
         MDC.put("version", version);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
 
         logger.info("Processing transformation request with version for consumer={}, subject={}, version={}", consumerId, subject, version);
 

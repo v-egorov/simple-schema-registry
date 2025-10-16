@@ -87,8 +87,31 @@ public class SchemaRegistryController {
     @Operation(summary = "Get all versions of a canonical schema", description = "Retrieve all versions of a canonical schema by subject")
     public ResponseEntity<List<SchemaResponse>> getCanonicalSchemasBySubject(
             @Parameter(description = "Schema subject") @PathVariable String subject) {
-        List<SchemaResponse> responses = schemaService.getCanonicalSchemasBySubject(subject);
-        return ResponseEntity.ok(responses);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "getCanonicalSchemasBySubject");
+        MDC.put("subject", subject);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing get canonical schemas by subject request");
+            }
+
+            List<SchemaResponse> responses = schemaService.getCanonicalSchemasBySubject(subject);
+
+            if (requestLoggingEnabled) {
+                logger.info("Get canonical schemas by subject completed successfully: count={}", responses.size());
+            }
+
+            return ResponseEntity.ok(responses);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @GetMapping("/schemas/{subject}/versions/{version}")
@@ -96,16 +119,63 @@ public class SchemaRegistryController {
     public ResponseEntity<SchemaResponse> getCanonicalSchema(
             @Parameter(description = "Schema subject") @PathVariable String subject,
             @Parameter(description = "Schema version") @PathVariable String version) {
-        SchemaResponse response = schemaService.getCanonicalSchema(subject, version);
-        return ResponseEntity.ok(response);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "getCanonicalSchema");
+        MDC.put("subject", subject);
+        MDC.put("version", version);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing get canonical schema request");
+            }
+
+            SchemaResponse response = schemaService.getCanonicalSchema(subject, version);
+
+            if (requestLoggingEnabled) {
+                logger.info("Get canonical schema completed successfully");
+            }
+
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @GetMapping("/schemas/{subject}")
     @Operation(summary = "Get latest canonical schema version", description = "Retrieve the latest version of a canonical schema")
     public ResponseEntity<SchemaResponse> getLatestCanonicalSchema(
             @Parameter(description = "Schema subject") @PathVariable String subject) {
-        SchemaResponse response = schemaService.getLatestCanonicalSchema(subject);
-        return ResponseEntity.ok(response);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "getLatestCanonicalSchema");
+        MDC.put("subject", subject);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing get latest canonical schema request");
+            }
+
+            SchemaResponse response = schemaService.getLatestCanonicalSchema(subject);
+
+            if (requestLoggingEnabled) {
+                logger.info("Get latest canonical schema completed successfully");
+            }
+
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @PostMapping("/schemas/{subject}/compat")
@@ -238,8 +308,32 @@ public class SchemaRegistryController {
     public ResponseEntity<List<SchemaResponse>> getConsumerOutputSchemasBySubjectAndConsumer(
             @Parameter(description = "Consumer ID") @PathVariable String consumerId,
             @Parameter(description = "Schema subject") @PathVariable String subject) {
-        List<SchemaResponse> responses = schemaService.getConsumerOutputSchemasBySubjectAndConsumer(subject, consumerId);
-        return ResponseEntity.ok(responses);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "getConsumerOutputSchemasBySubjectAndConsumer");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing get consumer output schemas by subject and consumer request");
+            }
+
+            List<SchemaResponse> responses = schemaService.getConsumerOutputSchemasBySubjectAndConsumer(subject, consumerId);
+
+            if (requestLoggingEnabled) {
+                logger.info("Get consumer output schemas by subject and consumer completed successfully: count={}", responses.size());
+            }
+
+            return ResponseEntity.ok(responses);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @GetMapping("/consumers/{consumerId}/schemas/{subject}/versions/{version}")
@@ -248,8 +342,33 @@ public class SchemaRegistryController {
             @Parameter(description = "Consumer ID") @PathVariable String consumerId,
             @Parameter(description = "Schema subject") @PathVariable String subject,
             @Parameter(description = "Schema version") @PathVariable String version) {
-        SchemaResponse response = schemaService.getConsumerOutputSchema(subject, consumerId, version);
-        return ResponseEntity.ok(response);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "getConsumerOutputSchema");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
+        MDC.put("version", version);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing get consumer output schema request");
+            }
+
+            SchemaResponse response = schemaService.getConsumerOutputSchema(subject, consumerId, version);
+
+            if (requestLoggingEnabled) {
+                logger.info("Get consumer output schema completed successfully");
+            }
+
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @GetMapping("/consumers/{consumerId}/schemas/{subject}")
@@ -257,8 +376,32 @@ public class SchemaRegistryController {
     public ResponseEntity<SchemaResponse> getLatestConsumerOutputSchema(
             @Parameter(description = "Consumer ID") @PathVariable String consumerId,
             @Parameter(description = "Schema subject") @PathVariable String subject) {
-        SchemaResponse response = schemaService.getLatestConsumerOutputSchema(subject, consumerId);
-        return ResponseEntity.ok(response);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "getLatestConsumerOutputSchema");
+        MDC.put("consumerId", consumerId);
+        MDC.put("subject", subject);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing get latest consumer output schema request");
+            }
+
+            SchemaResponse response = schemaService.getLatestConsumerOutputSchema(subject, consumerId);
+
+            if (requestLoggingEnabled) {
+                logger.info("Get latest consumer output schema completed successfully");
+            }
+
+            return ResponseEntity.ok(response);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @PostMapping("/consumers/{consumerId}/schemas/{subject}/compat")
@@ -352,16 +495,61 @@ public class SchemaRegistryController {
     @GetMapping("/schemas/subjects")
     @Operation(summary = "List all canonical schema subjects", description = "Retrieve all unique canonical schema subjects")
     public ResponseEntity<List<String>> getAllCanonicalSubjects() {
-        List<String> subjects = schemaService.getAllCanonicalSubjects();
-        return ResponseEntity.ok(subjects);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "getAllCanonicalSubjects");
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing get all canonical subjects request");
+            }
+
+            List<String> subjects = schemaService.getAllCanonicalSubjects();
+
+            if (requestLoggingEnabled) {
+                logger.info("Get all canonical subjects completed successfully: count={}", subjects.size());
+            }
+
+            return ResponseEntity.ok(subjects);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @GetMapping("/consumers/{consumerId}/schemas/subjects")
     @Operation(summary = "List all subjects for a consumer", description = "Retrieve all subjects that have consumer output schemas for the specified consumer")
     public ResponseEntity<List<String>> getSubjectsForConsumer(
             @Parameter(description = "Consumer ID") @PathVariable String consumerId) {
-        List<String> subjects = schemaService.getSubjectsForConsumer(consumerId);
-        return ResponseEntity.ok(subjects);
+
+        String correlationId = UUID.randomUUID().toString();
+        MDC.put("correlationId", correlationId);
+        MDC.put("operation", "getSubjectsForConsumer");
+        MDC.put("consumerId", consumerId);
+
+        // Store correlationId in request attributes for exception handler access
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        requestAttributes.setAttribute("correlationId", correlationId, 0);
+
+        try {
+            if (requestLoggingEnabled) {
+                logger.info("Processing get subjects for consumer request");
+            }
+
+            List<String> subjects = schemaService.getSubjectsForConsumer(consumerId);
+
+            if (requestLoggingEnabled) {
+                logger.info("Get subjects for consumer completed successfully: count={}", subjects.size());
+            }
+
+            return ResponseEntity.ok(subjects);
+        } finally {
+            MDC.clear();
+        }
     }
 
 

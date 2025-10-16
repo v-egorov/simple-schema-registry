@@ -100,6 +100,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        String correlationId = getCorrelationId();
+
+        // Set MDC context for structured logging
+        org.slf4j.MDC.put("correlationId", correlationId);
+        org.slf4j.MDC.put("operation", "exceptionHandler");
+
+        try {
+            if (businessLoggingEnabled) {
+                logger.warn("Illegal argument: message={}", ex.getMessage());
+            }
+        } finally {
+            org.slf4j.MDC.clear();
+        }
+
         ErrorResponse error = new ErrorResponse(
             HttpStatus.BAD_REQUEST.value(),
             "Bad Request",
@@ -136,6 +150,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TransformationException.class)
     public ResponseEntity<ErrorResponse> handleTransformation(TransformationException ex) {
+        String correlationId = getCorrelationId();
+
+        // Set MDC context for structured logging
+        org.slf4j.MDC.put("correlationId", correlationId);
+        org.slf4j.MDC.put("operation", "exceptionHandler");
+
+        try {
+            if (businessLoggingEnabled) {
+                logger.error("Transformation error: message={}", ex.getMessage(), ex);
+            }
+        } finally {
+            org.slf4j.MDC.clear();
+        }
+
         ErrorResponse error = new ErrorResponse(
             HttpStatus.INTERNAL_SERVER_ERROR.value(),
             "Transformation Error",
@@ -147,6 +175,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponse> handleValidationErrors(MethodArgumentNotValidException ex) {
+        String correlationId = getCorrelationId();
+
+        // Set MDC context for structured logging
+        org.slf4j.MDC.put("correlationId", correlationId);
+        org.slf4j.MDC.put("operation", "exceptionHandler");
+
+        try {
+            if (businessLoggingEnabled) {
+                logger.warn("Validation error: message={}", "Input validation failed");
+            }
+        } finally {
+            org.slf4j.MDC.clear();
+        }
+
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error ->
             errors.put(error.getField(), error.getDefaultMessage()));
@@ -163,11 +205,39 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
     public ResponseEntity<Void> handleMediaTypeNotAcceptable(HttpMediaTypeNotAcceptableException ex) {
+        String correlationId = getCorrelationId();
+
+        // Set MDC context for structured logging
+        org.slf4j.MDC.put("correlationId", correlationId);
+        org.slf4j.MDC.put("operation", "exceptionHandler");
+
+        try {
+            if (businessLoggingEnabled) {
+                logger.warn("Media type not acceptable: message={}", ex.getMessage());
+            }
+        } finally {
+            org.slf4j.MDC.clear();
+        }
+
         return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMessageNotReadable(HttpMessageNotReadableException ex) {
+        String correlationId = getCorrelationId();
+
+        // Set MDC context for structured logging
+        org.slf4j.MDC.put("correlationId", correlationId);
+        org.slf4j.MDC.put("operation", "exceptionHandler");
+
+        try {
+            if (businessLoggingEnabled) {
+                logger.warn("Message not readable: message={}", ex.getMessage());
+            }
+        } finally {
+            org.slf4j.MDC.clear();
+        }
+
         ErrorResponse error = new ErrorResponse(
             HttpStatus.BAD_REQUEST.value(),
             "Bad Request",
@@ -179,6 +249,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex) {
+        String correlationId = getCorrelationId();
+
+        // Set MDC context for structured logging
+        org.slf4j.MDC.put("correlationId", correlationId);
+        org.slf4j.MDC.put("operation", "exceptionHandler");
+
+        try {
+            if (businessLoggingEnabled) {
+                logger.warn("Media type not supported: message={}", ex.getMessage());
+            }
+        } finally {
+            org.slf4j.MDC.clear();
+        }
+
         ErrorResponse error = new ErrorResponse(
             HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(),
             "Unsupported Media Type",
