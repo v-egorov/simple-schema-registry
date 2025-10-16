@@ -25,6 +25,7 @@ import ru.vegorov.schemaregistry.entity.SchemaType;
 import ru.vegorov.schemaregistry.exception.ResourceNotFoundException;
 import ru.vegorov.schemaregistry.exception.SchemaValidationException;
 import ru.vegorov.schemaregistry.repository.SchemaRepository;
+import ru.vegorov.schemaregistry.service.ConsumerService;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +39,7 @@ public class SchemaRegistryService {
     private static final Logger logger = LoggerFactory.getLogger(SchemaRegistryService.class);
 
     private final SchemaRepository schemaRepository;
+    private final ConsumerService consumerService;
     private final ObjectMapper objectMapper;
 
     @Value("${app.logging.business-operations.enabled:true}")
@@ -49,8 +51,11 @@ public class SchemaRegistryService {
     @Value("${app.logging.performance.slow-threshold-ms:1000}")
     private long slowThresholdMs;
 
-    public SchemaRegistryService(SchemaRepository schemaRepository, ObjectMapper objectMapper) {
+    public SchemaRegistryService(SchemaRepository schemaRepository,
+                                  ConsumerService consumerService,
+                                  ObjectMapper objectMapper) {
         this.schemaRepository = schemaRepository;
+        this.consumerService = consumerService;
         this.objectMapper = objectMapper;
     }
 
@@ -116,24 +121,67 @@ public class SchemaRegistryService {
      * Register a consumer output schema
      */
     public SchemaResponse registerConsumerOutputSchema(String consumerId, SchemaRegistrationRequest request) {
+        Instant start = performanceLoggingEnabled ? Instant.now() : null;
         String subject = request.getSubject();
 
-        // Get the next version number for consumer output schemas
-        String nextVersion = getNextVersionForConsumerOutputSchema(subject, consumerId);
+        if (businessLoggingEnabled) {
+            logger.info("Registering consumer output schema: consumerId={}, subject={}, compatibility={}",
+                consumerId, subject, request.getCompatibility());
+        }
 
-        // Create new consumer output schema entity
-        SchemaEntity schemaEntity = new SchemaEntity(
-            subject,
-            SchemaType.consumer_output,
-            consumerId,
-            nextVersion,
-            request.getSchema(),
-            request.getCompatibility(),
-            request.getDescription()
-        );
+        try {
+            // Validate consumer exists
+            consumerService.getConsumer(consumerId);
 
-        SchemaEntity savedEntity = schemaRepository.save(schemaEntity);
-        return mapToResponse(savedEntity);
+            // Get the next version number for consumer output schemas
+            String nextVersion = getNextVersionForConsumerOutputSchema(subject, consumerId);
+
+            if (businessLoggingEnabled) {
+                logger.debug("Calculated next version for consumer output schema: consumerId={}, subject={}, version={}",
+                    consumerId, subject, nextVersion);
+            }
+
+            // Create new consumer output schema entity
+            SchemaEntity schemaEntity = new SchemaEntity(
+                subject,
+                SchemaType.consumer_output,
+                consumerId,
+                nextVersion,
+                request.getSchema(),
+                request.getCompatibility(),
+                request.getDescription()
+            );
+
+            SchemaEntity savedEntity = schemaRepository.save(schemaEntity);
+
+            if (businessLoggingEnabled) {
+                logger.info("Consumer output schema registered successfully: consumerId={}, subject={}, version={}, id={}",
+                    consumerId, subject, nextVersion, savedEntity.getId());
+            }
+
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                if (duration > slowThresholdMs) {
+                    logger.warn("Slow consumer schema registration detected: consumerId={}, subject={}, duration={}ms",
+                        consumerId, subject, duration);
+                } else {
+                    logger.debug("Consumer schema registration performance: consumerId={}, subject={}, duration={}ms",
+                        consumerId, subject, duration);
+                }
+            }
+
+            return mapToResponse(savedEntity);
+        } catch (Exception e) {
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                logger.error("Consumer schema registration failed: consumerId={}, subject={}, duration={}ms, error={}",
+                    consumerId, subject, duration, e.getMessage(), e);
+            } else if (businessLoggingEnabled) {
+                logger.error("Consumer schema registration failed: consumerId={}, subject={}, error={}",
+                    consumerId, subject, e.getMessage(), e);
+            }
+            throw e;
+        }
     }
 
 

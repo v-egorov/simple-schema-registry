@@ -15,6 +15,7 @@ import ru.vegorov.schemaregistry.dto.SchemaValidationResponse;
 import ru.vegorov.schemaregistry.entity.SchemaEntity;
 import ru.vegorov.schemaregistry.entity.SchemaType;
 import ru.vegorov.schemaregistry.repository.SchemaRepository;
+import ru.vegorov.schemaregistry.service.ConsumerService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,13 +31,16 @@ class SchemaRegistryServiceTest {
     @Mock
     private SchemaRepository schemaRepository;
 
+    @Mock
+    private ConsumerService consumerService;
+
     private ObjectMapper objectMapper = new ObjectMapper();
 
     private SchemaRegistryService schemaService;
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        schemaService = new SchemaRegistryService(schemaRepository, objectMapper);
+        schemaService = new SchemaRegistryService(schemaRepository, consumerService, objectMapper);
     }
 
     @Test
