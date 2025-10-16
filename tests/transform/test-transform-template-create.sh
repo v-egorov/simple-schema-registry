@@ -198,17 +198,17 @@ fi
 # Test 8: Verify template persistence across calls
 echo
 echo "Test 8: Verify template persistence"
-# Get the template back and verify it matches
-get_response=$(get_request "/api/consumers/$consumer_id/subjects/$subject/templates/active")
+# Get the specific version 3.0.0 template and verify it was persisted correctly
+get_response=$(get_request "/api/consumers/$consumer_id/subjects/$subject/templates/versions/3.0.0")
 get_http_code=$(echo "$get_response" | tail -n1)
 get_body=$(echo "$get_response" | head -n -1)
 
-assert_response "$get_http_code" 200 "Should be able to retrieve created template"
+assert_response "$get_http_code" 200 "Should be able to retrieve version 3.0.0 template"
 if echo "$get_body" | grep -q '.userId' && echo "$get_body" | grep -q '.status'; then
-    log_success "Template persisted correctly"
+    log_success "Template version 3.0.0 persisted correctly"
     ((TESTS_PASSED++))
 else
-    log_error "Template not persisted correctly"
+    log_error "Template version 3.0.0 not persisted correctly"
     ((TESTS_FAILED++))
 fi
 

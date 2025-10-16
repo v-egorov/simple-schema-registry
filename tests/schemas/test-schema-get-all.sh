@@ -92,12 +92,14 @@ fi
 # Test 3: Verify versions are in correct order (newest first)
 echo
 echo "Test 3: Verify version ordering"
-versions=$(echo "$schemas_response" | grep -o '"version":[0-9]*' | sed 's/"version"://g' | tr '\n' ' ')
-if echo "$versions" | grep -q "3 2 1"; then
+# Extract version strings from JSON: "version":"1.0.2" -> 1.0.2
+versions=$(echo "$schemas_response" | grep -o '"version":"[^"]*"' | sed 's/"version":"//g' | sed 's/"//g' | tr '\n' ' ')
+# Should be in descending semver order: 1.0.2 1.0.1 1.0.0
+if echo "$versions" | grep -q "1\.0\.2 1\.0\.1 1\.0\.0"; then
     log_success "Versions are ordered correctly (newest first)"
     ((TESTS_PASSED++))
 else
-    log_error "Versions not ordered correctly. Found: $versions"
+    log_error "Versions not ordered correctly. Expected: 1.0.2 1.0.1 1.0.0, Found: $versions"
     ((TESTS_FAILED++))
 fi
 
