@@ -95,3 +95,5 @@ node_modules/
 
 schema_export*
 db_backup*.sql
+tests/examples/investment-research/publications/large-publication-*.json
+prompts/
