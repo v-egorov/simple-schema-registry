@@ -497,11 +497,11 @@ public class SchemaRegistryService {
 
                 if (businessLoggingEnabled) {
                     if (consumerId != null) {
-                        logger.warn("JSON validation failed: subject={}, consumerId={}, schemaVersion={}, schemaType={}, errorCount={}",
-                            subject, consumerId, schemaEntity.getVersion(), schemaType, errors.size());
+                        logger.warn("JSON validation failed: subject={}, consumerId={}, schemaVersion={}, schemaType={}, errorCount={}, errors={}",
+                            subject, consumerId, schemaEntity.getVersion(), schemaType, errors.size(), errors);
                     } else {
-                        logger.warn("JSON validation failed: subject={}, schemaVersion={}, schemaType={}, errorCount={}",
-                            subject, schemaEntity.getVersion(), schemaType, errors.size());
+                        logger.warn("JSON validation failed: subject={}, schemaVersion={}, schemaType={}, errorCount={}, errors={}",
+                            subject, schemaEntity.getVersion(), schemaType, errors.size(), errors);
                     }
                 }
 
