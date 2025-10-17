@@ -90,6 +90,14 @@ public class TransformationController {
         logger.info("Processing transformation request for consumer={}, subject={}", consumerId, subject);
 
         try {
+            if (requestLoggingEnabled && shouldIncludePayload()) {
+                try {
+                    String payload = objectMapper.writeValueAsString(request);
+                    logger.debug("Request payload ({} chars): {}", payload.length(), payload);
+                } catch (Exception e) {
+                    logger.warn("Failed to serialize request payload for logging", e);
+                }
+            }
 
             // Set subject in request
             request.setSubject(subject);
@@ -97,6 +105,14 @@ public class TransformationController {
 
             if (requestLoggingEnabled) {
                 logger.info("Transformation request completed successfully");
+                if (shouldIncludePayload()) {
+                    try {
+                        String responsePayload = objectMapper.writeValueAsString(response);
+                        logger.debug("Response payload ({} chars): {}", responsePayload.length(), responsePayload);
+                    } catch (Exception e) {
+                        logger.warn("Failed to serialize response payload for logging", e);
+                    }
+                }
             }
 
             return ResponseEntity.ok(response);
@@ -127,6 +143,14 @@ public class TransformationController {
         logger.info("Processing transformation request with version for consumer={}, subject={}, version={}", consumerId, subject, version);
 
         try {
+            if (requestLoggingEnabled && shouldIncludePayload()) {
+                try {
+                    String payload = objectMapper.writeValueAsString(request);
+                    logger.debug("Request payload ({} chars): {}", payload.length(), payload);
+                } catch (Exception e) {
+                    logger.warn("Failed to serialize request payload for logging", e);
+                }
+            }
 
             // Set subject and version in request
             request.setSubject(subject);
@@ -135,6 +159,14 @@ public class TransformationController {
 
             if (requestLoggingEnabled) {
                 logger.info("Transformation request with version completed successfully");
+                if (shouldIncludePayload()) {
+                    try {
+                        String responsePayload = objectMapper.writeValueAsString(response);
+                        logger.debug("Response payload ({} chars): {}", responsePayload.length(), responsePayload);
+                    } catch (Exception e) {
+                        logger.warn("Failed to serialize response payload for logging", e);
+                    }
+                }
             }
 
             return ResponseEntity.ok(response);

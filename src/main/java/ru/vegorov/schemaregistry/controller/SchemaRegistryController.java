@@ -262,6 +262,14 @@ public class SchemaRegistryController {
         try {
             if (requestLoggingEnabled) {
                 logger.info("Processing canonical schema validation request");
+                if (shouldIncludePayload()) {
+                    try {
+                        String payload = objectMapper.writeValueAsString(request);
+                        logger.debug("Request payload ({} chars): {}", payload.length(), payload);
+                    } catch (Exception e) {
+                        logger.warn("Failed to serialize request payload for logging", e);
+                    }
+                }
             }
 
             // Ensure the subject in path matches the request
@@ -276,6 +284,14 @@ public class SchemaRegistryController {
 
             if (requestLoggingEnabled) {
                 logger.info("Canonical schema validation request completed: valid={}", response.isValid());
+                if (shouldIncludePayload()) {
+                    try {
+                        String responsePayload = objectMapper.writeValueAsString(response);
+                        logger.debug("Response payload ({} chars): {}", responsePayload.length(), responsePayload);
+                    } catch (Exception e) {
+                        logger.warn("Failed to serialize response payload for logging", e);
+                    }
+                }
             }
 
             return ResponseEntity.ok(response);
@@ -493,6 +509,14 @@ public class SchemaRegistryController {
         try {
             if (requestLoggingEnabled) {
                 logger.info("Processing consumer output schema validation request: consumerId={}", consumerId);
+                if (shouldIncludePayload()) {
+                    try {
+                        String payload = objectMapper.writeValueAsString(request);
+                        logger.debug("Request payload ({} chars): {}", payload.length(), payload);
+                    } catch (Exception e) {
+                        logger.warn("Failed to serialize request payload for logging", e);
+                    }
+                }
             }
 
             // Ensure the subject in path matches the request
@@ -508,6 +532,14 @@ public class SchemaRegistryController {
 
             if (requestLoggingEnabled) {
                 logger.info("Consumer output schema validation request completed: consumerId={}, valid={}", consumerId, response.isValid());
+                if (shouldIncludePayload()) {
+                    try {
+                        String responsePayload = objectMapper.writeValueAsString(response);
+                        logger.debug("Response payload ({} chars): {}", responsePayload.length(), responsePayload);
+                    } catch (Exception e) {
+                        logger.warn("Failed to serialize response payload for logging", e);
+                    }
+                }
             }
 
             return ResponseEntity.ok(response);
