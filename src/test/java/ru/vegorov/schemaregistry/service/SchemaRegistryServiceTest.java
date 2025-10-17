@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -108,6 +109,47 @@ class SchemaRegistryServiceTest {
         assertThat(response).isNotNull();
         assertThat(response.getSubject()).isEqualTo("test-subject");
         assertThat(response.getVersion()).isEqualTo("1.0.0");
+    }
+
+    @Test
+    void registerCanonicalSchema_shouldThrowExceptionForInvalidSchema() {
+        // Given
+        Map<String, Object> invalidSchemaJson = new HashMap<>();
+        invalidSchemaJson.put("invalid", "schema"); // no 'type' or '$schema'
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject",
+            invalidSchemaJson,
+            "BACKWARD",
+            "Invalid schema"
+        );
+
+        // When & Then
+        assertThatThrownBy(() -> schemaService.registerCanonicalSchema(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Schema must contain 'type' or '$schema' keyword");
+    }
+
+    @Test
+    void registerConsumerOutputSchema_shouldThrowExceptionForInvalidSchema() {
+        // Given
+        Map<String, Object> invalidSchemaJson = new HashMap<>();
+        invalidSchemaJson.put("invalid", "schema"); // no 'type' or '$schema'
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject",
+            invalidSchemaJson,
+            "BACKWARD",
+            "Invalid consumer output schema"
+        );
+
+        when(schemaRepository.findBySubjectAndSchemaTypeAndConsumerId("test-subject", SchemaType.consumer_output, "consumer-1"))
+            .thenReturn(java.util.Collections.emptyList());
+
+        // When & Then
+        assertThatThrownBy(() -> schemaService.registerConsumerOutputSchema("consumer-1", request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Schema must contain 'type' or '$schema' keyword");
     }
 
     @Test

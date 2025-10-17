@@ -80,6 +80,25 @@ public class SchemaRegistryService {
                     subject, nextVersion);
             }
 
+            // Validate the schema is a valid JSON Schema
+            try {
+                String schemaJsonString = objectMapper.writeValueAsString(request.getSchema());
+                JsonNode schemaNode = objectMapper.readTree(schemaJsonString);
+                if (!schemaNode.has("type") && !schemaNode.has("$schema")) {
+                    throw new IllegalArgumentException("Schema must contain 'type' or '$schema' keyword");
+                }
+                JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+                factory.getSchema(schemaJsonString);
+                if (businessLoggingEnabled) {
+                    logger.debug("Schema validation successful for canonical schema: subject={}", subject);
+                }
+            } catch (Exception e) {
+                if (businessLoggingEnabled) {
+                    logger.warn("Invalid schema provided for canonical schema registration: subject={}, error={}", subject, e.getMessage());
+                }
+                throw new IllegalArgumentException("Invalid JSON Schema: " + e.getMessage());
+            }
+
             // Create new canonical schema entity
             SchemaEntity schemaEntity = new SchemaEntity(
                 subject,
@@ -139,6 +158,25 @@ public class SchemaRegistryService {
             if (businessLoggingEnabled) {
                 logger.debug("Calculated next version for consumer output schema: consumerId={}, subject={}, version={}",
                     consumerId, subject, nextVersion);
+            }
+
+            // Validate the schema is a valid JSON Schema
+            try {
+                String schemaJsonString = objectMapper.writeValueAsString(request.getSchema());
+                JsonNode schemaNode = objectMapper.readTree(schemaJsonString);
+                if (!schemaNode.has("type") && !schemaNode.has("$schema")) {
+                    throw new IllegalArgumentException("Schema must contain 'type' or '$schema' keyword");
+                }
+                JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+                factory.getSchema(schemaJsonString);
+                if (businessLoggingEnabled) {
+                    logger.debug("Schema validation successful for consumer output schema: consumerId={}, subject={}", consumerId, subject);
+                }
+            } catch (Exception e) {
+                if (businessLoggingEnabled) {
+                    logger.warn("Invalid schema provided for consumer output schema registration: consumerId={}, subject={}, error={}", consumerId, subject, e.getMessage());
+                }
+                throw new IllegalArgumentException("Invalid JSON Schema: " + e.getMessage());
             }
 
             // Create new consumer output schema entity
