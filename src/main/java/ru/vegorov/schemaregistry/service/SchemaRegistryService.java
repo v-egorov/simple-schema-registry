@@ -417,11 +417,21 @@ public class SchemaRegistryService {
         if (businessLoggingEnabled) {
             try {
                 String jsonString = objectMapper.writeValueAsString(jsonData);
-                logger.info("Validating JSON against {} schema: subject={}, dataSize={} chars",
-                    schemaType, subject, jsonString.length());
+                if (consumerId != null) {
+                    logger.info("Validating JSON against {} schema: subject={}, consumerId={}, dataSize={} chars",
+                        schemaType, subject, consumerId, jsonString.length());
+                } else {
+                    logger.info("Validating JSON against {} schema: subject={}, dataSize={} chars",
+                        schemaType, subject, jsonString.length());
+                }
             } catch (Exception e) {
-                logger.warn("Could not serialize JSON for size logging: subject={}, error={}", subject, e.getMessage());
-                logger.info("Validating JSON against {} schema: subject={}", schemaType, subject);
+                if (consumerId != null) {
+                    logger.warn("Could not serialize JSON for size logging: subject={}, consumerId={}, error={}", subject, consumerId, e.getMessage());
+                    logger.info("Validating JSON against {} schema: subject={}, consumerId={}", schemaType, subject, consumerId);
+                } else {
+                    logger.warn("Could not serialize JSON for size logging: subject={}, error={}", subject, e.getMessage());
+                    logger.info("Validating JSON against {} schema: subject={}", schemaType, subject);
+                }
             }
         }
 
@@ -471,8 +481,13 @@ public class SchemaRegistryService {
 
             if (validationMessages.isEmpty()) {
                 if (businessLoggingEnabled) {
-                    logger.info("JSON validation successful: subject={}, schemaVersion={}, schemaType={}",
-                        subject, schemaEntity.getVersion(), schemaType);
+                    if (consumerId != null) {
+                        logger.info("JSON validation successful: subject={}, consumerId={}, schemaVersion={}, schemaType={}",
+                            subject, consumerId, schemaEntity.getVersion(), schemaType);
+                    } else {
+                        logger.info("JSON validation successful: subject={}, schemaVersion={}, schemaType={}",
+                            subject, schemaEntity.getVersion(), schemaType);
+                    }
                 }
                 return new SchemaValidationResponse(true, subject, schemaEntity.getVersion());
             } else {
@@ -481,16 +496,26 @@ public class SchemaRegistryService {
                     .collect(Collectors.toList());
 
                 if (businessLoggingEnabled) {
-                    logger.warn("JSON validation failed: subject={}, schemaVersion={}, schemaType={}, errorCount={}",
-                        subject, schemaEntity.getVersion(), schemaType, errors.size());
+                    if (consumerId != null) {
+                        logger.warn("JSON validation failed: subject={}, consumerId={}, schemaVersion={}, schemaType={}, errorCount={}",
+                            subject, consumerId, schemaEntity.getVersion(), schemaType, errors.size());
+                    } else {
+                        logger.warn("JSON validation failed: subject={}, schemaVersion={}, schemaType={}, errorCount={}",
+                            subject, schemaEntity.getVersion(), schemaType, errors.size());
+                    }
                 }
 
                 return new SchemaValidationResponse(false, subject, schemaEntity.getVersion(), errors);
             }
         } catch (Exception e) {
             if (businessLoggingEnabled) {
-                logger.error("JSON validation error: subject={}, schemaVersion={}, schemaType={}, error={}",
-                    subject, schemaEntity.getVersion(), schemaType, e.getMessage(), e);
+                if (consumerId != null) {
+                    logger.error("JSON validation error: subject={}, consumerId={}, schemaVersion={}, schemaType={}, error={}",
+                        subject, consumerId, schemaEntity.getVersion(), schemaType, e.getMessage(), e);
+                } else {
+                    logger.error("JSON validation error: subject={}, schemaVersion={}, schemaType={}, error={}",
+                        subject, schemaEntity.getVersion(), schemaType, e.getMessage(), e);
+                }
             }
             throw new SchemaValidationException("Failed to validate JSON against schema: " + e.getMessage());
         }

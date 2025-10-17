@@ -1,13 +1,14 @@
 #!/bin/bash
 
-# Validate JSON against canonical schema
-# Validates JSON data from a file against the canonical schema for a given subject
+# Validate JSON against schema
+# Validates JSON data from a file against the canonical or consumer schema for a given subject
 #
-# Usage: ./validate-json-against-schema.sh <json_file> <subject> [version]
+# Usage: ./validate-json-against-schema.sh <json_file> <subject> [consumer_id] [version]
 #
 # Arguments:
 #   json_file: Path to JSON data file to validate
 #   subject: Schema subject to validate against
+#   consumer_id: Optional consumer ID (validates against consumer schema if provided)
 #   version: Optional schema version (uses latest if not specified)
 #
 # Prerequisites:
@@ -54,16 +55,18 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # Validate arguments
-if [ $# -lt 2 ] || [ $# -gt 3 ]; then
-    log_error "Usage: $0 <json_file> <subject> [version]"
+if [ $# -lt 2 ] || [ $# -gt 4 ]; then
+    log_error "Usage: $0 <json_file> <subject> [consumer_id] [version]"
     log_error "Example: $0 data.json user-profile"
-    log_error "Example: $0 data.json user-profile 1.0.0"
+    log_error "Example: $0 data.json user-profile mobile-app"
+    log_error "Example: $0 data.json user-profile mobile-app 1.0.0"
     exit 1
 fi
 
 JSON_FILE="$1"
 SUBJECT="$2"
-VERSION="$3"
+CONSUMER_ID="$3"
+VERSION="$4"
 
 # Validate JSON file exists
 if [ ! -f "$JSON_FILE" ]; then
@@ -79,6 +82,9 @@ fi
 
 log_info "Validating JSON file: $JSON_FILE"
 log_info "Subject: $SUBJECT"
+if [ -n "$CONSUMER_ID" ]; then
+    log_info "Consumer: $CONSUMER_ID"
+fi
 if [ -n "$VERSION" ]; then
     log_info "Version: $VERSION"
 fi
@@ -101,8 +107,12 @@ echo "{\"subject\":\"$SUBJECT\",\"jsonData\":" > "$TEMP_PAYLOAD_FILE"
 cat "$JSON_FILE" >> "$TEMP_PAYLOAD_FILE"
 echo "}" >> "$TEMP_PAYLOAD_FILE"
 
-# Build URL with optional version
-URL="/api/schemas/$SUBJECT/validate"
+# Build URL with optional consumer and version
+if [ -n "$CONSUMER_ID" ]; then
+    URL="/api/consumers/$CONSUMER_ID/schemas/$SUBJECT/validate"
+else
+    URL="/api/schemas/$SUBJECT/validate"
+fi
 if [ -n "$VERSION" ]; then
     URL="${URL}/versions/$VERSION"
 fi
@@ -129,6 +139,11 @@ if [ "$HTTP_CODE" -eq 200 ]; then
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo "File: $JSON_FILE"
         echo "Subject: $SUBJECT"
+        if [ -n "$CONSUMER_ID" ]; then
+            echo "Schema Type: Consumer ($CONSUMER_ID)"
+        else
+            echo "Schema Type: Canonical"
+        fi
         echo "Size: ${SIZE_DISPLAY}"
         echo "Status: Valid"
         if [ -n "$VERSION" ]; then
@@ -142,6 +157,11 @@ if [ "$HTTP_CODE" -eq 200 ]; then
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo "File: $JSON_FILE"
         echo "Subject: $SUBJECT"
+        if [ -n "$CONSUMER_ID" ]; then
+            echo "Schema Type: Consumer ($CONSUMER_ID)"
+        else
+            echo "Schema Type: Canonical"
+        fi
         echo "Size: ${SIZE_DISPLAY}"
         echo "Status: Invalid"
         if [ -n "$VERSION" ]; then
@@ -160,6 +180,11 @@ else
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "File: $JSON_FILE"
     echo "Subject: $SUBJECT"
+    if [ -n "$CONSUMER_ID" ]; then
+        echo "Schema Type: Consumer ($CONSUMER_ID)"
+    else
+        echo "Schema Type: Canonical"
+    fi
     echo "Error: HTTP $HTTP_CODE"
     echo
     echo "Response:"

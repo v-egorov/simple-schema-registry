@@ -466,7 +466,7 @@ public class SchemaRegistryController {
 
         try {
             if (requestLoggingEnabled) {
-                logger.info("Processing consumer output schema validation request");
+                logger.info("Processing consumer output schema validation request: consumerId={}", consumerId);
             }
 
             // Ensure the subject in path matches the request
@@ -481,7 +481,7 @@ public class SchemaRegistryController {
             SchemaValidationResponse response = schemaService.validateJsonAgainstConsumerOutputSchema(request, consumerId);
 
             if (requestLoggingEnabled) {
-                logger.info("Consumer output schema validation request completed: valid={}", response.isValid());
+                logger.info("Consumer output schema validation request completed: consumerId={}, valid={}", consumerId, response.isValid());
             }
 
             return ResponseEntity.ok(response);
