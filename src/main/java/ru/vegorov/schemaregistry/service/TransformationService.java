@@ -169,128 +169,163 @@ public class TransformationService {
      */
     public TransformationTemplateResponse createTemplateVersion(String consumerId,
                                                                 TransformationTemplateRequest request) {
+        Instant start = performanceLoggingEnabled ? Instant.now() : null;
 
         if (businessLoggingEnabled) {
             logger.info("Creating transformation template version: consumer={}, version={}, engine={}",
                 consumerId, request.getVersion(), request.getEngine());
         }
 
-        // Verify consumer exists
-        if (!consumerService.consumerExists(consumerId)) {
-            throw new ResourceNotFoundException(
-                String.format("Consumer not found: %s", consumerId));
-        }
-
-        // Validate input and output schemas exist
-        SchemaEntity inputSchema = resolveSchemaReference(request.getInputSchema(), SchemaType.canonical);
-        SchemaEntity outputSchema = resolveSchemaReference(request.getOutputSchema(), SchemaType.consumer_output);
-
-        // The subject is derived from the input schema
-        String subject = inputSchema.getSubject();
-
-        if (businessLoggingEnabled) {
-            logger.debug("Resolved schemas for template creation: consumer={}, subject={}, inputSchemaId={}, outputSchemaId={}",
-                consumerId, subject, inputSchema.getId(), outputSchema.getId());
-        }
-
-        // Check if this version already exists
-        if (templateRepository.existsByConsumerIdAndSubjectAndVersion(consumerId, subject, request.getVersion())) {
-            throw new ConflictException(
-                String.format("Transformation template version already exists: consumer=%s, subject=%s, version=%s",
-                    consumerId, subject, request.getVersion()));
-        }
-
-        // Prepare the expression/configuration based on engine type
-        String expression;
-        String configuration;
-
         try {
-            if ("jslt".equalsIgnoreCase(request.getEngine())) {
-                // For JSLT engine, use the expression field
-                expression = request.getExpression();
-                if (expression == null || expression.trim().isEmpty()) {
-                    throw new IllegalArgumentException("Expression is required for JSLT engine");
+            // Verify consumer exists
+            if (!consumerService.consumerExists(consumerId)) {
+                throw new ResourceNotFoundException(
+                    String.format("Consumer not found: %s", consumerId));
+            }
+
+            // Validate input and output schemas exist
+            SchemaEntity inputSchema = resolveSchemaReference(request.getInputSchema(), SchemaType.canonical);
+            SchemaEntity outputSchema = resolveSchemaReference(request.getOutputSchema(), SchemaType.consumer_output);
+
+            // The subject is derived from the input schema
+            String subject = inputSchema.getSubject();
+
+            if (businessLoggingEnabled) {
+                logger.debug("Resolved schemas for template creation: consumer={}, subject={}, inputSchemaId={}, outputSchemaId={}",
+                    consumerId, subject, inputSchema.getId(), outputSchema.getId());
+            }
+
+            // Check if this version already exists
+            if (templateRepository.existsByConsumerIdAndSubjectAndVersion(consumerId, subject, request.getVersion())) {
+                throw new ConflictException(
+                    String.format("Transformation template version already exists: consumer=%s, subject=%s, version=%s",
+                        consumerId, subject, request.getVersion()));
+            }
+
+            // Prepare the expression/configuration based on engine type
+            String expression;
+            String configuration;
+
+            try {
+                if ("jslt".equalsIgnoreCase(request.getEngine())) {
+                    // For JSLT engine, use the expression field
+                    expression = request.getExpression();
+                    if (expression == null || expression.trim().isEmpty()) {
+                        throw new IllegalArgumentException("Expression is required for JSLT engine");
+                    }
+                    configuration = null;
+                } else if ("router".equalsIgnoreCase(request.getEngine())) {
+                    // For router engine, serialize the router configuration
+                    if (request.getRouterConfig() == null) {
+                        throw new IllegalArgumentException("Router configuration is required for router engine");
+                    }
+                    configuration = objectMapper.writeValueAsString(request.getRouterConfig());
+                    expression = configuration; // Use the same config as expression to satisfy validation
+                } else if ("pipeline".equalsIgnoreCase(request.getEngine())) {
+                    // For pipeline engine, serialize the pipeline configuration
+                    if (request.getPipelineConfig() == null) {
+                        throw new IllegalArgumentException("Pipeline configuration is required for pipeline engine");
+                    }
+                    configuration = objectMapper.writeValueAsString(request.getPipelineConfig());
+                    expression = configuration; // Use the same config as expression to satisfy validation
+                } else {
+                    throw new IllegalArgumentException("Unsupported engine: " + request.getEngine());
                 }
-                configuration = null;
-            } else if ("router".equalsIgnoreCase(request.getEngine())) {
-                // For router engine, serialize the router configuration
-                if (request.getRouterConfig() == null) {
-                    throw new IllegalArgumentException("Router configuration is required for router engine");
+            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                throw new IllegalArgumentException("Failed to serialize configuration: " + e.getMessage(), e);
+            }
+
+            // Validate the transformation expression/configuration
+            TransformationEngine engine = getEngine(request.getEngine());
+            boolean isValid;
+            if (engine instanceof JsltTransformationEngine && functionRegistry != null) {
+                // Use JSLT engine with function registry for validation
+                if (businessLoggingEnabled) {
+                    logger.debug("Validating JSLT expression with function registry: consumer={}, subject={}",
+                        consumerId, subject);
                 }
-                configuration = objectMapper.writeValueAsString(request.getRouterConfig());
-                expression = configuration; // Use the same config as expression to satisfy validation
-            } else if ("pipeline".equalsIgnoreCase(request.getEngine())) {
-                // For pipeline engine, serialize the pipeline configuration
-                if (request.getPipelineConfig() == null) {
-                    throw new IllegalArgumentException("Pipeline configuration is required for pipeline engine");
-                }
-                configuration = objectMapper.writeValueAsString(request.getPipelineConfig());
-                expression = configuration; // Use the same config as expression to satisfy validation
+                isValid = ((JsltTransformationEngine) engine).validateExpression(expression, functionRegistry);
             } else {
-                throw new IllegalArgumentException("Unsupported engine: " + request.getEngine());
+                // Fallback to standard validation
+                if (businessLoggingEnabled) {
+                    logger.debug("Validating expression with {} engine: consumer={}, subject={}",
+                        engine.getClass().getSimpleName(), consumerId, subject);
+                }
+                isValid = engine.validateExpression(expression);
             }
-        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-            throw new IllegalArgumentException("Failed to serialize configuration: " + e.getMessage(), e);
-        }
 
-        // Validate the transformation expression/configuration
-        TransformationEngine engine = getEngine(request.getEngine());
-        boolean isValid;
-        if (engine instanceof JsltTransformationEngine && functionRegistry != null) {
-            // Use JSLT engine with function registry for validation
+            if (!isValid) {
+                if (businessLoggingEnabled) {
+                    logger.error("Invalid transformation configuration: consumer={}, subject={}, engine={}",
+                        consumerId, subject, request.getEngine());
+                }
+                throw new IllegalArgumentException("Invalid transformation configuration");
+            }
+
+            // Determine if this should be the active version
+            boolean isActive = !templateRepository.existsByConsumerIdAndSubject(consumerId, subject) ||
+                               request.getVersion().equals(getLatestVersionForConsumerAndSubject(consumerId, subject));
+
+            // Create new template version
+            TransformationTemplateEntity entity = new TransformationTemplateEntity(
+                consumerId,
+                subject,
+                request.getVersion(),
+                request.getEngine(),
+                expression,
+                configuration,
+                inputSchema,
+                outputSchema,
+                isActive,
+                request.getDescription()
+            );
+
+            TransformationTemplateEntity savedEntity = templateRepository.save(entity);
+
+            // If this is active, deactivate other versions
+            if (isActive) {
+                deactivateOtherVersions(consumerId, subject, request.getVersion());
+            }
+
             if (businessLoggingEnabled) {
-                logger.debug("Validating JSLT expression with function registry: consumer={}, subject={}",
-                    consumerId, subject);
+                logger.info("Transformation template version created successfully: consumer={}, subject={}, version={}, active={}",
+                    consumerId, subject, request.getVersion(), isActive);
             }
-            isValid = ((JsltTransformationEngine) engine).validateExpression(expression, functionRegistry);
-        } else {
-            // Fallback to standard validation
-            if (businessLoggingEnabled) {
-                logger.debug("Validating expression with {} engine: consumer={}, subject={}",
-                    engine.getClass().getSimpleName(), consumerId, subject);
+
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                if (duration > slowThresholdMs) {
+                    logger.warn("Slow template version creation detected: consumer={}, subject={}, version={}, engine={}, duration={}ms",
+                        consumerId, subject, request.getVersion(), request.getEngine(), duration);
+                } else {
+                    logger.debug("Template version creation performance: consumer={}, subject={}, version={}, engine={}, duration={}ms",
+                        consumerId, subject, request.getVersion(), request.getEngine(), duration);
+                }
             }
-            isValid = engine.validateExpression(expression);
-        }
 
-        if (!isValid) {
-            if (businessLoggingEnabled) {
-                logger.error("Invalid transformation configuration: consumer={}, subject={}, engine={}",
-                    consumerId, subject, request.getEngine());
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                if (duration > slowThresholdMs) {
+                    logger.warn("Slow template version creation detected: consumer={}, subject={}, version={}, engine={}, duration={}ms",
+                        consumerId, subject, request.getVersion(), request.getEngine(), duration);
+                } else {
+                    logger.debug("Template version creation performance: consumer={}, subject={}, version={}, engine={}, duration={}ms",
+                        consumerId, subject, request.getVersion(), request.getEngine(), duration);
+                }
             }
-            throw new IllegalArgumentException("Invalid transformation configuration");
+
+            return mapToResponse(savedEntity);
+        } catch (Exception e) {
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                logger.error("Template version creation failed: consumer={}, version={}, engine={}, duration={}ms, error={}",
+                    consumerId, request.getVersion(), request.getEngine(), duration, e.getMessage(), e);
+            } else if (businessLoggingEnabled) {
+                logger.error("Template version creation failed: consumer={}, version={}, engine={}, error={}",
+                    consumerId, request.getVersion(), request.getEngine(), e.getMessage(), e);
+            }
+            throw e;
         }
-
-        // Determine if this should be the active version
-        boolean isActive = !templateRepository.existsByConsumerIdAndSubject(consumerId, subject) ||
-                          request.getVersion().equals(getLatestVersionForConsumerAndSubject(consumerId, subject));
-
-        // Create new template version
-        TransformationTemplateEntity entity = new TransformationTemplateEntity(
-            consumerId,
-            subject,
-            request.getVersion(),
-            request.getEngine(),
-            expression,
-            configuration,
-            inputSchema,
-            outputSchema,
-            isActive,
-            request.getDescription()
-        );
-
-        TransformationTemplateEntity savedEntity = templateRepository.save(entity);
-
-        // If this is active, deactivate other versions
-        if (isActive) {
-            deactivateOtherVersions(consumerId, subject, request.getVersion());
-        }
-
-        if (businessLoggingEnabled) {
-            logger.info("Transformation template version created successfully: consumer={}, subject={}, version={}, active={}",
-                consumerId, subject, request.getVersion(), isActive);
-        }
-
-        return mapToResponse(savedEntity);
     }
 
     /**

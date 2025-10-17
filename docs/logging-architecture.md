@@ -264,6 +264,8 @@ public SchemaResponse registerCanonicalSchema(SchemaRegistrationRequest request)
         if (performanceLoggingEnabled) {
             long duration = Duration.between(start, Instant.now()).toMillis();
             logger.error("Schema registration failed: subject={}, duration={}ms", request.getSubject(), duration, e);
+        } else if (businessLoggingEnabled) {
+            logger.error("Schema registration failed: subject={}", request.getSubject(), e);
         }
         throw e;
     }
@@ -438,7 +440,9 @@ public Result performOperation(Parameters params) {
     } catch (Exception e) {
         if (performanceLoggingEnabled) {
             long duration = Duration.between(start, Instant.now()).toMillis();
-            logger.error("Operation failed: duration={}ms, error={}", duration, e.getMessage(), e);
+            logger.error("Operation failed: context, duration={}ms, error={}", context, duration, e.getMessage(), e);
+        } else if (businessLoggingEnabled) {
+            logger.error("Operation failed: context, error={}", context, e.getMessage(), e);
         }
         throw e;
     }
@@ -577,9 +581,11 @@ logger.info("User login: username={}, password={}", username, password);
 
 ### 5. Error Logging
 
+- **Always log business errors**: Use the pattern `if (performanceLoggingEnabled) { ... } else if (businessLoggingEnabled) { ... }` to ensure errors are logged even when performance monitoring is disabled
 - Log exceptions with full stack traces at ERROR level
 - Include business context in error messages
 - Use WARN for recoverable errors, ERROR for system failures
+- **Critical**: Business errors must be logged regardless of performance logging configuration
 
 ## Troubleshooting
 

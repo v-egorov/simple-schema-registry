@@ -8,8 +8,11 @@ import com.schibsted.spt.data.jslt.JsltException;
 import com.schibsted.spt.data.jslt.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 
 /**
@@ -21,6 +24,12 @@ public class JsltTransformationEngine implements TransformationEngine {
     private static final Logger logger = LoggerFactory.getLogger(JsltTransformationEngine.class);
 
     private final ObjectMapper objectMapper;
+
+    @Value("${app.logging.performance.enabled:true}")
+    private boolean performanceLoggingEnabled;
+
+    @Value("${app.logging.performance.slow-threshold-ms:1000}")
+    private long slowThresholdMs;
 
     public JsltTransformationEngine(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
@@ -48,6 +57,8 @@ public class JsltTransformationEngine implements TransformationEngine {
      */
     public Map<String, Object> transform(Map<String, Object> inputJson, String expression, JsltFunctionRegistry functionRegistry)
         throws TransformationException {
+        Instant start = performanceLoggingEnabled ? Instant.now() : null;
+
         try {
             // Parse the JSLT expression with custom functions if registry is provided
             Expression jsltExpression;
@@ -64,11 +75,34 @@ public class JsltTransformationEngine implements TransformationEngine {
             JsonNode resultNode = jsltExpression.apply(inputNode);
 
             // Convert result back to Map
-            return objectMapper.convertValue(resultNode, new TypeReference<Map<String, Object>>() {});
+            Map<String, Object> result = objectMapper.convertValue(resultNode, new TypeReference<Map<String, Object>>() {});
+
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                if (duration > slowThresholdMs) {
+                    logger.warn("Slow JSLT transformation detected: inputSize={}, hasFunctions={}, duration={}ms",
+                        inputJson.size(), functionRegistry != null, duration);
+                } else {
+                    logger.debug("JSLT transformation performance: inputSize={}, hasFunctions={}, duration={}ms",
+                        inputJson.size(), functionRegistry != null, duration);
+                }
+            }
+
+            return result;
 
         } catch (JsltException e) {
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                logger.error("JSLT transformation failed: inputSize={}, hasFunctions={}, duration={}ms, error={}",
+                    inputJson.size(), functionRegistry != null, duration, e.getMessage(), e);
+            }
             throw new TransformationException("JSLT transformation failed: " + e.getMessage(), e);
         } catch (Exception e) {
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                logger.error("JSLT transformation failed: inputSize={}, hasFunctions={}, duration={}ms, error={}",
+                    inputJson.size(), functionRegistry != null, duration, e.getMessage(), e);
+            }
             throw new TransformationException("Transformation failed: " + e.getMessage(), e);
         }
     }

@@ -5,10 +5,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.vegorov.schemaregistry.dto.RouterConfiguration;
 import ru.vegorov.schemaregistry.service.ConfigurationValidator.ConfigurationValidationException;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,6 +29,12 @@ public class RouterTransformationEngine implements TransformationEngine {
     private final ObjectMapper objectMapper;
     private final ConfigurationValidator configValidator;
 
+    @Value("${app.logging.performance.enabled:true}")
+    private boolean performanceLoggingEnabled;
+
+    @Value("${app.logging.performance.slow-threshold-ms:1000}")
+    private long slowThresholdMs;
+
     public RouterTransformationEngine(ObjectMapper objectMapper,
                                      ConfigurationValidator configValidator) {
         this.objectMapper = objectMapper;
@@ -40,6 +49,7 @@ public class RouterTransformationEngine implements TransformationEngine {
     @Override
     public Map<String, Object> transform(Map<String, Object> inputJson, String expression)
         throws TransformationException {
+        Instant start = performanceLoggingEnabled ? Instant.now() : null;
 
         try {
             // Parse router configuration from expression (which contains JSON config)
@@ -56,9 +66,27 @@ public class RouterTransformationEngine implements TransformationEngine {
             }
 
             // Apply the selected transformation using hardcoded Java logic
-            return applyTransformation(selectedTransformationId, inputJson);
+            Map<String, Object> result = applyTransformation(selectedTransformationId, inputJson);
+
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                if (duration > slowThresholdMs) {
+                    logger.warn("Slow router transformation detected: inputSize={}, routes={}, selectedRoute={}, duration={}ms",
+                        inputJson.size(), config.getRoutes().size(), selectedTransformationId, duration);
+                } else {
+                    logger.debug("Router transformation performance: inputSize={}, routes={}, selectedRoute={}, duration={}ms",
+                        inputJson.size(), config.getRoutes().size(), selectedTransformationId, duration);
+                }
+            }
+
+            return result;
 
         } catch (Exception e) {
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                logger.error("Router transformation failed: inputSize={}, duration={}ms, error={}",
+                    inputJson.size(), duration, e.getMessage(), e);
+            }
             throw new TransformationException("Router transformation failed: " + e.getMessage(), e);
         }
     }

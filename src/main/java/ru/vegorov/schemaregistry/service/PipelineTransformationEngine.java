@@ -4,10 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.vegorov.schemaregistry.dto.PipelineConfiguration;
 import ru.vegorov.schemaregistry.service.ConfigurationValidator.ConfigurationValidationException;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +30,12 @@ public class PipelineTransformationEngine implements TransformationEngine {
     private final JsltTransformationEngine jsltEngine;
     private final ConfigurationValidator configValidator;
 
+    @Value("${app.logging.performance.enabled:true}")
+    private boolean performanceLoggingEnabled;
+
+    @Value("${app.logging.performance.slow-threshold-ms:1000}")
+    private long slowThresholdMs;
+
     public PipelineTransformationEngine(ObjectMapper objectMapper, JsltTransformationEngine jsltEngine,
                                       ConfigurationValidator configValidator) {
         this.objectMapper = objectMapper;
@@ -42,6 +51,7 @@ public class PipelineTransformationEngine implements TransformationEngine {
     @Override
     public Map<String, Object> transform(Map<String, Object> inputJson, String expression)
         throws TransformationException {
+        Instant start = performanceLoggingEnabled ? Instant.now() : null;
 
         try {
             // Parse pipeline configuration from expression (which contains JSON config)
@@ -68,6 +78,11 @@ public class PipelineTransformationEngine implements TransformationEngine {
 
                     if (!step.isContinueOnError()) {
                         // Stop pipeline execution on error
+                        if (performanceLoggingEnabled) {
+                            long duration = Duration.between(start, Instant.now()).toMillis();
+                            logger.error("Pipeline transformation failed: stepsExecuted={}, totalSteps={}, duration={}ms, error={}",
+                                executedSteps.size(), config.getSteps().size(), duration, e.getMessage(), e);
+                        }
                         throw new TransformationException(
                             String.format("Pipeline failed at step '%s': %s", step.getName(), e.getMessage()), e);
                     }
@@ -78,9 +93,25 @@ public class PipelineTransformationEngine implements TransformationEngine {
             // If we have errors but continued, we could log them or include in response
             // For now, just return the final result
 
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                if (duration > slowThresholdMs) {
+                    logger.warn("Slow pipeline transformation detected: steps={}, inputSize={}, errors={}, duration={}ms",
+                        config.getSteps().size(), inputJson.size(), errors.size(), duration);
+                } else {
+                    logger.debug("Pipeline transformation performance: steps={}, inputSize={}, errors={}, duration={}ms",
+                        config.getSteps().size(), inputJson.size(), errors.size(), duration);
+                }
+            }
+
             return currentData;
 
         } catch (Exception e) {
+            if (performanceLoggingEnabled) {
+                long duration = Duration.between(start, Instant.now()).toMillis();
+                logger.error("Pipeline transformation failed: inputSize={}, duration={}ms, error={}",
+                    inputJson.size(), duration, e.getMessage(), e);
+            }
             throw new TransformationException("Pipeline transformation failed: " + e.getMessage(), e);
         }
     }
