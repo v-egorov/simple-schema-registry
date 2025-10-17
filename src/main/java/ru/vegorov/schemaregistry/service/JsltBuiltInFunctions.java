@@ -41,9 +41,9 @@ public class JsltBuiltInFunctions {
 
     /**
      * Create the filter_additional_metadata_fields function.
-     * Filters out forecastTodayValue and forecastTodayDirection from additionalMetadataFields array.
+     * Filters out specified IDs from additionalMetadataFields array.
      *
-     * Usage in JSLT: filter_additional_metadata_fields(.details.additionalMetadataFields)
+     * Usage in JSLT: filter_additional_metadata_fields(.details.additionalMetadataFields, ["id1", "id2"])
      *
      * @return Function implementation
      */
@@ -131,34 +131,57 @@ public class JsltBuiltInFunctions {
 
         @Override
         public int getMinArguments() {
-            return 1;
+            return 2;
         }
 
         @Override
         public int getMaxArguments() {
-            return 1;
+            return 2;
         }
 
         @Override
         public JsonNode call(JsonNode input, JsonNode[] args) {
-            if (args.length != 1) {
-                throw new IllegalArgumentException("filter_additional_metadata_fields expects exactly 1 argument");
+            if (args.length != 2) {
+                throw new IllegalArgumentException("filter_additional_metadata_fields expects exactly 2 arguments");
             }
 
             JsonNode metadataFields = args[0];
-            if (metadataFields == null || !metadataFields.isArray()) {
+            if (metadataFields == null) {
                 return objectMapper.createArrayNode();
+            }
+            if (!metadataFields.isArray()) {
+                throw new IllegalArgumentException("First argument must be an array or null");
+            }
+
+            JsonNode excludeIds = args[1];
+            if (excludeIds == null || !excludeIds.isArray()) {
+                throw new IllegalArgumentException("Second argument must be an array of IDs to exclude");
+            }
+
+            // Collect exclude IDs
+            java.util.Set<String> excludeSet = new java.util.HashSet<>();
+            Iterator<JsonNode> excludeElements = excludeIds.elements();
+            while (excludeElements.hasNext()) {
+                JsonNode idNode = excludeElements.next();
+                if (!idNode.isTextual()) {
+                    throw new IllegalArgumentException("Exclude IDs must be strings");
+                }
+                excludeSet.add(idNode.asText());
             }
 
             ArrayNode result = objectMapper.createArrayNode();
             Iterator<JsonNode> elements = metadataFields.elements();
             while (elements.hasNext()) {
                 JsonNode field = elements.next();
-                if (field.isObject() && field.has("id")) {
-                    String fieldId = field.get("id").asText();
-                    if (!"forecastTodayValue".equals(fieldId) && !"forecastTodayDirection".equals(fieldId)) {
-                        result.add(field);
-                    }
+                if (!field.isObject()) {
+                    throw new IllegalArgumentException("Array elements must be objects");
+                }
+                if (!field.has("id")) {
+                    throw new IllegalArgumentException("Array elements must have an 'id' field");
+                }
+                String fieldId = field.get("id").asText();
+                if (!excludeSet.contains(fieldId)) {
+                    result.add(field);
                 }
             }
 

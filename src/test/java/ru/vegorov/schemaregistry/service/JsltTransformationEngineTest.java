@@ -68,7 +68,7 @@ class JsltTransformationEngineTest {
             "    \"status\": .details.status,\n" +
             "    \"lastUpdated\": .details.lastUpdated,\n" +
             "    \"forecastToday\": extract_forecast_today(.details.additionalMetadataFields),\n" +
-            "    \"additionalMetadataFields\": filter_additional_metadata_fields(.details.additionalMetadataFields)\n" +
+            "    \"additionalMetadataFields\": filter_additional_metadata_fields(.details.additionalMetadataFields, [\"forecastTodayValue\", \"forecastTodayDirection\"])\n" +
             "  }\n" +
             "}";
 
