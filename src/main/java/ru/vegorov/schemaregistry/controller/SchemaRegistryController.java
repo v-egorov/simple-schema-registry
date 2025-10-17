@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.UUID;
 import ru.vegorov.schemaregistry.dto.CompatibilityCheckRequest;
 import ru.vegorov.schemaregistry.dto.CompatibilityCheckResponse;
@@ -33,12 +35,28 @@ public class SchemaRegistryController {
     private static final Logger logger = LoggerFactory.getLogger(SchemaRegistryController.class);
 
     private final SchemaRegistryService schemaService;
+    private final ObjectMapper objectMapper;
 
     @Value("${app.logging.requests.enabled:true}")
     private boolean requestLoggingEnabled;
 
-    public SchemaRegistryController(SchemaRegistryService schemaService) {
+    @Value("${app.logging.requests.include-payload:false}")
+    private boolean includePayloadGlobal;
+
+    @Value("${app.logging.requests.include-payload.schema:false}")
+    private boolean includePayloadSchema;
+
+    /**
+     * Get effective payload logging setting for schema operations.
+     * Per-controller setting takes precedence over global.
+     */
+    private boolean shouldIncludePayload() {
+        return includePayloadSchema || (includePayloadGlobal && !includePayloadSchema);
+    }
+
+    public SchemaRegistryController(SchemaRegistryService schemaService, ObjectMapper objectMapper) {
         this.schemaService = schemaService;
+        this.objectMapper = objectMapper;
     }
 
     // ===== CANONICAL SCHEMA ENDPOINTS =====
@@ -61,6 +79,14 @@ public class SchemaRegistryController {
         try {
             if (requestLoggingEnabled) {
                 logger.info("Processing canonical schema registration request");
+                if (shouldIncludePayload()) {
+                    try {
+                        String payload = objectMapper.writeValueAsString(request);
+                        logger.debug("Request payload ({} chars): {}", payload.length(), payload);
+                    } catch (Exception e) {
+                        logger.warn("Failed to serialize request payload for logging", e);
+                    }
+                }
             }
 
             // Ensure the subject in path matches the request

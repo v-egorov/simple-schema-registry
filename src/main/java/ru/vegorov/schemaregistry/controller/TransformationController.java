@@ -14,6 +14,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.vegorov.schemaregistry.dto.TransformationRequest;
 import ru.vegorov.schemaregistry.dto.TransformationResponse;
 import ru.vegorov.schemaregistry.dto.TransformationTemplateRequest;
@@ -39,14 +41,31 @@ public class TransformationController {
 
     private final TransformationService transformationService;
     private final TransformationVersionService versionService;
+    private final ObjectMapper objectMapper;
 
     @Value("${app.logging.requests.enabled:true}")
     private boolean requestLoggingEnabled;
 
+    @Value("${app.logging.requests.include-payload:false}")
+    private boolean includePayloadGlobal;
+
+    @Value("${app.logging.requests.include-payload.transformation:false}")
+    private boolean includePayloadTransformation;
+
+    /**
+     * Get effective payload logging setting for transformation operations.
+     * Per-controller setting takes precedence over global.
+     */
+    private boolean shouldIncludePayload() {
+        return includePayloadTransformation || includePayloadGlobal;
+    }
+
     public TransformationController(TransformationService transformationService,
-                                  TransformationVersionService versionService) {
+                                   TransformationVersionService versionService,
+                                   ObjectMapper objectMapper) {
         this.transformationService = transformationService;
         this.versionService = versionService;
+        this.objectMapper = objectMapper;
     }
 
     // ===== TRANSFORMATION ENDPOINTS =====
@@ -146,6 +165,14 @@ public class TransformationController {
         try {
             if (requestLoggingEnabled) {
                 logger.info("Processing template creation request");
+                if (shouldIncludePayload()) {
+                    try {
+                        String payload = objectMapper.writeValueAsString(request);
+                        logger.debug("Request payload ({} chars): {}", payload.length(), payload);
+                    } catch (Exception e) {
+                        logger.warn("Failed to serialize request payload for logging", e);
+                    }
+                }
             }
 
             TransformationTemplateResponse response = transformationService.createTemplateVersion(consumerId, request);

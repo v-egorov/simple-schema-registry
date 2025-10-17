@@ -98,6 +98,30 @@ MDC.put("operation", "registerCanonicalSchema");
 MDC.put("subject", subject);
 ```
 
+### 6. Request Payload Logging
+
+Configurable logging of HTTP request payloads for debugging:
+
+```java
+@Value("${app.logging.requests.include-payload:false}")
+private boolean includePayloadGlobal;
+
+@Value("${app.logging.requests.include-payload.schema:false}")
+private boolean includePayloadSchema;
+
+private boolean shouldIncludePayload() {
+    return includePayloadSchema || includePayloadGlobal;
+}
+
+// In controller methods
+if (requestLoggingEnabled && shouldIncludePayload()) {
+    String payload = objectMapper.writeValueAsString(request);
+    logger.debug("Request payload: {} chars", payload.length());
+}
+```
+
+**Security Warning:** Enabling payload logging may expose sensitive data in logs. Use per-controller overrides to limit exposure.
+
 ## Configuration
 
 ### Logback Configuration (`logback-spring.xml`)
@@ -138,6 +162,9 @@ app.logging.business-operations.level=INFO
 app.logging.requests.enabled=true
 app.logging.requests.level=DEBUG
 app.logging.requests.include-payload=false
+# Per-controller payload logging overrides
+app.logging.requests.include-payload.schema=false
+app.logging.requests.include-payload.transformation=false
 
 # Performance logging
 app.logging.performance.enabled=true
