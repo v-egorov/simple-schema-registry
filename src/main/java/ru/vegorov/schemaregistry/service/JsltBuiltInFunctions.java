@@ -2,6 +2,7 @@ package ru.vegorov.schemaregistry.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.schibsted.spt.data.jslt.Function;
 import org.slf4j.Logger;
@@ -36,6 +37,18 @@ public class JsltBuiltInFunctions {
      */
     public Function createExtractForecastTodayFunction() {
         return new ExtractForecastTodayFunction();
+    }
+
+    /**
+     * Create the filter_additional_metadata_fields function.
+     * Filters out forecastTodayValue and forecastTodayDirection from additionalMetadataFields array.
+     *
+     * Usage in JSLT: filter_additional_metadata_fields(.details.additionalMetadataFields)
+     *
+     * @return Function implementation
+     */
+    public Function createFilterAdditionalMetadataFieldsFunction() {
+        return new FilterAdditionalMetadataFieldsFunction();
     }
 
     /**
@@ -103,6 +116,53 @@ public class JsltBuiltInFunctions {
             }
 
             return null;
+        }
+    }
+
+    /**
+     * JSLT Function implementation for filtering additional metadata fields.
+     */
+    private class FilterAdditionalMetadataFieldsFunction implements Function {
+
+        @Override
+        public String getName() {
+            return "filter_additional_metadata_fields";
+        }
+
+        @Override
+        public int getMinArguments() {
+            return 1;
+        }
+
+        @Override
+        public int getMaxArguments() {
+            return 1;
+        }
+
+        @Override
+        public JsonNode call(JsonNode input, JsonNode[] args) {
+            if (args.length != 1) {
+                throw new IllegalArgumentException("filter_additional_metadata_fields expects exactly 1 argument");
+            }
+
+            JsonNode metadataFields = args[0];
+            if (metadataFields == null || !metadataFields.isArray()) {
+                return objectMapper.createArrayNode();
+            }
+
+            ArrayNode result = objectMapper.createArrayNode();
+            Iterator<JsonNode> elements = metadataFields.elements();
+            while (elements.hasNext()) {
+                JsonNode field = elements.next();
+                if (field.isObject() && field.has("id")) {
+                    String fieldId = field.get("id").asText();
+                    if (!"forecastTodayValue".equals(fieldId) && !"forecastTodayDirection".equals(fieldId)) {
+                        result.add(field);
+                    }
+                }
+            }
+
+            return result;
         }
     }
 }

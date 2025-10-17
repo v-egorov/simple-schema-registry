@@ -6,6 +6,7 @@
     "category": .details.category,
     "status": .details.status,
     "lastUpdated": .details.lastUpdated,
-    "forecastToday": extract_forecast_today(.details.additionalMetadataFields)
+    "forecastToday": extract_forecast_today(.details.additionalMetadataFields),
+    "additionalMetadataFields": filter_additional_metadata_fields(.details.additionalMetadataFields)
   }
 }

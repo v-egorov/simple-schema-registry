@@ -27,5 +27,9 @@ public class JsltFunctionConfiguration {
         // Register forecast extraction function
         functionRegistry.register("extract_forecast_today",
             builtInFunctions.createExtractForecastTodayFunction());
+
+        // Register additional metadata fields filter function
+        functionRegistry.register("filter_additional_metadata_fields",
+            builtInFunctions.createFilterAdditionalMetadataFieldsFunction());
     }
 }

@@ -6,9 +6,19 @@
       "category": "equity",
       "status": "active",
       "lastUpdated": "2025-10-14T22:15:00Z",
-      "forecastToday": {
-        "value": 77.85,
-        "direction": "up"
-      }
+       "forecastToday": {
+         "value": 77.85,
+         "direction": "up"
+       },
+       "additionalMetadataFields": [
+         {
+           "id": "riskLevel",
+           "val": "medium"
+         },
+         {
+           "id": "lastAnalyzed",
+           "val": "2025-10-14T20:30:00Z"
+         }
+       ]
     }
   }

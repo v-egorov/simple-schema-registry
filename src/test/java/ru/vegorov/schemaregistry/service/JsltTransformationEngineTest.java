@@ -50,4 +50,29 @@ class JsltTransformationEngineTest {
         String invalidExpression = "{ invalid json";
         assertThat(engine.validateExpression(invalidExpression)).isFalse();
     }
+
+    @Test
+    void validateExpression_withCustomFunction_shouldReturnTrue() {
+        // Given
+        JsltFunctionRegistry registry = new JsltFunctionRegistry();
+        JsltBuiltInFunctions builtInFunctions = new JsltBuiltInFunctions(objectMapper);
+        registry.register("extract_forecast_today", builtInFunctions.createExtractForecastTodayFunction());
+        registry.register("filter_additional_metadata_fields", builtInFunctions.createFilterAdditionalMetadataFieldsFunction());
+
+        String expression = "{\n" +
+            "  \"id\": .id,\n" +
+            "  \"name\": .name,\n" +
+            "  \"createdAt\": .createdAt,\n" +
+            "  \"details\": {\n" +
+            "    \"category\": .details.category,\n" +
+            "    \"status\": .details.status,\n" +
+            "    \"lastUpdated\": .details.lastUpdated,\n" +
+            "    \"forecastToday\": extract_forecast_today(.details.additionalMetadataFields),\n" +
+            "    \"additionalMetadataFields\": filter_additional_metadata_fields(.details.additionalMetadataFields)\n" +
+            "  }\n" +
+            "}";
+
+        // When & Then
+        assertThat(engine.validateExpression(expression, registry)).isTrue();
+    }
 }
