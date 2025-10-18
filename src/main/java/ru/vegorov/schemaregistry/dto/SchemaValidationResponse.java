@@ -9,6 +9,7 @@ public class SchemaValidationResponse {
 
     private boolean valid;
     private String subject;
+    private String consumerId;
     private String schemaVersion;
     private List<String> errors;
 
@@ -20,9 +21,24 @@ public class SchemaValidationResponse {
         this.schemaVersion = schemaVersion;
     }
 
+    public SchemaValidationResponse(boolean valid, String subject, String consumerId, String schemaVersion) {
+        this.valid = valid;
+        this.subject = subject;
+        this.consumerId = consumerId;
+        this.schemaVersion = schemaVersion;
+    }
+
     public SchemaValidationResponse(boolean valid, String subject, String schemaVersion, List<String> errors) {
         this.valid = valid;
         this.subject = subject;
+        this.schemaVersion = schemaVersion;
+        this.errors = errors;
+    }
+
+    public SchemaValidationResponse(boolean valid, String subject, String consumerId, String schemaVersion, List<String> errors) {
+        this.valid = valid;
+        this.subject = subject;
+        this.consumerId = consumerId;
         this.schemaVersion = schemaVersion;
         this.errors = errors;
     }
@@ -41,6 +57,14 @@ public class SchemaValidationResponse {
 
     public void setSubject(String subject) {
         this.subject = subject;
+    }
+
+    public String getConsumerId() {
+        return consumerId;
+    }
+
+    public void setConsumerId(String consumerId) {
+        this.consumerId = consumerId;
     }
 
     public String getSchemaVersion() {

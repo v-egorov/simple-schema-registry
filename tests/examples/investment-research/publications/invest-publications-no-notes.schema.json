@@ -2,11 +2,13 @@
   "title": "Investment Publications (No Notes)",
   "description": "Simplified schema for investment analytics publications without notes (draft-04 compatible)",
   "type": "object",
+  "additionalProperties": false,
   "properties": {
     "publications": {
       "type": "array",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string",
@@ -40,9 +42,10 @@
             "type": "string",
             "minLength": 2
           },
-          "metadata": {
-            "type": "object",
-            "properties": {
+           "metadata": {
+             "type": "object",
+             "additionalProperties": false,
+             "properties": {
               "tags": {
                 "type": "array",
                 "items": {
@@ -174,11 +177,12 @@
             "type": "string",
             "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
           },
-          "chapters": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
+           "chapters": {
+             "type": "array",
+             "items": {
+               "type": "object",
+               "additionalProperties": false,
+               "properties": {
                 "id": {
                   "type": "string",
                   "pattern": "^[A-Za-z0-9._:-]+$",
@@ -211,9 +215,10 @@
                   "type": "string",
                   "minLength": 2
                 },
-                "metadata": {
-                  "type": "object",
-                  "properties": {
+                 "metadata": {
+                   "type": "object",
+                   "additionalProperties": false,
+                   "properties": {
                     "tags": {
                       "type": "array",
                       "items": {
@@ -326,11 +331,12 @@
                   "minimum": 0,
                   "description": "Optional explicit ordering index"
                 },
-                "blocks": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
+                 "blocks": {
+                   "type": "array",
+                   "items": {
+                     "type": "object",
+                     "additionalProperties": false,
+                     "properties": {
                       "id": {
                         "type": "string",
                         "pattern": "^[A-Za-z0-9._:-]+$",
@@ -363,9 +369,10 @@
                         "type": "string",
                         "minLength": 2
                       },
-                      "metadata": {
-                        "type": "object",
-                        "properties": {
+                       "metadata": {
+                         "type": "object",
+                         "additionalProperties": false,
+                         "properties": {
                           "tags": {
                             "type": "array",
                             "items": {
@@ -478,11 +485,12 @@
                         "type": "string",
                         "description": "Optional classifier for block kind"
                       },
-                      "views": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
+                       "views": {
+                         "type": "array",
+                         "items": {
+                           "type": "object",
+                           "additionalProperties": false,
+                           "properties": {
                             "type": {
                               "type": "string",
                               "enum": ["text", "image", "chart", "table"]

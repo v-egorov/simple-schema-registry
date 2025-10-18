@@ -527,7 +527,7 @@ public class SchemaRegistryService {
                             subject, schemaEntity.getVersion(), schemaType);
                     }
                 }
-                return new SchemaValidationResponse(true, subject, schemaEntity.getVersion());
+                return new SchemaValidationResponse(true, subject, consumerId, schemaEntity.getVersion());
             } else {
                 List<String> errors = validationMessages.stream()
                     .map(ValidationMessage::getMessage)
@@ -543,7 +543,7 @@ public class SchemaRegistryService {
                     }
                 }
 
-                return new SchemaValidationResponse(false, subject, schemaEntity.getVersion(), errors);
+                return new SchemaValidationResponse(false, subject, consumerId, schemaEntity.getVersion(), errors);
             }
         } catch (Exception e) {
             if (businessLoggingEnabled) {
