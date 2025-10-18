@@ -12,11 +12,12 @@ echo "================================"
 echo
 echo "Test 1: Duplicate consumer registration"
 # First create a consumer
-create_test_consumer "test-conflict-consumer" "Conflict Test Consumer"
+consumer_id="test-conflict-consumer-$(date +%s)"
+create_test_consumer "$consumer_id" "Conflict Test Consumer"
 
 # Try to create the same consumer again
 response=$(post_request "/api/consumers" '{
-    "consumerId": "test-conflict-consumer",
+    "consumerId": "'$consumer_id'",
     "name": "Duplicate Consumer",
     "description": "This should conflict"
 }')
@@ -124,19 +125,26 @@ fi
 # Test 4: Template update conflict (if templates are unique per consumer)
 echo
 echo "Test 4: Template update scenarios"
-create_test_consumer "test-template-conflict" "Template Conflict Consumer"
+consumer_id4="test-template-conflict-$(date +%s)"
+create_test_consumer "$consumer_id4" "Template Conflict Consumer"
+create_test_schema "test-subject" '{"type": "object", "properties": {"userId": {"type": "integer"}, "fullName": {"type": "string"}}}'
+create_test_consumer_schema "$consumer_id4" "test-subject" '{"type": "object", "properties": {"id": {"type": "string"}, "name": {"type": "string"}}}'
 
 # Create initial template
-create_test_template "test-template-conflict" '{ "id": .userId, "name": .fullName }'
+create_test_template "$consumer_id4" "test-subject" '{ "id": .userId, "name": .fullName }'
 
-# Update template - this should work (not a conflict)
-response=$(post_request "/api/transform/templates/test-template-conflict" '{
+# Attempt template update - endpoint not supported
+response=$(post_request "/api/consumers/$consumer_id4/subjects/test-subject/templates" '{
+    "version": "1.0.0",
+    "engine": "jslt",
     "expression": "{ \"id\": .userId, \"name\": .fullName, \"email\": .emailAddress }",
-    "engine": "JSLT"
+    "inputSchema": {"subject": "test-subject"},
+    "outputSchema": {"subject": "test-subject", "consumerId": "'$consumer_id4'"},
+    "description": "Updated template"
 }')
 http_code=$(echo "$response" | tail -n1)
 
-assert_response "$http_code" 200 "Template update should succeed (not a conflict)"
+assert_response "$http_code" 409 "Duplicate template creation should conflict"
 
 # Test 5: Concurrent schema registration (if supported)
 echo
@@ -219,7 +227,8 @@ conflicting_schema='{
 }'
 
 response=$(post_request "/api/schemas/test-compatibility-conflict/compat" "{
-    \"schema\": $conflicting_schema
+    \"schema\": $conflicting_schema,
+    \"subject\": \"test-compatibility-conflict\"
 }")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
@@ -240,3 +249,4 @@ fi
 
 echo
 print_test_summary
+

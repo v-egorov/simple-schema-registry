@@ -22,9 +22,7 @@ echo "Test 2: Get non-existent schema subject"
 response=$(get_request "/api/schemas/definitely-does-not-exist-subject")
 http_code=$(echo "$response" | tail -n1)
 
-assert_response "$http_code" 200 "Should return 200 with empty array for non-existent subject"
-response_body=$(echo "$response" | head -n -1)
-assert_contains "$response_body" '[]' "Should return empty array for non-existent subject"
+assert_response "$http_code" 404 "Should return 404 for non-existent schema subject"
 
 # Test 3: Get non-existent schema version
 echo
@@ -70,7 +68,8 @@ assert_response "$http_code" 404 "Should return 404 for template of non-existent
 echo
 echo "Test 7: Check compatibility for non-existent subject"
 response=$(post_request "/api/schemas/definitely-does-not-exist/compat" '{
-    "schema": {"type": "object", "properties": {"id": {"type": "string"}}}
+    "schema": {"type": "object", "properties": {"id": {"type": "string"}}},
+    "subject": "definitely-does-not-exist"
 }')
 http_code=$(echo "$response" | tail -n1)
 
@@ -95,7 +94,8 @@ assert_response "$http_code" 404 "Should return 404 for invalid nested endpoint"
 # Test 10: Case-sensitive consumer ID
 echo
 echo "Test 10: Case-sensitive consumer lookup"
-create_test_consumer "test-case-sensitive" "Case Sensitive Consumer"
+consumer_id_case="test-case-sensitive-$(date +%s)"
+create_test_consumer "$consumer_id_case" "Case Sensitive Consumer"
 
 # Try with different case
 response=$(get_request "/api/consumers/TEST-CASE-SENSITIVE")
@@ -106,8 +106,9 @@ assert_response "$http_code" 404 "Should return 404 for case mismatch (assuming 
 # Test 11: Consumer with template but requesting wrong consumer
 echo
 echo "Test 11: Transform with wrong consumer ID"
-create_test_consumer "test-wrong-consumer" "Wrong Consumer Test"
-create_test_template "test-wrong-consumer" '{ "id": .userId }'
+consumer_id_wrong="test-wrong-consumer-$(date +%s)"
+create_test_consumer "$consumer_id_wrong" "Wrong Consumer Test"
+create_test_template "$consumer_id_wrong" "test-subject" '{ "id": .userId }'
 
 response=$(post_request "/api/transform/wrong-consumer-name" '{
     "canonicalJson": {"userId": 456}

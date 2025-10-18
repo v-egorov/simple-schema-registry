@@ -58,9 +58,19 @@ response_body=$(echo "$response" | head -n -1)
 
 assert_response "$http_code" 201 "Schema registration should succeed"
 assert_json_field "$response_body" "subject" "$WORKFLOW_SUBJECT"
-assert_json_field "$response_body" "version" 1
+assert_json_field "$response_body" "version" "1.0.0"
 
 echo "✓ Schema registered successfully"
+
+# Create consumer output schema
+consumer_schema_response=$(post_request "/api/consumers/$WORKFLOW_CONSUMER/schemas/$WORKFLOW_SUBJECT" "{
+    \"subject\": \"$WORKFLOW_SUBJECT\",
+    \"schema\": $schema,
+    \"compatibility\": \"BACKWARD\",
+    \"description\": \"Consumer output schema for workflow test\"
+}")
+consumer_schema_http_code=$(echo "$consumer_schema_response" | tail -n1)
+assert_response "$consumer_schema_http_code" 201 "Consumer output schema registration should succeed"
 
 echo
 echo "=== Phase 3: Template Creation ==="
@@ -70,18 +80,27 @@ template='{"id": .userId, "name": .fullName, "email": .emailAddress, "registered
 # Escape quotes in template for JSON
 escaped_template=$(echo "$template" | sed 's/"/\\"/g')
 
-response=$(post_request "/api/transform/templates/$WORKFLOW_CONSUMER" "{
+response=$(post_request "/api/consumers/$WORKFLOW_CONSUMER/subjects/$WORKFLOW_SUBJECT/templates" "{
+    \"version\": \"1.0.0\",
+    \"engine\": \"jslt\",
+    \"inputSchema\": {
+        \"subject\": \"$WORKFLOW_SUBJECT\"
+    },
+    \"outputSchema\": {
+        \"subject\": \"$WORKFLOW_SUBJECT\",
+        \"consumerId\": \"$WORKFLOW_CONSUMER\"
+    },
     \"expression\": \"$escaped_template\",
-    \"engine\": \"JSLT\"
+    \"description\": \"Template for workflow test\"
 }")
 http_code=$(echo "$response" | tail -n1)
 response_body=$(echo "$response" | head -n -1)
 
-assert_response "$http_code" 200 "Template creation should succeed"
+assert_response "$http_code" 201 "Template creation should succeed"
 assert_json_field "$response_body" "consumerId" "$WORKFLOW_CONSUMER"
 assert_contains "$response_body" '"expression"' "Should contain expression field"
 assert_contains "$response_body" '.userId' "Should contain userId reference"
-assert_json_field "$response_body" "engine" "JSLT"
+assert_json_field "$response_body" "engine" "jslt"
 
 echo "✓ Transformation template created successfully"
 
@@ -98,7 +117,7 @@ canonical_data='{
     "internalField": "should_be_filtered_out"
 }'
 
-response=$(post_request "/api/transform/$WORKFLOW_CONSUMER" "{
+response=$(post_request "/api/consumers/$WORKFLOW_CONSUMER/subjects/$WORKFLOW_SUBJECT/transform" "{
     \"canonicalJson\": $canonical_data
 }")
 http_code=$(echo "$response" | tail -n1)
@@ -135,12 +154,12 @@ consumer_http_code=$(echo "$consumer_response" | tail -n1)
 assert_response "$consumer_http_code" 200 "Consumer should still exist"
 
 # Verify schema exists
-schema_response=$(get_request "/api/schemas/$WORKFLOW_SUBJECT/latest")
+schema_response=$(get_request "/api/schemas/$WORKFLOW_SUBJECT")
 schema_http_code=$(echo "$schema_response" | tail -n1)
 assert_response "$schema_http_code" 200 "Schema should still exist"
 
 # Verify template exists
-template_response=$(get_request "/api/transform/templates/$WORKFLOW_CONSUMER")
+template_response=$(get_request "/api/consumers/$WORKFLOW_CONSUMER/subjects/$WORKFLOW_SUBJECT/templates/active")
 template_http_code=$(echo "$template_response" | tail -n1)
 assert_response "$template_http_code" 200 "Template should still exist"
 
@@ -159,7 +178,7 @@ test_data_2='{
     "accountStatus": "inactive"
 }'
 
-response=$(post_request "/api/transform/$WORKFLOW_CONSUMER" "{
+response=$(post_request "/api/consumers/$WORKFLOW_CONSUMER/subjects/$WORKFLOW_SUBJECT/transform" "{
     \"canonicalJson\": $test_data_2
 }")
 http_code=$(echo "$response" | tail -n1)
@@ -184,3 +203,4 @@ echo "🎉 Full workflow integration test completed successfully!"
 
 echo
 print_test_summary
+

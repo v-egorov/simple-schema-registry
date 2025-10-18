@@ -164,6 +164,12 @@ post_request() {
     make_request "POST" "$url" "$data"
 }
 
+put_request() {
+    local url="$1"
+    local data="$2"
+    make_request "PUT" "$url" "$data"
+}
+
 # Test data cleanup functions
 cleanup_consumer() {
     local consumer_id="$1"

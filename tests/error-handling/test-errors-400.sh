@@ -64,10 +64,13 @@ assert_response "$http_code" 400 "Should reject schema registration without sche
 echo
 echo "Test 5: Invalid JSON in transformation request"
 # First create a consumer and template for transformation
-create_test_consumer "test-error-consumer" "Error Test Consumer"
-create_test_template "test-error-consumer" '. | {id: .userId}'
+consumer_id="test-error-consumer-$(date +%s)"
+create_test_consumer "$consumer_id" "Error Test Consumer"
+create_test_schema "test-subject" '{"type": "object", "properties": {"userId": {"type": "integer"}}}'
+create_test_consumer_schema "$consumer_id" "test-subject" '{"type": "object", "properties": {"id": {"type": "string"}}}'
+create_test_template "$consumer_id" "test-subject" '. | {id: .userId}'
 
-response=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/transform/test-error-consumer" \
+response=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/consumers/$consumer_id/subjects/test-subject/transform" \
     -H "Content-Type: application/json" \
     -d '{"canonicalJson": {"userId": 123, invalid json}')
 http_code=$(echo "$response" | tail -n1)
@@ -77,7 +80,12 @@ assert_response "$http_code" 400 "Should reject invalid JSON in transformation r
 # Test 6: Missing canonicalJson in transformation request
 echo
 echo "Test 6: Missing canonicalJson in transformation request"
-response=$(post_request "/api/transform/test-error-consumer" '{
+consumer_id2="test-error-consumer2-$(date +%s)"
+create_test_consumer "$consumer_id2" "Error Test Consumer 2"
+create_test_schema "test-subject" '{"type": "object", "properties": {"userId": {"type": "integer"}}}'
+create_test_consumer_schema "$consumer_id2" "test-subject" '{"type": "object", "properties": {"id": {"type": "string"}}}'
+create_test_template "$consumer_id2" "test-subject" '. | {id: .userId}'
+response=$(post_request "/api/consumers/$consumer_id2/subjects/test-subject/transform" '{
     "data": {"userId": 456}
 }')
 http_code=$(echo "$response" | tail -n1)
@@ -87,9 +95,17 @@ assert_response "$http_code" 400 "Should reject transformation request without c
 # Test 7: Invalid template in template creation
 echo
 echo "Test 7: Invalid template in template creation"
-response=$(post_request "/api/transform/templates/test-error-consumer" '{
-    "template": "",
-    "engine": "JSLT"
+consumer_id3="test-error-consumer3-$(date +%s)"
+create_test_consumer "$consumer_id3" "Error Test Consumer 3"
+create_test_schema "test-subject2" '{"type": "object", "properties": {"id": {"type": "string"}}}'
+create_test_consumer_schema "$consumer_id3" "test-subject2" '{"type": "object", "properties": {"id": {"type": "string"}}}'
+response=$(post_request "/api/consumers/$consumer_id3/subjects/test-subject2/templates" '{
+    "version": "1.0.0",
+    "engine": "jslt",
+    "expression": "",
+    "inputSchema": {"subject": "test-subject2"},
+    "outputSchema": {"subject": "test-subject2", "consumerId": "'$consumer_id3'"},
+    "description": "Invalid template"
 }')
 http_code=$(echo "$response" | tail -n1)
 
@@ -107,7 +123,7 @@ fi
 # Test 8: Invalid compatibility type in schema registration
 echo
 echo "Test 8: Invalid compatibility type in schema registration"
-response=$(post_request "/api/schemas" '{
+response=$(post_request "/api/schemas/test-invalid-compat" '{
     "subject": "test-invalid-compat",
     "schema": {
         "type": "object",
