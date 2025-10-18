@@ -16,6 +16,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ru.vegorov.schemaregistry.util.LoggingUtils;
 import ru.vegorov.schemaregistry.dto.TransformationRequest;
 import ru.vegorov.schemaregistry.dto.TransformationResponse;
 import ru.vegorov.schemaregistry.dto.TransformationTemplateRequest;
@@ -51,6 +52,9 @@ public class TransformationController {
 
     @Value("${app.logging.requests.include-payload.transformation:false}")
     private boolean includePayloadTransformation;
+
+    @Value("${app.logging.requests.payload-max-length:0}")
+    private int payloadMaxLength;
 
     /**
      * Get effective payload logging setting for transformation operations.
@@ -93,7 +97,9 @@ public class TransformationController {
             if (requestLoggingEnabled && shouldIncludePayload()) {
                 try {
                     String payload = objectMapper.writeValueAsString(request);
-                    logger.debug("Request payload ({} chars): {}", payload.length(), payload);
+                    int originalLength = payload.length();
+                    payload = LoggingUtils.truncatePayload(payload, payloadMaxLength);
+                    logger.debug("Request payload ({} chars): {}", originalLength, payload);
                 } catch (Exception e) {
                     logger.warn("Failed to serialize request payload for logging", e);
                 }
@@ -108,7 +114,9 @@ public class TransformationController {
                 if (shouldIncludePayload()) {
                     try {
                         String responsePayload = objectMapper.writeValueAsString(response);
-                        logger.debug("Response payload ({} chars): {}", responsePayload.length(), responsePayload);
+                        int originalLength = responsePayload.length();
+                        responsePayload = LoggingUtils.truncatePayload(responsePayload, payloadMaxLength);
+                        logger.debug("Response payload ({} chars): {}", originalLength, responsePayload);
                     } catch (Exception e) {
                         logger.warn("Failed to serialize response payload for logging", e);
                     }
@@ -146,7 +154,9 @@ public class TransformationController {
             if (requestLoggingEnabled && shouldIncludePayload()) {
                 try {
                     String payload = objectMapper.writeValueAsString(request);
-                    logger.debug("Request payload ({} chars): {}", payload.length(), payload);
+                    int originalLength = payload.length();
+                    payload = LoggingUtils.truncatePayload(payload, payloadMaxLength);
+                    logger.debug("Request payload ({} chars): {}", originalLength, payload);
                 } catch (Exception e) {
                     logger.warn("Failed to serialize request payload for logging", e);
                 }
@@ -162,7 +172,9 @@ public class TransformationController {
                 if (shouldIncludePayload()) {
                     try {
                         String responsePayload = objectMapper.writeValueAsString(response);
-                        logger.debug("Response payload ({} chars): {}", responsePayload.length(), responsePayload);
+                        int originalLength = responsePayload.length();
+                        responsePayload = LoggingUtils.truncatePayload(responsePayload, payloadMaxLength);
+                        logger.debug("Response payload ({} chars): {}", originalLength, responsePayload);
                     } catch (Exception e) {
                         logger.warn("Failed to serialize response payload for logging", e);
                     }
@@ -200,7 +212,9 @@ public class TransformationController {
                 if (shouldIncludePayload()) {
                     try {
                         String payload = objectMapper.writeValueAsString(request);
-                        logger.debug("Request payload ({} chars): {}", payload.length(), payload);
+                        int originalLength = payload.length();
+                        payload = LoggingUtils.truncatePayload(payload, payloadMaxLength);
+                        logger.debug("Request payload ({} chars): {}", originalLength, payload);
                     } catch (Exception e) {
                         logger.warn("Failed to serialize request payload for logging", e);
                     }

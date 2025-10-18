@@ -15,6 +15,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ru.vegorov.schemaregistry.util.LoggingUtils;
 
 import java.util.UUID;
 import ru.vegorov.schemaregistry.dto.CompatibilityCheckRequest;
@@ -45,6 +46,9 @@ public class SchemaRegistryController {
 
     @Value("${app.logging.requests.include-payload.schema:false}")
     private boolean includePayloadSchema;
+
+    @Value("${app.logging.requests.payload-max-length:0}")
+    private int payloadMaxLength;
 
     /**
      * Get effective payload logging setting for schema operations.
@@ -82,7 +86,9 @@ public class SchemaRegistryController {
                 if (shouldIncludePayload()) {
                     try {
                         String payload = objectMapper.writeValueAsString(request);
-                        logger.debug("Request payload ({} chars): {}", payload.length(), payload);
+                        int originalLength = payload.length();
+                        payload = LoggingUtils.truncatePayload(payload, payloadMaxLength);
+                        logger.debug("Request payload ({} chars): {}", originalLength, payload);
                     } catch (Exception e) {
                         logger.warn("Failed to serialize request payload for logging", e);
                     }
@@ -265,7 +271,9 @@ public class SchemaRegistryController {
                 if (shouldIncludePayload()) {
                     try {
                         String payload = objectMapper.writeValueAsString(request);
-                        logger.debug("Request payload ({} chars): {}", payload.length(), payload);
+                        int originalLength = payload.length();
+                        payload = LoggingUtils.truncatePayload(payload, payloadMaxLength);
+                        logger.debug("Request payload ({} chars): {}", originalLength, payload);
                     } catch (Exception e) {
                         logger.warn("Failed to serialize request payload for logging", e);
                     }
@@ -287,7 +295,9 @@ public class SchemaRegistryController {
                 if (shouldIncludePayload()) {
                     try {
                         String responsePayload = objectMapper.writeValueAsString(response);
-                        logger.debug("Response payload ({} chars): {}", responsePayload.length(), responsePayload);
+                        int originalLength = responsePayload.length();
+                        responsePayload = LoggingUtils.truncatePayload(responsePayload, payloadMaxLength);
+                        logger.debug("Response payload ({} chars): {}", originalLength, responsePayload);
                     } catch (Exception e) {
                         logger.warn("Failed to serialize response payload for logging", e);
                     }
@@ -512,7 +522,9 @@ public class SchemaRegistryController {
                 if (shouldIncludePayload()) {
                     try {
                         String payload = objectMapper.writeValueAsString(request);
-                        logger.debug("Request payload ({} chars): {}", payload.length(), payload);
+                        int originalLength = payload.length();
+                        payload = LoggingUtils.truncatePayload(payload, payloadMaxLength);
+                        logger.debug("Request payload ({} chars): {}", originalLength, payload);
                     } catch (Exception e) {
                         logger.warn("Failed to serialize request payload for logging", e);
                     }
@@ -535,7 +547,9 @@ public class SchemaRegistryController {
                 if (shouldIncludePayload()) {
                     try {
                         String responsePayload = objectMapper.writeValueAsString(response);
-                        logger.debug("Response payload ({} chars): {}", responsePayload.length(), responsePayload);
+                        int originalLength = responsePayload.length();
+                        responsePayload = LoggingUtils.truncatePayload(responsePayload, payloadMaxLength);
+                        logger.debug("Response payload ({} chars): {}", originalLength, responsePayload);
                     } catch (Exception e) {
                         logger.warn("Failed to serialize response payload for logging", e);
                     }
