@@ -90,7 +90,7 @@ echo
 echo "Test 5: Validate data against draft-06 schema"
 valid_data='{"id": 123, "name": "John Doe", "email": "john@example.com"}'
 
-response=$(post_request "/api/validation/$subject1" "{
+response=$(post_request "/api/schemas/$subject1/validate" "{
     \"subject\": \"$subject1\",
     \"jsonData\": $valid_data
 }")
@@ -105,7 +105,7 @@ assert_json_field "$response_body" "schemaVersion" "1.0.0"
 # Test 6: Validate data against draft-07 schema
 echo
 echo "Test 6: Validate data against draft-07 schema"
-response=$(post_request "/api/validation/$subject2" "{
+response=$(post_request "/api/schemas/$subject2/validate" "{
     \"subject\": \"$subject2\",
     \"jsonData\": $valid_data
 }")
@@ -120,7 +120,7 @@ assert_json_field "$response_body" "schemaVersion" "1.0.0"
 # Test 7: Validate data against draft-2019-09 schema
 echo
 echo "Test 7: Validate data against draft-2019-09 schema"
-response=$(post_request "/api/validation/$subject3" "{
+response=$(post_request "/api/schemas/$subject3/validate" "{
     \"subject\": \"$subject3\",
     \"jsonData\": $valid_data
 }")
@@ -135,7 +135,7 @@ assert_json_field "$response_body" "schemaVersion" "1.0.0"
 # Test 8: Validate data against draft-2020-12 schema
 echo
 echo "Test 8: Validate data against draft-2020-12 schema"
-response=$(post_request "/api/validation/$subject4" "{
+response=$(post_request "/api/schemas/$subject4/validate" "{
     \"subject\": \"$subject4\",
     \"jsonData\": $valid_data
 }")
