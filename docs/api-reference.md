@@ -138,7 +138,7 @@ Register a new schema or create a new version of an existing schema.
 {
   "id": 1,
   "subject": "user-profile",
-  "version": 1,
+  "version": "1.0.0",
   "schema": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
@@ -150,7 +150,7 @@ Register a new schema or create a new version of an existing schema.
     "required": ["id", "name"]
   },
   "compatibility": "BACKWARD",
-  "description": "User profile schema for version 1",
+  "description": "User profile schema for version 1.0.0",
   "createdAt": "2024-01-15T10:30:00",
   "updatedAt": "2024-01-15T10:30:00"
 }
@@ -169,20 +169,20 @@ Retrieve all versions of a schema by subject.
   {
     "id": 1,
     "subject": "user-profile",
-    "version": 1,
+    "version": "1.0.0",
     "schema": {...},
     "compatibility": "BACKWARD",
-    "description": "User profile schema for version 1",
+    "description": "User profile schema for version 1.0.0",
     "createdAt": "2024-01-15T10:30:00",
     "updatedAt": "2024-01-15T10:30:00"
   },
   {
     "id": 2,
     "subject": "user-profile",
-    "version": 2,
+    "version": "2.0.0",
     "schema": {...},
     "compatibility": "BACKWARD",
-    "description": "User profile schema for version 2",
+    "description": "User profile schema for version 2.0.0",
     "createdAt": "2024-01-15T11:00:00",
     "updatedAt": "2024-01-15T11:00:00"
   }
@@ -201,10 +201,10 @@ Retrieve a specific version of a schema.
 {
   "id": 2,
   "subject": "user-profile",
-  "version": 2,
+  "version": "2.0.0",
   "schema": {...},
   "compatibility": "BACKWARD",
-  "description": "User profile schema for version 2",
+  "description": "User profile schema for version 2.0.0",
   "createdAt": "2024-01-15T11:00:00",
   "updatedAt": "2024-01-15T11:00:00"
 }
@@ -222,10 +222,10 @@ Retrieve the latest version of a schema.
 {
   "id": 2,
   "subject": "user-profile",
-  "version": 2,
+  "version": "2.0.0",
   "schema": {...},
   "compatibility": "BACKWARD",
-  "description": "User profile schema for version 2",
+  "description": "User profile schema for version 2.0.0",
   "createdAt": "2024-01-15T11:00:00",
   "updatedAt": "2024-01-15T11:00:00"
 }
