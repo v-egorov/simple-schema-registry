@@ -667,11 +667,12 @@ public class SchemaRegistryService {
         } else if (schemaUri.contains("2019-09")) {
             return SpecVersion.VersionFlag.V201909;
         } else if (schemaUri.contains("2020-12")) {
-            return SpecVersion.VersionFlag.V202012;
+            throw new IllegalArgumentException("JSON Schema draft-2020-12 is not supported due to validation bugs in the NetworkNT library. " +
+                "Please use draft-07 or earlier versions.");
         }
 
         throw new IllegalArgumentException("Unsupported JSON Schema version: " + schemaUri +
-            ". Supported versions: draft-04, draft-06, draft-07, draft-2019-09, draft-2020-12");
+            ". Supported versions: draft-04, draft-06, draft-07, draft-2019-09");
     }
 
     /**

@@ -471,7 +471,7 @@ class SchemaRegistryServiceTest {
     }
 
     @Test
-    void registerCanonicalSchema_shouldSupportDraft202012Schema() throws Exception {
+    void registerCanonicalSchema_shouldRejectDraft202012Schema() throws Exception {
         // Given
         Map<String, Object> schemaJson = new HashMap<>();
         schemaJson.put("$schema", "https://json-schema.org/draft/2020-12/schema");
@@ -487,21 +487,10 @@ class SchemaRegistryServiceTest {
             "test-subject", schemaJson, "BACKWARD", "Test schema"
         );
 
-        SchemaEntity savedEntity = new SchemaEntity();
-        savedEntity.setId(1L);
-        savedEntity.setSubject("test-subject");
-        savedEntity.setVersion("1.0.0");
-        savedEntity.setSchemaJson(schemaJson);
-
-        when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
-
-        // When
-        SchemaResponse response = schemaService.registerCanonicalSchema(request);
-
-        // Then
-        assertThat(response).isNotNull();
-        assertThat(response.getSubject()).isEqualTo("test-subject");
-        assertThat(response.getVersion()).isEqualTo("1.0.0");
+        // When & Then
+        assertThatThrownBy(() -> schemaService.registerCanonicalSchema(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("JSON Schema draft-2020-12 is not supported");
     }
 
     @Test

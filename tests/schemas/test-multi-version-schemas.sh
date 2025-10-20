@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Multi-Version JSON Schema Support Tests
-# Tests support for different JSON Schema versions (draft-04, draft-06, draft-07, draft-2019-09, draft-2020-12)
+# Tests support for different JSON Schema versions (draft-04, draft-06, draft-07, draft-2019-09)
 
 source "$(dirname "$0")/../utils/common.sh"
 
@@ -66,9 +66,9 @@ assert_response "$http_code" 201 "Draft-2019-09 schema registration should succe
 assert_json_field "$response_body" "subject" "$subject3"
 assert_json_field "$response_body" "version" "1.0.0"
 
-# Test 4: Register draft-2020-12 schema
+# Test 4: Reject draft-2020-12 schema
 echo
-echo "Test 4: Register draft-2020-12 schema"
+echo "Test 4: Reject draft-2020-12 schema"
 subject4="test-draft2020-$timestamp"
 schema_data=$(cat "$(dirname "$0")/../examples/compatibility/draft2020-schema.json")
 
@@ -79,11 +79,8 @@ response=$(post_request "/api/schemas/$subject4" "{
     \"description\": \"Test draft-2020-12 schema\"
 }")
 http_code=$(echo "$response" | tail -n1)
-response_body=$(echo "$response" | head -n -1)
 
-assert_response "$http_code" 201 "Draft-2020-12 schema registration should succeed"
-assert_json_field "$response_body" "subject" "$subject4"
-assert_json_field "$response_body" "version" "1.0.0"
+assert_response "$http_code" 400 "Draft-2020-12 schema registration should be rejected"
 
 # Test 5: Validate data against draft-06 schema
 echo
@@ -132,20 +129,7 @@ assert_json_field "$response_body" "valid" "true"
 assert_json_field "$response_body" "subject" "$subject3"
 assert_json_field "$response_body" "schemaVersion" "1.0.0"
 
-# Test 8: Validate data against draft-2020-12 schema
-echo
-echo "Test 8: Validate data against draft-2020-12 schema"
-response=$(post_request "/api/schemas/$subject4/validate" "{
-    \"subject\": \"$subject4\",
-    \"jsonData\": $valid_data
-}")
-http_code=$(echo "$response" | tail -n1)
-response_body=$(echo "$response" | head -n -1)
 
-assert_response "$http_code" 200 "Validation against draft-2020-12 schema should succeed"
-assert_json_field "$response_body" "valid" "true"
-assert_json_field "$response_body" "subject" "$subject4"
-assert_json_field "$response_body" "schemaVersion" "1.0.0"
 
 # Test 9: Test invalid schema version
 echo

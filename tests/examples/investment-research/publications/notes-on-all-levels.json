@@ -13,7 +13,7 @@
       "authors": ["Автор А", "Редактор Б"],
       "createdAt": "2025-10-12T10:00:00Z",
       "updatedAt": "2025-10-12T12:00:00Z",
-      "publishedAt": null,
+      "publishedAt": "2025-10-12T12:00:00Z",
       "metadata": {},
       "notes": [
         {
@@ -92,4 +92,3 @@
     }
   ]
 }
-
