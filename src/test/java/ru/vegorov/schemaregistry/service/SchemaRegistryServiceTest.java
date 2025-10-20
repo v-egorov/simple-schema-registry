@@ -369,4 +369,224 @@ class SchemaRegistryServiceTest {
         assertThat(response.isCompatible()).isTrue(); // Stubbed to return true
         assertThat(response.getMessage()).isEqualTo("Consumer output schema is compatible");
     }
+
+    @Test
+    void registerCanonicalSchema_shouldSupportDraft06Schema() throws Exception {
+        // Given
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("$schema", "http://json-schema.org/draft-06/schema#");
+        schemaJson.put("type", "object");
+        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> idProp = new HashMap<>();
+        idProp.put("type", "integer");
+        properties.put("id", idProp);
+        schemaJson.put("properties", properties);
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject", schemaJson, "BACKWARD", "Test schema"
+        );
+
+        SchemaEntity savedEntity = new SchemaEntity();
+        savedEntity.setId(1L);
+        savedEntity.setSubject("test-subject");
+        savedEntity.setVersion("1.0.0");
+        savedEntity.setSchemaJson(schemaJson);
+
+        when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
+
+        // When
+        SchemaResponse response = schemaService.registerCanonicalSchema(request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getSubject()).isEqualTo("test-subject");
+        assertThat(response.getVersion()).isEqualTo("1.0.0");
+    }
+
+    @Test
+    void registerCanonicalSchema_shouldSupportDraft07Schema() throws Exception {
+        // Given
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("$schema", "http://json-schema.org/draft-07/schema#");
+        schemaJson.put("type", "object");
+        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> nameProp = new HashMap<>();
+        nameProp.put("type", "string");
+        properties.put("name", nameProp);
+        schemaJson.put("properties", properties);
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject", schemaJson, "BACKWARD", "Test schema"
+        );
+
+        SchemaEntity savedEntity = new SchemaEntity();
+        savedEntity.setId(1L);
+        savedEntity.setSubject("test-subject");
+        savedEntity.setVersion("1.0.0");
+        savedEntity.setSchemaJson(schemaJson);
+
+        when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
+
+        // When
+        SchemaResponse response = schemaService.registerCanonicalSchema(request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getSubject()).isEqualTo("test-subject");
+        assertThat(response.getVersion()).isEqualTo("1.0.0");
+    }
+
+    @Test
+    void registerCanonicalSchema_shouldSupportDraft201909Schema() throws Exception {
+        // Given
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("$schema", "https://json-schema.org/draft/2019-09/schema");
+        schemaJson.put("type", "object");
+        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> emailProp = new HashMap<>();
+        emailProp.put("type", "string");
+        emailProp.put("format", "email");
+        properties.put("email", emailProp);
+        schemaJson.put("properties", properties);
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject", schemaJson, "BACKWARD", "Test schema"
+        );
+
+        SchemaEntity savedEntity = new SchemaEntity();
+        savedEntity.setId(1L);
+        savedEntity.setSubject("test-subject");
+        savedEntity.setVersion("1.0.0");
+        savedEntity.setSchemaJson(schemaJson);
+
+        when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
+
+        // When
+        SchemaResponse response = schemaService.registerCanonicalSchema(request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getSubject()).isEqualTo("test-subject");
+        assertThat(response.getVersion()).isEqualTo("1.0.0");
+    }
+
+    @Test
+    void registerCanonicalSchema_shouldSupportDraft202012Schema() throws Exception {
+        // Given
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("$schema", "https://json-schema.org/draft/2020-12/schema");
+        schemaJson.put("type", "object");
+        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> ageProp = new HashMap<>();
+        ageProp.put("type", "integer");
+        ageProp.put("minimum", 0);
+        properties.put("age", ageProp);
+        schemaJson.put("properties", properties);
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject", schemaJson, "BACKWARD", "Test schema"
+        );
+
+        SchemaEntity savedEntity = new SchemaEntity();
+        savedEntity.setId(1L);
+        savedEntity.setSubject("test-subject");
+        savedEntity.setVersion("1.0.0");
+        savedEntity.setSchemaJson(schemaJson);
+
+        when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
+
+        // When
+        SchemaResponse response = schemaService.registerCanonicalSchema(request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getSubject()).isEqualTo("test-subject");
+        assertThat(response.getVersion()).isEqualTo("1.0.0");
+    }
+
+    @Test
+    void registerCanonicalSchema_shouldDefaultToDraft04WhenNoSchemaSpecified() throws Exception {
+        // Given
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("type", "object");
+        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> idProp = new HashMap<>();
+        idProp.put("type", "integer");
+        properties.put("id", idProp);
+        schemaJson.put("properties", properties);
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject", schemaJson, "BACKWARD", "Test schema"
+        );
+
+        SchemaEntity savedEntity = new SchemaEntity();
+        savedEntity.setId(1L);
+        savedEntity.setSubject("test-subject");
+        savedEntity.setVersion("1.0.0");
+        savedEntity.setSchemaJson(schemaJson);
+
+        when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
+
+        // When
+        SchemaResponse response = schemaService.registerCanonicalSchema(request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getSubject()).isEqualTo("test-subject");
+        assertThat(response.getVersion()).isEqualTo("1.0.0");
+    }
+
+    @Test
+    void registerCanonicalSchema_shouldRejectUnsupportedSchemaVersion() {
+        // Given
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("$schema", "http://json-schema.org/draft-03/schema#");
+        schemaJson.put("type", "object");
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject", schemaJson, "BACKWARD", "Test schema"
+        );
+
+        // When & Then
+        assertThatThrownBy(() -> schemaService.registerCanonicalSchema(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Unsupported JSON Schema version: http://json-schema.org/draft-03/schema#");
+    }
+
+    @Test
+    void validateJson_shouldSupportDifferentSchemaVersions() throws Exception {
+        // Given - draft-07 schema
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("$schema", "http://json-schema.org/draft-07/schema#");
+        schemaJson.put("type", "object");
+        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> nameProp = new HashMap<>();
+        nameProp.put("type", "string");
+        properties.put("name", nameProp);
+        schemaJson.put("properties", properties);
+        schemaJson.put("required", java.util.Arrays.asList("name"));
+
+        SchemaEntity schemaEntity = new SchemaEntity();
+        schemaEntity.setSubject("test-subject");
+        schemaEntity.setSchemaType(SchemaType.canonical);
+        schemaEntity.setVersion("1.0.0");
+        schemaEntity.setSchemaJson(schemaJson);
+
+        // Valid JSON data
+        JsonNode validJson = objectMapper.readTree("{\"name\": \"John Doe\"}");
+
+        SchemaValidationRequest request = new SchemaValidationRequest("test-subject", validJson);
+
+        when(schemaRepository.findBySubjectAndSchemaType("test-subject", SchemaType.canonical))
+            .thenReturn(java.util.List.of(schemaEntity));
+
+        // When
+        SchemaValidationResponse response = schemaService.validateJson(request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.isValid()).isTrue();
+        assertThat(response.getSubject()).isEqualTo("test-subject");
+        assertThat(response.getSchemaVersion()).isEqualTo("1.0.0");
+    }
 }

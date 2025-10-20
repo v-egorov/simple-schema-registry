@@ -219,7 +219,7 @@ run_test_suite() {
                 scripts=("test-consumer-register.sh" "test-consumer-get.sh" "test-consumer-list.sh")
                 ;;
             "Schemas")
-                scripts=("test-schema-register.sh" "test-schema-get-specific.sh" "test-schema-get-latest.sh" "test-schema-get-all.sh" "test-schema-subjects.sh" "test-schema-compatibility.sh")
+                scripts=("test-schema-register.sh" "test-schema-get-specific.sh" "test-schema-get-latest.sh" "test-schema-get-all.sh" "test-schema-subjects.sh" "test-schema-compatibility.sh" "test-multi-version-schemas.sh")
                 ;;
             "Transform")
                 scripts=("test-transform-template-create.sh" "test-transform-template-get.sh" "test-transform-data.sh" "test-transform-engines.sh" "test-transform-router.sh" "test-transform-pipeline.sh")

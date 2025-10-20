@@ -111,6 +111,7 @@ public class ConfigurationValidator {
             }
             """;
 
+        // Use draft-04 for configuration schemas as they don't specify a version
         JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
         return factory.getSchema(schemaJson);
     }
@@ -173,6 +174,7 @@ public class ConfigurationValidator {
             }
             """;
 
+        // Use draft-04 for configuration schemas as they don't specify a version
         JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
         return factory.getSchema(schemaJson);
     }

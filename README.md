@@ -12,10 +12,31 @@ A comprehensive Spring Boot application for managing JSON schemas and transformi
 - **Template Versioning**: Version-controlled transformation templates with activation/deactivation
 - **Multi-Consumer Support**: Handle different data format requirements for various applications (mobile, web, analytics)
 - **JSON Schema Validation**: Validate data against both canonical and consumer output schemas
+- **Multi-Version JSON Schema Support**: Support for draft-04, draft-06, draft-07, draft-2019-09, and draft-2020-12 specifications
 - **RESTful API**: Complete REST API with OpenAPI 3.0 documentation and Swagger UI
 - **Database Persistence**: PostgreSQL with Flyway migrations for reliable schema management
 - **Docker Support**: Containerized deployment with Docker Compose
 - **Extensible Design**: Pluggable transformation engines with comprehensive error handling
+
+## JSON Schema Version Support
+
+This service supports multiple versions of the JSON Schema specification:
+
+- **Draft-04** (default when no `$schema` field is specified)
+- **Draft-06**
+- **Draft-07**
+- **Draft-2019-09**
+- **Draft-2020-12**
+
+The service automatically detects the schema version from the `$schema` field in the JSON schema and uses the appropriate validation engine. If no `$schema` field is present, it defaults to draft-04 for backward compatibility.
+
+### Supported Schema URIs
+
+- `http://json-schema.org/draft-04/schema#`
+- `http://json-schema.org/draft-06/schema#`
+- `http://json-schema.org/draft-07/schema#`
+- `https://json-schema.org/draft/2019-09/schema`
+- `https://json-schema.org/draft/2020-12/schema`
 
 ## Technology Stack
 

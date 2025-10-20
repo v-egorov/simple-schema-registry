@@ -110,6 +110,8 @@ Register a new schema or create a new version of an existing schema.
 
 **Endpoint**: `POST /api/schemas`
 
+**Supported JSON Schema Versions**: The service supports draft-04, draft-06, draft-07, draft-2019-09, and draft-2020-12. The schema version is automatically detected from the `$schema` field. If no `$schema` field is present, draft-04 is used as the default.
+
 **Request Body**:
 
 ```json

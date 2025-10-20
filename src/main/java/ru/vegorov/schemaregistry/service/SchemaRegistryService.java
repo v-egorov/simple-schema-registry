@@ -87,7 +87,8 @@ public class SchemaRegistryService {
                 if (!schemaNode.has("type") && !schemaNode.has("$schema")) {
                     throw new IllegalArgumentException("Schema must contain 'type' or '$schema' keyword");
                 }
-                JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+                SpecVersion.VersionFlag schemaVersion = detectSchemaVersion(schemaNode);
+                JsonSchemaFactory factory = JsonSchemaFactory.getInstance(schemaVersion);
                 factory.getSchema(schemaJsonString);
                 if (businessLoggingEnabled) {
                     logger.debug("Schema validation successful for canonical schema: subject={}", subject);
@@ -167,7 +168,8 @@ public class SchemaRegistryService {
                 if (!schemaNode.has("type") && !schemaNode.has("$schema")) {
                     throw new IllegalArgumentException("Schema must contain 'type' or '$schema' keyword");
                 }
-                JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+                SpecVersion.VersionFlag schemaVersion = detectSchemaVersion(schemaNode);
+                JsonSchemaFactory factory = JsonSchemaFactory.getInstance(schemaVersion);
                 factory.getSchema(schemaJsonString);
                 if (businessLoggingEnabled) {
                     logger.debug("Schema validation successful for consumer output schema: consumerId={}, subject={}", consumerId, subject);
@@ -512,7 +514,9 @@ public class SchemaRegistryService {
         // Perform validation
         try {
             String schemaJsonString = objectMapper.writeValueAsString(schemaEntity.getSchemaJson());
-            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+            JsonNode schemaNode = objectMapper.readTree(schemaJsonString);
+            SpecVersion.VersionFlag schemaVersion = detectSchemaVersion(schemaNode);
+            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(schemaVersion);
             JsonSchema schema = factory.getSchema(schemaJsonString);
 
             java.util.Set<ValidationMessage> validationMessages = schema.validate(jsonData);
@@ -642,6 +646,32 @@ public class SchemaRegistryService {
         }
 
         return false;
+    }
+
+    /**
+     * Detect JSON Schema version from the $schema field
+     */
+    private SpecVersion.VersionFlag detectSchemaVersion(JsonNode schemaNode) {
+        if (!schemaNode.has("$schema")) {
+            return SpecVersion.VersionFlag.V4; // default to draft-04 for backward compatibility
+        }
+
+        String schemaUri = schemaNode.get("$schema").asText();
+
+        if (schemaUri.contains("draft-04")) {
+            return SpecVersion.VersionFlag.V4;
+        } else if (schemaUri.contains("draft-06")) {
+            return SpecVersion.VersionFlag.V6;
+        } else if (schemaUri.contains("draft-07")) {
+            return SpecVersion.VersionFlag.V7;
+        } else if (schemaUri.contains("2019-09")) {
+            return SpecVersion.VersionFlag.V201909;
+        } else if (schemaUri.contains("2020-12")) {
+            return SpecVersion.VersionFlag.V202012;
+        }
+
+        throw new IllegalArgumentException("Unsupported JSON Schema version: " + schemaUri +
+            ". Supported versions: draft-04, draft-06, draft-07, draft-2019-09, draft-2020-12");
     }
 
     /**
