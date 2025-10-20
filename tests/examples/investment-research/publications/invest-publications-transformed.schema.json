@@ -1,0 +1,762 @@
+{
+  "title": "Investment Publications (Transformed)",
+  "description": "Schema for transformed investment analytics publications with forecastToday and filtered metadata (draft-04 compatible)",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "publications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "minLength": 1,
+            "description": "Stable unique identifier within system scope"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "subtitle": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Optional subtitle for additional context"
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "Short abstract/summary (plain text or limited markup)"
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "language": {
+            "type": "string",
+            "minLength": 2
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "maxItems": 100,
+                "uniqueItems": true
+              },
+              "regions": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "Global",
+                    "US",
+                    "Europe",
+                    "APAC",
+                    "EMEA",
+                    "LATAM",
+                    "Emerging Markets",
+                    "China",
+                    "Japan"
+                  ],
+                  "type": "string"
+                },
+                "uniqueItems": true
+              },
+              "sectors": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "Energy",
+                    "Materials",
+                    "Industrials",
+                    "Consumer Discretionary",
+                    "Consumer Staples",
+                    "Health Care",
+                    "Financials",
+                    "Information Technology",
+                    "Communication Services",
+                    "Utilities",
+                    "Real Estate"
+                  ],
+                  "type": "string"
+                },
+                "uniqueItems": true
+              },
+              "companies": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": "Company names or tickers; system may validate externally",
+                "uniqueItems": true
+              },
+              "instruments": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "Stocks",
+                    "Bonds",
+                    "ETF",
+                    "Options",
+                    "Futures",
+                    "Funds",
+                    "Notes",
+                    "Swaps"
+                  ],
+                  "type": "string"
+                },
+                "uniqueItems": true
+              },
+              "riskProfile": {
+                "enum": [
+                  "Conservative",
+                  "Moderate",
+                  "Aggressive"
+                ],
+                "type": "string"
+              },
+              "timeHorizon": {
+                "enum": [
+                  "Short-term",
+                  "Medium-term",
+                  "Long-term"
+                ],
+                "type": "string"
+              },
+              "assetClasses": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "Equities",
+                    "Bonds",
+                    "Commodities",
+                    "REITs",
+                    "FX",
+                    "Derivatives",
+                    "Alternatives",
+                    "Cash"
+                  ],
+                  "type": "string"
+                },
+                "uniqueItems": true
+              }
+            },
+            "description": "Domain metadata for investment analytics (extensible)"
+          },
+          "forecastToday": {
+            "type": "object",
+            "description": "Transformed forecast data (created if forecastTodayValue exists in input)",
+            "properties": {
+              "value": {
+                "type": "number",
+                "description": "Forecast value converted from string to number"
+              },
+              "direction": {
+                "type": "string",
+                "description": "Forecast direction (flat, up, down)"
+              }
+            },
+            "required": ["value", "direction"],
+            "additionalProperties": false
+          },
+          "additionalMetadataFields": {
+            "type": "array",
+            "description": "Preserved metadata fields excluding transformed forecast elements",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Field identifier"
+                },
+                "val": {
+                  "type": "string",
+                  "description": "Field value"
+                }
+              },
+              "required": ["id", "val"],
+              "additionalProperties": false
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "quarterly_report",
+              "thematic_report",
+              "strategy_note",
+              "market_commentary",
+              "research_note"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "in_review",
+              "approved",
+              "published",
+              "archived"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9._:-]+$",
+                  "minLength": 1,
+                  "description": "Stable unique identifier within system scope"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "subtitle": {
+                  "type": "string",
+                  "maxLength": 500,
+                  "description": "Optional subtitle for additional context"
+                },
+                "summary": {
+                  "type": "string",
+                  "maxLength": 5000,
+                  "description": "Short abstract/summary (plain text or limited markup)"
+                },
+                "authors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "uniqueItems": true
+                },
+                "language": {
+                  "type": "string",
+                  "minLength": 2
+                },
+                "metadata": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "maxItems": 100,
+                      "uniqueItems": true
+                    },
+                    "regions": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "Global",
+                          "US",
+                          "Europe",
+                          "APAC",
+                          "EMEA",
+                          "LATAM",
+                          "Emerging Markets",
+                          "China",
+                          "Japan"
+                        ],
+                        "type": "string"
+                      },
+                      "uniqueItems": true
+                    },
+                    "sectors": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "Energy",
+                          "Materials",
+                          "Industrials",
+                          "Consumer Discretionary",
+                          "Consumer Staples",
+                          "Health Care",
+                          "Financials",
+                          "Information Technology",
+                          "Communication Services",
+                          "Utilities",
+                          "Real Estate"
+                        ],
+                        "type": "string"
+                      },
+                      "uniqueItems": true
+                    },
+                    "companies": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "description": "Company names or tickers; system may validate externally",
+                      "uniqueItems": true
+                    },
+                    "instruments": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "Stocks",
+                          "Bonds",
+                          "ETF",
+                          "Options",
+                          "Futures",
+                          "Funds",
+                          "Notes",
+                          "Swaps"
+                        ],
+                        "type": "string"
+                      },
+                      "uniqueItems": true
+                    },
+                    "riskProfile": {
+                      "enum": [
+                        "Conservative",
+                        "Moderate",
+                        "Aggressive"
+                      ],
+                      "type": "string"
+                    },
+                    "timeHorizon": {
+                      "enum": [
+                        "Short-term",
+                        "Medium-term",
+                        "Long-term"
+                      ],
+                      "type": "string"
+                    },
+                    "assetClasses": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "Equities",
+                          "Bonds",
+                          "Commodities",
+                          "REITs",
+                          "FX",
+                          "Derivatives",
+                          "Alternatives",
+                          "Cash"
+                        ],
+                        "type": "string"
+                      },
+                      "uniqueItems": true
+                    }
+                  },
+                  "description": "Domain metadata for investment analytics (extensible)"
+                },
+                "forecastToday": {
+                  "type": "object",
+                  "description": "Transformed forecast data (created if forecastTodayValue exists in input)",
+                  "properties": {
+                    "value": {
+                      "type": "number",
+                      "description": "Forecast value converted from string to number"
+                    },
+                    "direction": {
+                      "type": "string",
+                      "description": "Forecast direction (flat, up, down)"
+                    }
+                  },
+                  "required": ["value", "direction"],
+                  "additionalProperties": false
+                },
+                "additionalMetadataFields": {
+                  "type": "array",
+                  "description": "Preserved metadata fields excluding transformed forecast elements",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Field identifier"
+                      },
+                      "val": {
+                        "type": "string",
+                        "description": "Field value"
+                      }
+                    },
+                    "required": ["id", "val"],
+                    "additionalProperties": false
+                  }
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "type": "string"
+                },
+                "order": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Optional explicit ordering index"
+                },
+                "blocks": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9._:-]+$",
+                        "minLength": 1,
+                        "description": "Stable unique identifier within system scope"
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "subtitle": {
+                        "type": "string",
+                        "maxLength": 500,
+                        "description": "Optional subtitle for additional context"
+                      },
+                      "summary": {
+                        "type": "string",
+                        "maxLength": 5000,
+                        "description": "Short abstract/summary (plain text or limited markup)"
+                      },
+                      "authors": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "uniqueItems": true
+                      },
+                      "language": {
+                        "type": "string",
+                        "minLength": 2
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "maxItems": 100,
+                            "uniqueItems": true
+                          },
+                          "regions": {
+                            "type": "array",
+                            "items": {
+                              "enum": [
+                                "Global",
+                                "US",
+                                "Europe",
+                                "APAC",
+                                "EMEA",
+                                "LATAM",
+                                "Emerging Markets",
+                                "China",
+                                "Japan"
+                              ],
+                              "type": "string"
+                            },
+                            "uniqueItems": true
+                          },
+                          "sectors": {
+                            "type": "array",
+                            "items": {
+                              "enum": [
+                                "Energy",
+                                "Materials",
+                                "Industrials",
+                                "Consumer Discretionary",
+                                "Consumer Staples",
+                                "Health Care",
+                                "Financials",
+                                "Information Technology",
+                                "Communication Services",
+                                "Utilities",
+                                "Real Estate"
+                              ],
+                              "type": "string"
+                            },
+                            "uniqueItems": true
+                          },
+                          "companies": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "description": "Company names or tickers; system may validate externally",
+                            "uniqueItems": true
+                          },
+                          "instruments": {
+                            "type": "array",
+                            "items": {
+                              "enum": [
+                                "Stocks",
+                                "Bonds",
+                                "ETF",
+                                "Options",
+                                "Futures",
+                                "Funds",
+                                "Notes",
+                                "Swaps"
+                              ],
+                              "type": "string"
+                            },
+                            "uniqueItems": true
+                          },
+                          "riskProfile": {
+                            "enum": [
+                              "Conservative",
+                              "Moderate",
+                              "Aggressive"
+                            ],
+                            "type": "string"
+                          },
+                          "timeHorizon": {
+                            "enum": [
+                              "Short-term",
+                              "Medium-term",
+                              "Long-term"
+                            ],
+                            "type": "string"
+                          },
+                          "assetClasses": {
+                            "type": "array",
+                            "items": {
+                              "enum": [
+                                "Equities",
+                                "Bonds",
+                                "Commodities",
+                                "REITs",
+                                "FX",
+                                "Derivatives",
+                                "Alternatives",
+                                "Cash"
+                              ],
+                              "type": "string"
+                            },
+                            "uniqueItems": true
+                          }
+                        },
+                        "description": "Domain metadata for investment analytics (extensible)"
+                      },
+                      "forecastToday": {
+                        "type": "object",
+                        "description": "Transformed forecast data (created if forecastTodayValue exists in input)",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "description": "Forecast value converted from string to number"
+                          },
+                          "direction": {
+                            "type": "string",
+                            "description": "Forecast direction (flat, up, down)"
+                          }
+                        },
+                        "required": ["value", "direction"],
+                        "additionalProperties": false
+                      },
+                      "additionalMetadataFields": {
+                        "type": "array",
+                        "description": "Preserved metadata fields excluding transformed forecast elements",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "description": "Field identifier"
+                            },
+                            "val": {
+                              "type": "string",
+                              "description": "Field value"
+                            }
+                          },
+                          "required": ["id", "val"],
+                          "additionalProperties": false
+                        }
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      },
+                      "updatedAt": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "enum": [
+                          "textual",
+                          "figure",
+                          "table",
+                          "composite",
+                          "custom"
+                        ],
+                        "type": "string",
+                        "description": "Optional classifier for block kind"
+                      },
+                      "views": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "text",
+                                "image",
+                                "chart",
+                                "table"
+                              ]
+                            },
+                            "content": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "Rich text (HTML/Markdown) or plain text depending on editor policy"
+                            },
+                            "mediaType": {
+                              "type": "string",
+                              "enum": [
+                                "image/png",
+                                "image/jpeg",
+                                "image/gif",
+                                "image/webp",
+                                "image/svg+xml"
+                              ]
+                            },
+                            "base64": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "alt": {
+                              "type": "string"
+                            },
+                            "caption": {
+                              "type": "string"
+                            },
+                            "spec": {
+                              "type": "object",
+                              "description": "JSON specification for chart (e.g., Vega/Vega-Lite/ECharts/Highcharts)"
+                            },
+                            "columns": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "key": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "title": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "string",
+                                      "number",
+                                      "date",
+                                      "boolean"
+                                    ]
+                                  },
+                                  "format": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "title",
+                                  "type"
+                                ]
+                              }
+                            },
+                            "rows": {
+                              "type": "array",
+                              "items": {
+                                "type": "object"
+                              }
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ],
+                          "description": "Content-only leaf. Metadata only in parent levels."
+                        },
+                        "minItems": 1,
+                        "description": "Ordered content pieces of the block"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title",
+                      "views"
+                    ],
+                    "description": "Content block within a chapter"
+                  },
+                  "minItems": 1
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "blocks"
+              ],
+              "description": "Chapter within a publication"
+            },
+            "minItems": 1
+          },
+          "publishedAt": {
+            "type": "string"
+          },
+          "targetAudience": {
+            "enum": [
+              "institutional",
+              "retail",
+              "internal"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "type",
+          "chapters"
+        ],
+        "description": "Individual publication"
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "publications"
+  ]
+}

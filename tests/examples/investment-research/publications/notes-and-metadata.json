@@ -1,0 +1,112 @@
+{
+  "publications": [
+    {
+      "id": "pub_001",
+      "title": "Publication with Notes and Metadata",
+      "subtitle": "Combined example demonstrating notes removal and metadata processing",
+      "summary": "This publication contains notes at all levels and additionalMetadataFields with forecast data that will be transformed.",
+      "type": "research_note",
+      "targetAudience": "internal",
+      "status": "draft",
+      "version": "1.0.0",
+      "language": "en",
+      "authors": ["Author A", "Editor B"],
+      "createdAt": "2025-10-19T10:00:00Z",
+      "updatedAt": "2025-10-19T12:00:00Z",
+      "publishedAt": null,
+      "metadata": {
+        "assetClasses": ["Equities"],
+        "regions": ["Global"],
+        "tags": ["forecast", "analysis"]
+      },
+      "additionalMetadataFields": [
+        {"id": "forecastTodayValue", "val": "150.5"},
+        {"id": "forecastTodayDirection", "val": "up"},
+        {"id": "customField", "val": "publication level value"},
+        {"id": "anotherField", "val": "additional data"}
+      ],
+      "notes": [
+        {
+          "id": "note_pub_001",
+          "author": "Editor B",
+          "role": "editor",
+          "timestamp": "2025-10-19T10:30:00Z",
+          "status": "open",
+          "text": "Publication level note - will be removed by transformation"
+        }
+      ],
+      "chapters": [
+        {
+          "id": "ch_001",
+          "title": "Chapter with Metadata Processing",
+          "subtitle": "First chapter",
+          "summary": "This chapter demonstrates metadata transformation at chapter level.",
+          "order": 0,
+          "metadata": {
+            "assetClasses": ["Bonds"],
+            "regions": ["US"],
+            "tags": ["chapter", "data"]
+          },
+          "additionalMetadataFields": [
+            {"id": "forecastTodayValue", "val": "200.0"},
+            {"id": "forecastTodayDirection", "val": "down"},
+            {"id": "chapterField", "val": "chapter specific data"}
+          ],
+          "notes": [
+            {
+              "id": "note_ch_001",
+              "author": "Author A",
+              "role": "author",
+              "timestamp": "2025-10-19T11:00:00Z",
+              "status": "open",
+              "text": "Chapter level note - will be removed"
+            }
+          ],
+          "createdAt": "2025-10-19T10:05:00Z",
+          "updatedAt": "2025-10-19T11:30:00Z",
+          "authors": ["Author A"],
+          "language": "en",
+          "blocks": [
+            {
+              "id": "block_001",
+              "title": "Block with Forecast Data",
+              "subtitle": "Data block",
+              "summary": "This block contains forecast metadata that will be transformed.",
+              "type": "textual",
+              "metadata": {
+                "assetClasses": ["Commodities"],
+                "regions": ["Europe"],
+                "tags": ["block", "forecast"]
+              },
+              "additionalMetadataFields": [
+                {"id": "forecastTodayValue", "val": "100.0"},
+                {"id": "forecastTodayDirection", "val": "flat"},
+                {"id": "blockField", "val": "block level data"}
+              ],
+              "notes": [
+                {
+                  "id": "note_block_001",
+                  "author": "Reviewer C",
+                  "role": "reviewer",
+                  "timestamp": "2025-10-19T11:45:00Z",
+                  "status": "resolved",
+                  "text": "Block level note - will be removed by transformation"
+                }
+              ],
+              "createdAt": "2025-10-19T10:10:00Z",
+              "updatedAt": "2025-10-19T12:00:00Z",
+              "authors": ["Author A"],
+              "language": "en",
+              "views": [
+                {
+                  "type": "text",
+                  "content": "This is the main content of the block. The notes and raw metadata fields will be processed by the transformation."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
