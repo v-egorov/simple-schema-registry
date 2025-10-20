@@ -193,21 +193,16 @@ public class JsltBuiltInFunctions {
             }
 
             JsonNode metadataFields = args[0];
-            if (metadataFields == null) {
+            if (metadataFields == null || metadataFields.isMissingNode() || !metadataFields.isArray()) {
                 if (businessLoggingEnabled) {
-                    logger.debug("filter_additional_metadata_fields: metadata fields is null, returning empty array");
+                    logger.debug("filter_additional_metadata_fields: metadata fields is null, missing, or not an array (type: {}), returning empty array",
+                        metadataFields != null ? metadataFields.getNodeType() : "null");
                 }
                 if (performanceLoggingEnabled) {
                     long duration = Duration.between(start, Instant.now()).toMillis();
                     logger.debug("filter_additional_metadata_fields completed: duration={}ms", duration);
                 }
                 return objectMapper.createArrayNode();
-            }
-            if (!metadataFields.isArray()) {
-                if (businessLoggingEnabled) {
-                    logger.error("filter_additional_metadata_fields: first argument is not an array");
-                }
-                throw new IllegalArgumentException("First argument must be an array or null");
             }
 
             JsonNode excludeIds = args[1];

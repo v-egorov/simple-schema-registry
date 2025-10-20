@@ -13,12 +13,14 @@ class JsltBuiltInFunctionsTest {
     private JsltBuiltInFunctions functions;
     private ObjectMapper objectMapper;
     private Function extractForecastTodayFunction;
+    private Function filterAdditionalMetadataFieldsFunction;
 
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
         functions = new JsltBuiltInFunctions(objectMapper);
         extractForecastTodayFunction = functions.createExtractForecastTodayFunction();
+        filterAdditionalMetadataFieldsFunction = functions.createFilterAdditionalMetadataFieldsFunction();
     }
 
     @Test
@@ -123,5 +125,96 @@ class JsltBuiltInFunctionsTest {
             extractForecastTodayFunction.call(input, args);
         });
         assertTrue(exception.getMessage().contains("expects exactly 1 argument"));
+    }
+
+    @Test
+    void testFilterAdditionalMetadataFields_Success() throws Exception {
+        // Create test input
+        String jsonInput = """
+            [
+                {"id": "forecastTodayValue", "val": "77.85"},
+                {"id": "forecastTodayDirection", "val": "up"},
+                {"id": "otherField", "val": "keep"}
+            ]
+            """;
+
+        String excludeInput = """
+            ["forecastTodayValue", "forecastTodayDirection"]
+            """;
+
+        JsonNode input = objectMapper.createObjectNode();
+        JsonNode[] args = new JsonNode[]{
+            objectMapper.readTree(jsonInput),
+            objectMapper.readTree(excludeInput)
+        };
+
+        // Call the function
+        JsonNode result = filterAdditionalMetadataFieldsFunction.call(input, args);
+
+        // Verify result
+        assertNotNull(result);
+        assertTrue(result.isArray());
+        assertEquals(1, result.size());
+        assertEquals("otherField", result.get(0).get("id").asText());
+        assertEquals("keep", result.get(0).get("val").asText());
+    }
+
+    @Test
+    void testFilterAdditionalMetadataFields_NullInput() throws Exception {
+        JsonNode input = objectMapper.createObjectNode();
+        JsonNode[] args = new JsonNode[]{
+            null,
+            objectMapper.readTree("[]")
+        };
+
+        JsonNode result = filterAdditionalMetadataFieldsFunction.call(input, args);
+
+        // Should return empty array for null input
+        assertNotNull(result);
+        assertTrue(result.isArray());
+        assertEquals(0, result.size());
+    }
+
+    @Test
+    void testFilterAdditionalMetadataFields_ObjectInput() throws Exception {
+        JsonNode input = objectMapper.createObjectNode();
+        JsonNode[] args = new JsonNode[]{
+            objectMapper.createObjectNode().put("test", "value"), // Object instead of array
+            objectMapper.readTree("[]")
+        };
+
+        JsonNode result = filterAdditionalMetadataFieldsFunction.call(input, args);
+
+        // Should return empty array for non-array input
+        assertNotNull(result);
+        assertTrue(result.isArray());
+        assertEquals(0, result.size());
+    }
+
+    @Test
+    void testFilterAdditionalMetadataFields_EmptyArray() throws Exception {
+        JsonNode input = objectMapper.createObjectNode();
+        JsonNode[] args = new JsonNode[]{
+            objectMapper.createArrayNode(),
+            objectMapper.readTree("[]")
+        };
+
+        JsonNode result = filterAdditionalMetadataFieldsFunction.call(input, args);
+
+        // Should return empty array
+        assertNotNull(result);
+        assertTrue(result.isArray());
+        assertEquals(0, result.size());
+    }
+
+    @Test
+    void testFilterAdditionalMetadataFields_WrongArgumentCount() {
+        JsonNode input = objectMapper.createObjectNode();
+        JsonNode[] args = new JsonNode[]{objectMapper.createArrayNode()}; // Only 1 argument
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            filterAdditionalMetadataFieldsFunction.call(input, args);
+        });
+        assertTrue(exception.getMessage().contains("expects exactly 2 arguments"));
     }
 }
