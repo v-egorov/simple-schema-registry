@@ -177,10 +177,10 @@ Client Application                    TransformationController              Tran
         |                                           |                              |                              |    - Router: Evaluate conditions
         |                                           |                              |                              |    - Pipeline: Execute steps
         |                                           |                              |                              |
-        |                                           |                              | 10. Return transformed JSON  |
+        |                                           |                              |  9. Return transformed JSON  |
         |                                           |                              |<-----------------------------|
         |                                           |                              |                              |
-        |                                           | 11. Return success response  |                              |
+        |                                           | 10. Return success response  |                              |
         |                                           |    {"transformedData": {...}}|                              |
         |<------------------------------------------|                              |                              |
 ```
