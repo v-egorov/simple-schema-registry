@@ -247,6 +247,7 @@ public interface Function {
     JsonNode call(JsonNode input, JsonNode[] args);
 }
 ```
+
 Input JSON → Step 1 Transform → Step 2 Transform → ... → Step N Transform → Output JSON
               ↓                     ↓                           ↓
         Continue on Error?   Continue on Error?         Continue on Error?

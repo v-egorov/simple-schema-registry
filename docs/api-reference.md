@@ -108,7 +108,7 @@ This pattern is used for critical resource operations where identifier validatio
 
 Register a new schema or create a new version of an existing schema.
 
-**Endpoint**: `POST /api/schemas`
+**Endpoint**: `POST /api/schemas/{subject}`
 
 **Supported JSON Schema Versions**: The service supports draft-04, draft-06, draft-07, and draft-2019-09. The schema version is automatically detected from the `$schema` field. If no `$schema` field is present, draft-04 is used as the default. Note: draft-2020-12 is not supported due to validation bugs in the NetworkNT library.
 
@@ -161,7 +161,7 @@ Register a new schema or create a new version of an existing schema.
 
 Retrieve all versions of a schema by subject.
 
-**Endpoint**: `GET /api/schemas/{subject}`
+**Endpoint**: `GET /api/schemas/{subject}/versions`
 
 **Response** (200 OK):
 
@@ -215,7 +215,7 @@ Retrieve a specific version of a schema.
 
 Retrieve the latest version of a schema.
 
-**Endpoint**: `GET /api/schemas/{subject}/latest`
+**Endpoint**: `GET /api/schemas/{subject}`
 
 **Response** (200 OK):
 
