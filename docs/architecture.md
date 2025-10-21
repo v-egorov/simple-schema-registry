@@ -160,46 +160,6 @@ Client Application                    TransformationController              Tran
         |                                           |                              | 3. Retrieve active template  |
         |                                           |                              |    version for consumer+subject|
         |                                           |                              |                              |
-        |                                           |                              | 4. Determine engine type     |
-        |                                           |                              |    (jslt/router/pipeline)    |
-        |                                           |                              |                              |
-        |                                           |                              | 5. Instantiate appropriate   |
-        |                                           |                              |    engine                    |
-        |                                           |                              |                              |
-        |                                           |                              | 6. Call engine.transform()   |
-        |                                           |                              |    with function registry    |
-        |                                           |                              |    (for JSLT engine)         |
-        |                                           |----------------------------->|                              |
-        |                                           |                              |                              |
-        |                                           |                              |                              | 7. Execute transformation
-        |                                           |                              |                              |    - JSLT: Apply expression with custom functions
-        |                                           |                              |                              |    - Router: Evaluate conditions
-        |                                           |                              |                              |    - Pipeline: Execute steps
-        |                                           |                              |                              |
-        |                                           |                              | 8. Return transformed JSON   |
-        |                                           |                              |<-----------------------------|
-        |                                           |                              |                              |
-        |                                           | 9. Return success response   |                              |
-        |                                           |    {"transformedData": {...}}|                              |
-<---------------------------------------------------|                              |                              |
-Client Application                    TransformationController              TransformationService              TransformationEngine
-        |                                           |                              |                              |
-        |  POST /api/consumers/{consumerId}/subjects/{subject}/transform           |                              |
-        |  Content-Type: application/json                                          |                              |
-        |  Body: {"data": {...}}                                                   |                              |
-        |------------------------------------------>|                              |                              |
-        |                                           |                              |                              |
-        |                                           | 1. Validate request params   |                              |
-        |                                           |    - consumerId exists       |                              |
-        |                                           |    - subject exists          |                              |
-        |                                           |    - JSON payload structure  |                              |
-        |                                           |                              |                              |
-        |                                           | 2. Call service.transform()  |                              |
-        |                                           |----------------------------->|                              |
-        |                                           |                              |                              |
-        |                                           |                              | 3. Retrieve active template  |
-        |                                           |                              |    version for consumer+subject|
-        |                                           |                              |                              |
         |                                           |                              | 4. Validate input against    |
         |                                           |                              |    canonical schema          |
         |                                           |                              |                              |
