@@ -36,10 +36,12 @@ The presentation layer handles HTTP requests and responses, providing RESTful AP
 The service layer contains the core business logic:
 
 - **SchemaRegistryService**: Handles schema versioning, compatibility validation, and retrieval for both canonical and consumer output schemas
-- **TransformationService**: Manages transformation template creation, retrieval, and executes transformations
+- **TransformationService**: Manages transformation template creation, retrieval, and executes transformations with function registry integration
 - **TransformationVersionService**: Handles template version activation, deactivation, and lifecycle management
 - **ConsumerService**: Manages consumer application registrations
-- **ConfigurationValidator**: Validates transformation engine configurations
+- **ConfigurationValidator**: Validates transformation engine configurations (router/pipeline)
+- **JsltFunctionRegistry**: Manages custom JSLT functions for enhanced transformations
+- **JsltBuiltInFunctions**: Factory for built-in JSLT functions (uuid, extract_forecast_today, etc.)
 - **Transformation Engines**: Pluggable engines for different transformation languages (JSLT, Router, Pipeline)
 
 **Key Features**:
@@ -58,14 +60,55 @@ Spring Data JPA repositories provide data access:
 - **ConsumerRepository**: CRUD operations for consumer entities
 - **TransformationTemplateRepository**: CRUD operations for transformation templates
 
-### 4. Data Model (Entities)
+### 4. JSLT Custom Function System
+
+The system includes a sophisticated custom function system that extends JSLT transformation capabilities:
+
+#### Core Components
+
+- **JsltFunctionRegistry**: Thread-safe registry for managing custom functions with registration/unregistration capabilities
+- **JsltBuiltInFunctions**: Factory class that creates built-in function implementations
+- **JsltFunctionConfiguration**: Spring configuration class that registers built-in functions at startup
+- **LoggingUtils**: Utility class for structured logging across the application
+
+#### Built-in Functions
+
+The system provides several built-in JSLT functions:
+
+- **`uuid()`**: Generates RFC 4122 compliant UUIDs for unique identifier generation
+- **`extract_forecast_today()`**: Extracts forecast data from complex metadata field arrays
+- **`filter_additional_metadata_fields()`**: Filters metadata field arrays by excluding specified field IDs
+
+#### Function Usage Examples
+
+```jslt
+{
+  "recordId": uuid(),
+  "forecast": extract_forecast_today(.details.additionalMetadataFields),
+  "filteredMetadata": filter_additional_metadata_fields(.details.additionalMetadataFields, ["field1", "field2"])
+}
+```
+
+#### Function Architecture
+
+Functions implement the JSLT `Function` interface with proper argument validation, error handling, and performance logging. The registry integrates with the JSLT engine during expression compilation, allowing custom functions to be used seamlessly in transformation templates.
+
+### 5. Data Model (Entities)
 
 JPA entities representing the domain model:
 
-- **SchemaEntity**: Stores schema definitions with versioning, supporting both canonical and consumer output schema types
-- **ConsumerEntity**: Represents consumer applications
-- **TransformationTemplateEntity**: Stores transformation templates with versioning, linked to input/output schemas
+- **SchemaEntity**: Stores schema definitions with versioning and type support
+- **ConsumerEntity**: Represents consumer applications with unique consumer IDs
+- **TransformationTemplateEntity**: Stores transformation templates with versioning and schema relationships
 - **SchemaType**: Enum defining schema types (CANONICAL, CONSUMER_OUTPUT)
+
+#### Schema Type System
+
+The system supports dual schema types for comprehensive validation:
+
+- **Canonical Schemas** (`schema_type = 'canonical'`): Used for input data validation before transformation
+- **Consumer Output Schemas** (`schema_type = 'consumer_output'`): Used for output validation after transformation
+- **Schema Relationships**: Transformation templates reference both input (canonical) and output (consumer) schemas
 
 ## Data Flow
 
@@ -85,11 +128,60 @@ JPA entities representing the domain model:
 2. Controller validates request parameters and consumer/subject existence
 3. Service retrieves the active transformation template version for the consumer-subject pair
 4. Appropriate transformation engine processes the data according to the template
-5. Transformed JSON is validated against the consumer output schema (if configured)
-6. Transformed JSON is returned to client
+5. Transformed JSON is returned to client
+
+#### Schema Validation Responsibility
+
+**Important**: The transformation service does not perform automatic schema validation during the transformation process. Schema validation is the responsibility of the service consumer and should be performed separately:
+
+- **Pre-transformation validation**: Validate input JSON against canonical schemas using `POST /api/schemas/{subject}/validate`
+- **Post-transformation validation**: Validate transformed JSON against consumer output schemas using `POST /api/consumers/{consumerId}/schemas/{subject}/validate`
+
+This design choice delegates validation responsibility to service consumers, allowing them to implement validation strategies appropriate for their use cases while keeping the transformation service focused on data transformation logic.
 
 #### Detailed Sequence Diagram
 
+```
+Client Application                    TransformationController              TransformationService              TransformationEngine
+        |                                           |                              |                              |
+        |  POST /api/consumers/{consumerId}/subjects/{subject}/transform           |                              |
+        |  Content-Type: application/json                                          |                              |
+        |  Body: {"data": {...}}                                                   |                              |
+        |------------------------------------------>|                              |                              |
+        |                                           |                              |                              |
+        |                                           | 1. Validate request params   |                              |
+        |                                           |    - consumerId exists       |                              |
+        |                                           |    - subject exists          |                              |
+        |                                           |    - JSON payload structure  |                              |
+        |                                           |                              |                              |
+        |                                           | 2. Call service.transform()  |                              |
+        |                                           |----------------------------->|                              |
+        |                                           |                              |                              |
+        |                                           |                              | 3. Retrieve active template  |
+        |                                           |                              |    version for consumer+subject|
+        |                                           |                              |                              |
+        |                                           |                              | 4. Determine engine type     |
+        |                                           |                              |    (jslt/router/pipeline)    |
+        |                                           |                              |                              |
+        |                                           |                              | 5. Instantiate appropriate   |
+        |                                           |                              |    engine                    |
+        |                                           |                              |                              |
+        |                                           |                              | 6. Call engine.transform()   |
+        |                                           |                              |    with function registry    |
+        |                                           |                              |    (for JSLT engine)         |
+        |                                           |----------------------------->|                              |
+        |                                           |                              |                              |
+        |                                           |                              |                              | 7. Execute transformation
+        |                                           |                              |                              |    - JSLT: Apply expression with custom functions
+        |                                           |                              |                              |    - Router: Evaluate conditions
+        |                                           |                              |                              |    - Pipeline: Execute steps
+        |                                           |                              |                              |
+        |                                           |                              | 8. Return transformed JSON   |
+        |                                           |                              |<-----------------------------|
+        |                                           |                              |                              |
+        |                                           | 9. Return success response   |                              |
+        |                                           |    {"transformedData": {...}}|                              |
+<---------------------------------------------------|                              |                              |
 ```
 Client Application                    TransformationController              TransformationService              TransformationEngine
         |                                           |                              |                              |
@@ -122,7 +214,7 @@ Client Application                    TransformationController              Tran
         |                                           |                              |----------------------------->|
         |                                           |                              |                              |
         |                                           |                              |                              | 8. Execute transformation
-        |                                           |                              |                              |    - JSLT: Apply expression
+        |                                           |                              |                              |    - JSLT: Apply expression with custom functions
         |                                           |                              |                              |    - Router: Evaluate conditions
         |                                           |                              |                              |    - Pipeline: Execute steps
         |                                           |                              |                              |
@@ -139,10 +231,11 @@ Client Application                    TransformationController              Tran
 
 #### Key Points About Current Flow
 
-- **Schema Validation**: Input JSON is validated against canonical schemas, output against consumer schemas
+- **Schema Validation**: Delegated to service consumers via separate validation APIs
 - **Template Versioning**: Uses active template version for consumer-subject pairs (many templates per consumer)
 - **Subject-Based Organization**: Templates are organized by consumer-subject combinations
 - **Engine Selection**: Template metadata determines which transformation engine to use
+- **Function Registry Integration**: JSLT engine integrates with JsltFunctionRegistry for custom functions
 - **Version Management**: Templates support multiple versions with activation/deactivation
 
 #### Engine-Specific Flows
@@ -162,12 +255,58 @@ Input JSON → Evaluate Route Conditions → Select Transformation → Apply Sel
 ##### Pipeline Engine Flow
 
 ```
+Input JSON → Step 1 → Step 2 → ... → Step N → Output JSON
+```
+
+### JSLT Function System Architecture
+
+The JSLT function system provides extensible transformation capabilities:
+
+#### Function Registry Architecture
+
+```
+Function Registration → Expression Compilation → Function Execution
+       ↓                        ↓                        ↓
+JsltFunctionConfiguration  JSLT Parser with Functions   Custom Functions
+       ↓                        ↓                        ↓
+Built-in Functions     Expression.apply(input)     uuid(), extract_*, etc.
+```
+
+#### Key Components
+
+- **Function Registry**: Thread-safe storage and retrieval of custom functions
+- **Built-in Functions**: Pre-implemented functions for common transformation needs
+- **Function Configuration**: Spring-based registration of functions at application startup
+- **Engine Integration**: JSLT engine automatically includes registered functions during compilation
+
+#### Function Interface
+
+All custom functions implement the JSLT `Function` interface:
+
+```java
+public interface Function {
+    String getName();
+    int getMinArguments();
+    int getMaxArguments();
+    JsonNode call(JsonNode input, JsonNode[] args);
+}
+```
 Input JSON → Step 1 Transform → Step 2 Transform → ... → Step N Transform → Output JSON
               ↓                     ↓                           ↓
         Continue on Error?   Continue on Error?         Continue on Error?
 ```
 
 ## Database Schema
+
+### Schema Evolution
+
+The database schema has evolved through several versions to support advanced features:
+
+- **V1**: Initial schema with basic schema storage and integer versioning
+- **V2**: Added transformation configuration support for router/pipeline engines
+- **V3**: Added subject management and migrated to semver versioning
+- **V4**: Complete transformation versioning refactor with dual schema types
+- **V5**: Removed consumer subjects (subjects now determined by registered templates)
 
 ### Tables
 
@@ -239,7 +378,7 @@ CREATE TABLE transformation_templates (
 
 ### Subject Management
 
-Subjects are not pre-declared in consumer registrations. Instead, consumers can register transformation templates for any subject, and the available subjects for a consumer are determined by the templates that have been registered.
+Subjects are not pre-declared in consumer registrations. Instead, consumers can register transformation templates for any subject, and the available subjects for a consumer are determined by the templates that have been registered. This approach provides flexibility while maintaining clear consumer-subject relationships through template registrations.
 
 ## Transformation Engine Architecture
 
@@ -258,9 +397,10 @@ public interface TransformationEngine {
 #### 1. JSLT Engine
 
 - **Implementation**: `JsltTransformationEngine`
-- **Purpose**: Simple JSON-to-JSON transformations using JSLT expressions
-- **Use Case**: Declarative transformations, data normalization, field mapping
-- **Example Expression**: `{ "user_id": .id, "full_name": (.firstName + " " + .lastName) }`
+- **Purpose**: Advanced JSON-to-JSON transformations using JSLT expressions with custom function support
+- **Use Case**: Declarative transformations, data normalization, field mapping, unique ID generation
+- **Custom Functions**: Integrates with JsltFunctionRegistry for extensible functionality
+- **Example Expression**: `{ "user_id": uuid(), "full_name": (.firstName + " " + .lastName), "forecast": extract_forecast_today(.metadata) }`
 
 #### 2. Router Engine
 
@@ -344,6 +484,11 @@ spring.jpa.show-sql=false
 
 # OpenAPI
 springdoc.swagger-ui.path=/swagger-ui.html
+
+# Logging
+app.logging.business-operations.enabled=true
+app.logging.performance.enabled=true
+app.logging.performance.slow-threshold-ms=1000
 ```
 
 ## Security Considerations
@@ -443,8 +588,9 @@ See [Exception Handling Guide](exception-handling-guide.md) for comprehensive do
 ### Unit Tests
 
 - Service layer testing with mocked repositories
-- Transformation engine testing
-- Utility class testing
+- Transformation engine testing including custom function integration
+- JSLT function registry and built-in functions testing
+- Utility class testing (LoggingUtils, ConfigurationValidator)
 
 ### Integration Tests
 
