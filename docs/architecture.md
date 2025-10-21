@@ -177,9 +177,6 @@ Client Application                    TransformationController              Tran
         |                                           |                              |                              |    - Router: Evaluate conditions
         |                                           |                              |                              |    - Pipeline: Execute steps
         |                                           |                              |                              |
-        |                                           |                              | 9. Validate output against   |
-        |                                           |                              |    consumer output schema    |
-        |                                           |                              |                              |
         |                                           |                              | 10. Return transformed JSON  |
         |                                           |                              |<-----------------------------|
         |                                           |                              |                              |
