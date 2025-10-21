@@ -137,10 +137,10 @@ public class JsltFunctionConfiguration {
         functionRegistry.register("extract_forecast_today",
             builtInFunctions.createExtractForecastTodayFunction());
 
-        // Register additional functions here
-        functionRegistry.register("string_to_number",
-            builtInFunctions.createStringToNumberFunction());
-    }
+        // Register UUID generation function
+        functionRegistry.register("uuid",
+            builtInFunctions.createUuidFunction());
+     }
 }
 ```
 
@@ -418,6 +418,70 @@ The `extract_forecast_today` function:
 4. **Output**: Returns a structured object with `value` (number) and `direction` (string) properties
 5. **Error Handling**: Returns `null` if required fields are missing or invalid
 
+### UUID Generation Function
+
+The `uuid()` function generates a random RFC 4122 compliant UUID (Universally Unique Identifier) string. This is useful for creating unique identifiers during data transformation.
+
+#### Function Signature
+
+```java
+public Function createUuidFunction()
+```
+
+#### Usage in JSLT
+
+```jslt
+{
+  "id": uuid(),
+  "name": .name,
+  "email": .email,
+  "createdAt": .timestamp
+}
+```
+
+#### Parameters
+
+- **Arguments**: 0 (no arguments required)
+- **Returns**: String containing a UUID in the format `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
+
+#### Example Transformation
+
+**Input JSON:**
+
+```json
+{
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "department": "Engineering"
+}
+```
+
+**JSLT Template:**
+
+```jslt
+{
+  "userId": uuid(),
+  "name": .name,
+  "email": .email,
+  "department": .department,
+  "createdAt": .timestamp
+}
+```
+
+**Output JSON:**
+
+```json
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "department": "Engineering",
+  "createdAt": "2025-10-21T09:00:00Z"
+}
+```
+
+**Note**: Each call to `uuid()` generates a unique value, so multiple calls in the same transformation will produce different UUIDs.
+
 ### Testing the Transformation
 
 You can test this transformation using the provided test files:
@@ -476,3 +540,4 @@ public class DomainSpecificFunctions {
 ```
 
 This approach keeps the core system clean while allowing extensibility for specific use cases.
+

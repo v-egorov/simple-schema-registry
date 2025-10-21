@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Iterator;
+import java.util.UUID;
 
 /**
  * Built-in JSLT functions for common transformation patterns.
@@ -49,16 +50,28 @@ public class JsltBuiltInFunctions {
     }
 
     /**
-     * Create the filter_additional_metadata_fields function.
-     * Filters out specified IDs from additionalMetadataFields array.
-     *
-     * Usage in JSLT: filter_additional_metadata_fields(.details.additionalMetadataFields, ["id1", "id2"])
-     *
-     * @return Function implementation
-     */
-    public Function createFilterAdditionalMetadataFieldsFunction() {
-        return new FilterAdditionalMetadataFieldsFunction();
-    }
+      * Create the filter_additional_metadata_fields function.
+      * Filters out specified IDs from additionalMetadataFields array.
+      *
+      * Usage in JSLT: filter_additional_metadata_fields(.details.additionalMetadataFields, ["id1", "id2"])
+      *
+      * @return Function implementation
+      */
+     public Function createFilterAdditionalMetadataFieldsFunction() {
+         return new FilterAdditionalMetadataFieldsFunction();
+     }
+
+     /**
+      * Create the uuid function.
+      * Generates a random UUID (Universally Unique Identifier) string.
+      *
+      * Usage in JSLT: uuid()
+      *
+      * @return Function implementation
+      */
+     public Function createUuidFunction() {
+         return new UuidFunction();
+     }
 
     /**
      * JSLT Function implementation for extracting forecast data.
@@ -257,12 +270,58 @@ public class JsltBuiltInFunctions {
                 logger.debug("filter_additional_metadata_fields: filtered to {} fields", result.size());
             }
 
-            if (performanceLoggingEnabled) {
-                long duration = Duration.between(start, Instant.now()).toMillis();
-                logger.debug("filter_additional_metadata_fields completed: duration={}ms", duration);
-            }
+             if (performanceLoggingEnabled) {
+                 long duration = Duration.between(start, Instant.now()).toMillis();
+                 logger.debug("filter_additional_metadata_fields completed: duration={}ms", duration);
+             }
 
-            return result;
-        }
-    }
-}
+             return result;
+         }
+     }
+
+     /**
+      * JSLT Function implementation for generating UUIDs.
+      */
+     private class UuidFunction implements Function {
+
+         @Override
+         public String getName() {
+             return "uuid";
+         }
+
+         @Override
+         public int getMinArguments() {
+             return 0;
+         }
+
+         @Override
+         public int getMaxArguments() {
+             return 0;
+         }
+
+         @Override
+         public JsonNode call(JsonNode input, JsonNode[] args) {
+             Instant start = performanceLoggingEnabled ? Instant.now() : null;
+
+             if (args.length != 0) {
+                 if (businessLoggingEnabled) {
+                     logger.error("uuid called with invalid arguments: expected 0, got {}", args.length);
+                 }
+                 throw new IllegalArgumentException("uuid expects exactly 0 arguments");
+             }
+
+             if (businessLoggingEnabled) {
+                 logger.debug("Generating UUID");
+             }
+
+             String uuid = UUID.randomUUID().toString();
+
+             if (performanceLoggingEnabled) {
+                 long duration = Duration.between(start, Instant.now()).toMillis();
+                 logger.debug("uuid completed successfully: duration={}ms", duration);
+             }
+
+             return objectMapper.createObjectNode().textNode(uuid);
+         }
+     }
+ }

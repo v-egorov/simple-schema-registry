@@ -147,7 +147,60 @@ assert_contains "$response_body" '"id":1001' "Should contain correct id"
 assert_contains "$response_body" '"name":"Alice Johnson"' "Should contain correct name"
 assert_contains "$response_body" '"email":"alice@example.com"' "Should contain correct email"
 
-# Test 8: Test transformation error handling
+# Test 8: Transform with UUID function
+echo
+echo "Test 8: Transform with UUID function"
+uuid_template='{"id": uuid(), "name": .fullName, "email": .emailAddress}'
+uuid_consumer="test-uuid-consumer-$timestamp"
+create_test_consumer "$uuid_consumer" "UUID Consumer"
+# Create schemas for UUID consumer
+create_test_schema "$subject" '{"type": "object", "properties": {"userId": {"type": "integer"}, "fullName": {"type": "string"}, "emailAddress": {"type": "string"}}}'
+create_test_consumer_schema "$uuid_consumer" "$subject" '{"type": "object", "properties": {"id": {"type": "string"}, "name": {"type": "string"}, "email": {"type": "string"}}}'
+create_test_template "$uuid_consumer" "$subject" "$uuid_template"
+
+# Transform data multiple times to verify UUID uniqueness
+response1=$(post_request "/api/consumers/$uuid_consumer/subjects/$subject/transform" "{
+    \"subject\": \"$subject\",
+    \"canonicalJson\": {
+        \"userId\": 2001,
+        \"fullName\": \"UUID Test User\",
+        \"emailAddress\": \"uuid@example.com\"
+    }
+}")
+http_code1=$(echo "$response1" | tail -n1)
+response_body1=$(echo "$response1" | head -n -1)
+
+response2=$(post_request "/api/consumers/$uuid_consumer/subjects/$subject/transform" "{
+    \"subject\": \"$subject\",
+    \"canonicalJson\": {
+        \"userId\": 2002,
+        \"fullName\": \"UUID Test User 2\",
+        \"emailAddress\": \"uuid2@example.com\"
+    }
+}")
+http_code2=$(echo "$response2" | tail -n1)
+response_body2=$(echo "$response2" | head -n -1)
+
+assert_response "$http_code1" 200 "First UUID transformation should succeed"
+assert_response "$http_code2" 200 "Second UUID transformation should succeed"
+assert_contains "$response_body1" '"id":' "Should contain id field with UUID"
+assert_contains "$response_body2" '"id":' "Should contain id field with UUID"
+assert_contains "$response_body1" '"name":"UUID Test User"' "Should contain correct name"
+assert_contains "$response_body2" '"name":"UUID Test User 2"' "Should contain correct name"
+
+# Extract UUIDs from responses and verify they are different
+uuid1=$(echo "$response_body1" | grep -o '"id":"[^"]*"' | cut -d'"' -f4)
+uuid2=$(echo "$response_body2" | grep -o '"id":"[^"]*"' | cut -d'"' -f4)
+
+if [ "$uuid1" != "$uuid2" ] && [ ${#uuid1} -eq 36 ] && [ ${#uuid2} -eq 36 ]; then
+    log_success "UUID function generates unique 36-character UUIDs"
+    ((TESTS_PASSED++))
+else
+    log_error "UUID function should generate unique 36-character UUIDs (got '$uuid1' and '$uuid2')"
+    ((TESTS_FAILED++))
+fi
+
+# Test 9: Test transformation error handling
 echo
 echo "Test 8: Test transformation with invalid template"
 # Try to create a consumer with invalid JSLT template

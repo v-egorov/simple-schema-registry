@@ -14,6 +14,7 @@ class JsltBuiltInFunctionsTest {
     private ObjectMapper objectMapper;
     private Function extractForecastTodayFunction;
     private Function filterAdditionalMetadataFieldsFunction;
+    private Function uuidFunction;
 
     @BeforeEach
     void setUp() {
@@ -21,6 +22,7 @@ class JsltBuiltInFunctionsTest {
         functions = new JsltBuiltInFunctions(objectMapper);
         extractForecastTodayFunction = functions.createExtractForecastTodayFunction();
         filterAdditionalMetadataFieldsFunction = functions.createFilterAdditionalMetadataFieldsFunction();
+        uuidFunction = functions.createUuidFunction();
     }
 
     @Test
@@ -192,29 +194,51 @@ class JsltBuiltInFunctionsTest {
     }
 
     @Test
-    void testFilterAdditionalMetadataFields_EmptyArray() throws Exception {
+    void testUuidFunction_Success() {
         JsonNode input = objectMapper.createObjectNode();
-        JsonNode[] args = new JsonNode[]{
-            objectMapper.createArrayNode(),
-            objectMapper.readTree("[]")
-        };
+        JsonNode[] args = new JsonNode[]{};
 
-        JsonNode result = filterAdditionalMetadataFieldsFunction.call(input, args);
+        // Call the function
+        JsonNode result = uuidFunction.call(input, args);
 
-        // Should return empty array
+        // Verify result
         assertNotNull(result);
-        assertTrue(result.isArray());
-        assertEquals(0, result.size());
+        assertTrue(result.isTextual());
+        String uuidString = result.asText();
+
+        // Verify UUID format (should be 36 characters with dashes)
+        assertEquals(36, uuidString.length());
+        assertTrue(uuidString.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"));
     }
 
     @Test
-    void testFilterAdditionalMetadataFields_WrongArgumentCount() {
+    void testUuidFunction_GeneratesUniqueValues() {
         JsonNode input = objectMapper.createObjectNode();
-        JsonNode[] args = new JsonNode[]{objectMapper.createArrayNode()}; // Only 1 argument
+        JsonNode[] args = new JsonNode[]{};
+
+        // Call the function multiple times
+        JsonNode result1 = uuidFunction.call(input, args);
+        JsonNode result2 = uuidFunction.call(input, args);
+        JsonNode result3 = uuidFunction.call(input, args);
+
+        // Verify all results are different
+        String uuid1 = result1.asText();
+        String uuid2 = result2.asText();
+        String uuid3 = result3.asText();
+
+        assertNotEquals(uuid1, uuid2);
+        assertNotEquals(uuid1, uuid3);
+        assertNotEquals(uuid2, uuid3);
+    }
+
+    @Test
+    void testUuidFunction_WrongArgumentCount() {
+        JsonNode input = objectMapper.createObjectNode();
+        JsonNode[] args = new JsonNode[]{objectMapper.createObjectNode().put("test", "value")}; // 1 argument
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            filterAdditionalMetadataFieldsFunction.call(input, args);
+            uuidFunction.call(input, args);
         });
-        assertTrue(exception.getMessage().contains("expects exactly 2 arguments"));
+        assertTrue(exception.getMessage().contains("uuid expects exactly 0 arguments"));
     }
 }

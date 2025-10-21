@@ -31,5 +31,9 @@ public class JsltFunctionConfiguration {
         // Register additional metadata fields filter function
         functionRegistry.register("filter_additional_metadata_fields",
             builtInFunctions.createFilterAdditionalMetadataFieldsFunction());
+
+         // Register UUID generation function
+         functionRegistry.register("uuid",
+             builtInFunctions.createUuidFunction());
     }
 }
