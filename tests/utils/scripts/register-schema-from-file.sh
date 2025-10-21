@@ -3,7 +3,7 @@
 # Schema Registration from File
 # Registers a JSON schema from a file with the Schema Registry API
 #
-# Usage: ./register-schema-from-file.sh <schema_file> <subject> [consumer_id] [compatibility] [description]
+# Usage: ./register-schema-from-file.sh <schema_file> <subject> [consumer_id] [compatibility] [description] [version]
 #
 # Arguments:
 #   schema_file: Path to JSON schema file
@@ -11,6 +11,7 @@
 #   consumer_id: Consumer ID (optional, for consumer output schemas)
 #   compatibility: Schema compatibility mode (default: BACKWARD)
 #   description: Optional schema description
+#   version: Optional schema version in semver format (e.g., 1.0.0, 2.1.3)
 #
 # Prerequisites:
 #   - jq must be installed
@@ -23,6 +24,12 @@
 #
 #   # Register consumer output schema
 #   ./register-schema-from-file.sh output-schema.json user-profile consumer-123 BACKWARD "Consumer output schema"
+#
+#   # Register schema with specific version
+#   ./register-schema-from-file.sh user-schema.json user-profile BACKWARD "User profile schema" "2.0.0"
+#
+#   # Register consumer schema with specific version
+#   ./register-schema-from-file.sh output-schema.json user-profile consumer-123 BACKWARD "Consumer output schema" "1.5.0"
 
 set -e
 
@@ -39,7 +46,7 @@ fi
 
 # Validate arguments
 if [ $# -lt 2 ]; then
-    log_error "Usage: $0 <schema_file> <subject> [consumer_id] [compatibility] [description]"
+    log_error "Usage: $0 <schema_file> <subject> [consumer_id] [compatibility] [description] [version]"
     log_error ""
     log_error "Examples:"
     log_error "  # Register canonical schema"
@@ -47,13 +54,24 @@ if [ $# -lt 2 ]; then
     log_error ""
     log_error "  # Register consumer output schema"
     log_error "  $0 output-schema.json user-profile consumer-123 BACKWARD 'Consumer output schema'"
+    log_error ""
+    log_error "  # Register schema with specific version"
+    log_error "  $0 user-schema.json user-profile BACKWARD 'User profile schema' '2.0.0'"
     exit 1
 fi
 
 SCHEMA_FILE="$1"
 SUBJECT="$2"
 
-# Detect schema type based on parameters
+# Check if last parameter is a version (semver format)
+VERSION=""
+if [[ $# -ge 3 && "${!#}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    VERSION="${!#}"
+    # Remove version from argument count for parsing
+    set -- "${@:1:$#-1}"
+fi
+
+# Now parse the remaining arguments
 if [ $# -ge 3 ]; then
     # Check if 3rd parameter looks like compatibility mode
     if [[ "$3" =~ ^(BACKWARD|FORWARD|FULL)$ ]]; then
@@ -103,19 +121,38 @@ if [ -n "$CONSUMER_ID" ]; then
 fi
 log_info "Subject: $SUBJECT"
 log_info "Compatibility: $COMPATIBILITY"
+if [ -n "$VERSION" ]; then
+    log_info "Version: $VERSION"
+fi
 
 # Construct JSON payload using jq
-PAYLOAD=$(jq -n \
-    --arg subject "$SUBJECT" \
-    --arg compatibility "$COMPATIBILITY" \
-    --arg description "$DESCRIPTION" \
-    --argjson schema "$(cat "$SCHEMA_FILE")" \
-    '{
-        subject: $subject,
-        schema: $schema,
-        compatibility: $compatibility,
-        description: $description
-    }')
+if [ -n "$VERSION" ]; then
+    PAYLOAD=$(jq -n \
+        --arg subject "$SUBJECT" \
+        --arg compatibility "$COMPATIBILITY" \
+        --arg description "$DESCRIPTION" \
+        --arg version "$VERSION" \
+        --argjson schema "$(cat "$SCHEMA_FILE")" \
+        '{
+            subject: $subject,
+            schema: $schema,
+            compatibility: $compatibility,
+            description: $description,
+            version: $version
+        }')
+else
+    PAYLOAD=$(jq -n \
+        --arg subject "$SUBJECT" \
+        --arg compatibility "$COMPATIBILITY" \
+        --arg description "$DESCRIPTION" \
+        --argjson schema "$(cat "$SCHEMA_FILE")" \
+        '{
+            subject: $subject,
+            schema: $schema,
+            compatibility: $compatibility,
+            description: $description
+        }')
+fi
 
 # Determine API endpoint
 if [ -n "$CONSUMER_ID" ]; then

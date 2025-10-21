@@ -258,14 +258,24 @@ Registers JSON schemas from files with automatic schema type detection:
 
 **Canonical Schema Registration:**
 ```bash
+# Auto-assigned version
 ./register-schema-from-file.sh schema.json subject-name BACKWARD "description"
 # Registers to: POST /api/schemas/subject-name
+
+# Specific version
+./register-schema-from-file.sh schema.json subject-name BACKWARD "description" "2.0.0"
+# Registers to: POST /api/schemas/subject-name with version "2.0.0"
 ```
 
 **Consumer Output Schema Registration:**
 ```bash
+# Auto-assigned version
 ./register-schema-from-file.sh schema.json subject-name consumer-123 BACKWARD "description"
 # Registers to: POST /api/consumers/consumer-123/schemas/subject-name
+
+# Specific version
+./register-schema-from-file.sh schema.json subject-name consumer-123 BACKWARD "description" "1.5.0"
+# Registers to: POST /api/consumers/consumer-123/schemas/subject-name with version "1.5.0"
 ```
 
 **Parameter Detection:**

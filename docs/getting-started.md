@@ -486,10 +486,18 @@ Registers a JSON schema from a file with the Schema Registry.
 - `subject`: Schema subject name (e.g., "user-profile")
 - `compatibility`: Schema compatibility mode ("BACKWARD", "FORWARD", "FULL", "NONE")
 - `description`: Optional human-readable description
+- `version`: Optional schema version in semver format (e.g., "1.0.0", "2.1.3") - if not provided, auto-assigns next patch version
 
-**Example:**
+**Examples:**
 ```bash
+# Register with auto-assigned version
 ./tests/utils/scripts/register-schema-from-file.sh user-schema.json user-profile BACKWARD "User profile schema"
+
+# Register with specific version
+./tests/utils/scripts/register-schema-from-file.sh user-schema.json user-profile BACKWARD "User profile schema" "2.0.0"
+
+# Register consumer schema with version
+./tests/utils/scripts/register-schema-from-file.sh consumer-schema.json user-profile consumer-123 BACKWARD "Consumer schema" "1.5.0"
 ```
 
 #### `register-jslt-template-from-file.sh`
@@ -544,7 +552,7 @@ Register the schema using the helper script:
 
 ```bash
 # Using the helper script
-./tests/utils/scripts/register-schema-from-file.sh user-schema.json user-profile 1.0.0 BACKWARD "User profile schema"
+./tests/utils/scripts/register-schema-from-file.sh user-schema.json user-profile BACKWARD "User profile schema" "1.0.0"
 
 # Or manually with curl and jq
 jq -n \
@@ -652,10 +660,10 @@ curl -X POST "http://localhost:8080/api/consumers/mobile-app/subjects/user-profi
 
 ```bash
 # Product schema
-./tests/utils/scripts/register-schema-from-file.sh product-schema.json product-catalog 1.0.0 FORWARD "Product catalog schema"
+./tests/utils/scripts/register-schema-from-file.sh product-schema.json product-catalog FORWARD "Product catalog schema" "1.0.0"
 
 # Order schema
-./tests/utils/scripts/register-schema-from-file.sh order-schema.json order-data 1.0.0 BACKWARD "Order data schema"
+./tests/utils/scripts/register-schema-from-file.sh order-schema.json order-data BACKWARD "Order data schema" "1.0.0"
 ```
 
 #### Batch Transformations
@@ -674,7 +682,7 @@ Add to your `Makefile`:
 ```makefile
 # Register schema from file
 register-schema:
-	./tests/utils/scripts/register-schema-from-file.sh $(SCHEMA_FILE) $(SUBJECT) $(VERSION) $(COMPATIBILITY) "$(DESCRIPTION)"
+	./tests/utils/scripts/register-schema-from-file.sh $(SCHEMA_FILE) $(SUBJECT) $(COMPATIBILITY) "$(DESCRIPTION)" $(VERSION)
 
 # Register JSLT template from file
 register-jslt-template:

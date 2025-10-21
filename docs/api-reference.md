@@ -128,7 +128,8 @@ Register a new schema or create a new version of an existing schema.
     "required": ["id", "name"]
   },
   "compatibility": "BACKWARD",
-  "description": "User profile schema for version 1"
+  "description": "User profile schema for version 1.0.0",
+  "version": "1.0.0" // Optional: specify version for registration. If not provided, auto-assigns next patch version
 }
 ```
 
@@ -351,7 +352,8 @@ Register a new consumer output schema or create a new version for a specific con
     "required": ["id", "name"]
   },
   "compatibility": "BACKWARD",
-  "description": "Consumer output schema for mobile app"
+  "description": "Consumer output schema for mobile app",
+  "version": "1.0.0" // Optional: specify version for registration. If not provided, auto-assigns next patch version
 }
 ```
 

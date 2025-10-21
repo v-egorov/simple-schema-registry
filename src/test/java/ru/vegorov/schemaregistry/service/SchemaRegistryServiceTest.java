@@ -578,4 +578,241 @@ class SchemaRegistryServiceTest {
         assertThat(response.getSubject()).isEqualTo("test-subject");
         assertThat(response.getSchemaVersion()).isEqualTo("1.0.0");
     }
+
+    @Test
+    void registerCanonicalSchema_shouldUseSpecifiedVersion() {
+        // Given
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("type", "object");
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject",
+            schemaJson,
+            "BACKWARD",
+            "Test schema",
+            "2.1.3"  // Specified version
+        );
+
+        SchemaEntity savedEntity = new SchemaEntity();
+        savedEntity.setId(1L);
+        savedEntity.setSubject("test-subject");
+        savedEntity.setSchemaType(SchemaType.canonical);
+        savedEntity.setVersion("2.1.3");
+        savedEntity.setSchemaJson(schemaJson);
+
+        when(schemaRepository.findBySubjectAndSchemaTypeAndVersion("test-subject", SchemaType.canonical, "2.1.3"))
+            .thenReturn(Optional.empty());
+        when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
+
+        // When
+        SchemaResponse response = schemaService.registerCanonicalSchema(request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getSubject()).isEqualTo("test-subject");
+        assertThat(response.getVersion()).isEqualTo("2.1.3");
+    }
+
+    @Test
+    void registerConsumerOutputSchema_shouldUseSpecifiedVersion() {
+        // Given
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("type", "object");
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject",
+            schemaJson,
+            "BACKWARD",
+            "Test consumer output schema",
+            "1.5.0"  // Specified version
+        );
+
+        SchemaEntity savedEntity = new SchemaEntity();
+        savedEntity.setId(1L);
+        savedEntity.setSubject("test-subject");
+        savedEntity.setSchemaType(SchemaType.consumer_output);
+        savedEntity.setConsumerId("consumer-1");
+        savedEntity.setVersion("1.5.0");
+        savedEntity.setSchemaJson(schemaJson);
+
+        when(schemaRepository.findBySubjectAndSchemaTypeAndConsumerIdAndVersion("test-subject", SchemaType.consumer_output, "consumer-1", "1.5.0"))
+            .thenReturn(Optional.empty());
+        when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
+
+        // When
+        SchemaResponse response = schemaService.registerConsumerOutputSchema("consumer-1", request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getSubject()).isEqualTo("test-subject");
+        assertThat(response.getVersion()).isEqualTo("1.5.0");
+    }
+
+    @Test
+    void registerCanonicalSchema_shouldRejectInvalidVersionFormat() {
+        // Given
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("type", "object");
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject",
+            schemaJson,
+            "BACKWARD",
+            "Test schema",
+            "invalid-version"  // Invalid semver format
+        );
+
+        // When & Then
+        assertThatThrownBy(() -> schemaService.registerCanonicalSchema(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Invalid version format: invalid-version. Must be in semver format (e.g., 1.0.0)");
+    }
+
+    @Test
+    void registerConsumerOutputSchema_shouldRejectInvalidVersionFormat() {
+        // Given
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("type", "object");
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject",
+            schemaJson,
+            "BACKWARD",
+            "Test consumer output schema",
+            "1.0"  // Invalid semver format (missing patch)
+        );
+
+        // When & Then
+        assertThatThrownBy(() -> schemaService.registerConsumerOutputSchema("consumer-1", request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Invalid version format: 1.0. Must be in semver format (e.g., 1.0.0)");
+    }
+
+    @Test
+    void registerCanonicalSchema_shouldRejectDuplicateVersion() {
+        // Given
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("type", "object");
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject",
+            schemaJson,
+            "BACKWARD",
+            "Test schema",
+            "1.0.0"  // Version that already exists
+        );
+
+        SchemaEntity existingEntity = new SchemaEntity();
+        existingEntity.setId(1L);
+        existingEntity.setSubject("test-subject");
+        existingEntity.setSchemaType(SchemaType.canonical);
+        existingEntity.setVersion("1.0.0");
+
+        when(schemaRepository.findBySubjectAndSchemaTypeAndVersion("test-subject", SchemaType.canonical, "1.0.0"))
+            .thenReturn(Optional.of(existingEntity));
+
+        // When & Then
+        assertThatThrownBy(() -> schemaService.registerCanonicalSchema(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Version 1.0.0 already exists for subject test-subject");
+    }
+
+    @Test
+    void registerConsumerOutputSchema_shouldRejectDuplicateVersion() {
+        // Given
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("type", "object");
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject",
+            schemaJson,
+            "BACKWARD",
+            "Test consumer output schema",
+            "1.0.0"  // Version that already exists
+        );
+
+        SchemaEntity existingEntity = new SchemaEntity();
+        existingEntity.setId(1L);
+        existingEntity.setSubject("test-subject");
+        existingEntity.setSchemaType(SchemaType.consumer_output);
+        existingEntity.setConsumerId("consumer-1");
+        existingEntity.setVersion("1.0.0");
+
+        when(schemaRepository.findBySubjectAndSchemaTypeAndConsumerIdAndVersion("test-subject", SchemaType.consumer_output, "consumer-1", "1.0.0"))
+            .thenReturn(Optional.of(existingEntity));
+
+        // When & Then
+        assertThatThrownBy(() -> schemaService.registerConsumerOutputSchema("consumer-1", request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Version 1.0.0 already exists for subject test-subject and consumer consumer-1");
+    }
+
+    @Test
+    void registerCanonicalSchema_shouldMaintainBackwardCompatibilityWithoutVersion() {
+        // Given - no version specified (backward compatibility)
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("type", "object");
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject",
+            schemaJson,
+            "BACKWARD",
+            "Test schema"
+            // No version specified
+        );
+
+        SchemaEntity savedEntity = new SchemaEntity();
+        savedEntity.setId(1L);
+        savedEntity.setSubject("test-subject");
+        savedEntity.setSchemaType(SchemaType.canonical);
+        savedEntity.setVersion("1.0.0");
+        savedEntity.setSchemaJson(schemaJson);
+
+        when(schemaRepository.findBySubjectAndSchemaType("test-subject", SchemaType.canonical))
+            .thenReturn(java.util.Collections.emptyList());
+        when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
+
+        // When
+        SchemaResponse response = schemaService.registerCanonicalSchema(request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getSubject()).isEqualTo("test-subject");
+        assertThat(response.getVersion()).isEqualTo("1.0.0");
+    }
+
+    @Test
+    void registerConsumerOutputSchema_shouldMaintainBackwardCompatibilityWithoutVersion() {
+        // Given - no version specified (backward compatibility)
+        Map<String, Object> schemaJson = new HashMap<>();
+        schemaJson.put("type", "object");
+
+        SchemaRegistrationRequest request = new SchemaRegistrationRequest(
+            "test-subject",
+            schemaJson,
+            "BACKWARD",
+            "Test consumer output schema"
+            // No version specified
+        );
+
+        SchemaEntity savedEntity = new SchemaEntity();
+        savedEntity.setId(1L);
+        savedEntity.setSubject("test-subject");
+        savedEntity.setSchemaType(SchemaType.consumer_output);
+        savedEntity.setConsumerId("consumer-1");
+        savedEntity.setVersion("1.0.0");
+        savedEntity.setSchemaJson(schemaJson);
+
+        when(schemaRepository.findBySubjectAndSchemaTypeAndConsumerId("test-subject", SchemaType.consumer_output, "consumer-1"))
+            .thenReturn(java.util.Collections.emptyList());
+        when(schemaRepository.save(any(SchemaEntity.class))).thenReturn(savedEntity);
+
+        // When
+        SchemaResponse response = schemaService.registerConsumerOutputSchema("consumer-1", request);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getSubject()).isEqualTo("test-subject");
+        assertThat(response.getVersion()).isEqualTo("1.0.0");
+    }
 }

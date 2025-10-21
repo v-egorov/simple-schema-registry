@@ -241,19 +241,33 @@ create_test_consumer_schema() {
     local consumer_id="$1"
     local subject="$2"
     local schema_data="$3"
+    local version="$4"  # Optional version parameter
 
-    local response=$(post_request "/api/consumers/$consumer_id/schemas/$subject" "{
+    local request_body="{
         \"subject\": \"$subject\",
         \"schema\": $schema_data,
         \"compatibility\": \"BACKWARD\",
-        \"description\": \"Test consumer schema for $consumer_id\"
-    }")
+        \"description\": \"Test consumer schema for $consumer_id\""
+
+    if [ -n "$version" ]; then
+        request_body="$request_body,
+        \"version\": \"$version\""
+    fi
+
+    request_body="$request_body
+    }"
+
+    local response=$(post_request "/api/consumers/$consumer_id/schemas/$subject" "$request_body")
 
     local http_code=$(echo "$response" | tail -n1)
     local response_body=$(echo "$response" | head -n -1)
 
     if [ "$http_code" -eq 201 ]; then
-        log_info "Created test consumer schema: $consumer_id/$subject"
+        if [ -n "$version" ]; then
+            log_info "Created test consumer schema: $consumer_id/$subject (version: $version)"
+        else
+            log_info "Created test consumer schema: $consumer_id/$subject"
+        fi
         echo "$response_body"
     else
         log_error "Failed to create test consumer schema: $consumer_id/$subject (HTTP $http_code)"

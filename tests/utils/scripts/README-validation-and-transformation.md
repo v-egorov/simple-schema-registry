@@ -178,8 +178,11 @@ done
 # Register a consumer for testing
 ./register-consumer.sh test-consumer "Test Consumer" "Consumer for integration testing"
 
-# Register schema for the consumer
-./register-schema-from-file.sh consumer-schema.json test-subject test-consumer BACKWARD "Test consumer schema"
+  # Register schema for the consumer
+  ./register-schema-from-file.sh consumer-schema.json test-subject test-consumer BACKWARD "Test consumer schema"
+
+  # Register schema with specific version
+  ./register-schema-from-file.sh schema.json test-subject BACKWARD "Schema with version" "2.0.0"
 
 # Validate test data
 ./validate-json-against-schema.sh test-data.json test-subject

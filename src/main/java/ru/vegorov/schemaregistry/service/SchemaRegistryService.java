@@ -72,12 +72,27 @@ public class SchemaRegistryService {
         }
 
         try {
-            // Get the next version number for canonical schemas
-            String nextVersion = getNextVersionForCanonicalSchema(subject);
+            // Determine version: use provided version if specified and valid, otherwise auto-assign
+            String versionToUse;
+            if (request.getVersion() != null && !request.getVersion().trim().isEmpty()) {
+                versionToUse = request.getVersion().trim();
+                // Validate semver format
+                if (!isValidSemver(versionToUse)) {
+                    throw new IllegalArgumentException("Invalid version format: " + versionToUse + ". Must be in semver format (e.g., 1.0.0)");
+                }
+                // Check if version already exists
+                boolean versionExists = schemaRepository.findBySubjectAndSchemaTypeAndVersion(subject, SchemaType.canonical, versionToUse).isPresent();
+                if (versionExists) {
+                    throw new IllegalArgumentException("Version " + versionToUse + " already exists for subject " + subject);
+                }
+            } else {
+                // Auto-assign next version
+                versionToUse = getNextVersionForCanonicalSchema(subject);
+            }
 
             if (businessLoggingEnabled) {
-                logger.debug("Calculated next version for canonical schema: subject={}, version={}",
-                    subject, nextVersion);
+                logger.debug("Using version for canonical schema: subject={}, version={}",
+                    subject, versionToUse);
             }
 
             // Validate the schema is a valid JSON Schema
@@ -104,7 +119,7 @@ public class SchemaRegistryService {
             SchemaEntity schemaEntity = new SchemaEntity(
                 subject,
                 SchemaType.canonical,
-                nextVersion,
+                versionToUse,
                 request.getSchema(),
                 request.getCompatibility(),
                 request.getDescription()
@@ -114,7 +129,7 @@ public class SchemaRegistryService {
 
             if (businessLoggingEnabled) {
                 logger.info("Canonical schema registered successfully: subject={}, version={}, id={}",
-                    subject, nextVersion, savedEntity.getId());
+                    subject, versionToUse, savedEntity.getId());
             }
 
             if (performanceLoggingEnabled) {
@@ -153,12 +168,27 @@ public class SchemaRegistryService {
             // Validate consumer exists
             consumerService.getConsumer(consumerId);
 
-            // Get the next version number for consumer output schemas
-            String nextVersion = getNextVersionForConsumerOutputSchema(subject, consumerId);
+            // Determine version: use provided version if specified and valid, otherwise auto-assign
+            String versionToUse;
+            if (request.getVersion() != null && !request.getVersion().trim().isEmpty()) {
+                versionToUse = request.getVersion().trim();
+                // Validate semver format
+                if (!isValidSemver(versionToUse)) {
+                    throw new IllegalArgumentException("Invalid version format: " + versionToUse + ". Must be in semver format (e.g., 1.0.0)");
+                }
+                // Check if version already exists
+                boolean versionExists = schemaRepository.findBySubjectAndSchemaTypeAndConsumerIdAndVersion(subject, SchemaType.consumer_output, consumerId, versionToUse).isPresent();
+                if (versionExists) {
+                    throw new IllegalArgumentException("Version " + versionToUse + " already exists for subject " + subject + " and consumer " + consumerId);
+                }
+            } else {
+                // Auto-assign next version
+                versionToUse = getNextVersionForConsumerOutputSchema(subject, consumerId);
+            }
 
             if (businessLoggingEnabled) {
-                logger.debug("Calculated next version for consumer output schema: consumerId={}, subject={}, version={}",
-                    consumerId, subject, nextVersion);
+                logger.debug("Using version for consumer output schema: consumerId={}, subject={}, version={}",
+                    consumerId, subject, versionToUse);
             }
 
             // Validate the schema is a valid JSON Schema
@@ -186,7 +216,7 @@ public class SchemaRegistryService {
                 subject,
                 SchemaType.consumer_output,
                 consumerId,
-                nextVersion,
+                versionToUse,
                 request.getSchema(),
                 request.getCompatibility(),
                 request.getDescription()
@@ -196,7 +226,7 @@ public class SchemaRegistryService {
 
             if (businessLoggingEnabled) {
                 logger.info("Consumer output schema registered successfully: consumerId={}, subject={}, version={}, id={}",
-                    consumerId, subject, nextVersion, savedEntity.getId());
+                    consumerId, subject, versionToUse, savedEntity.getId());
             }
 
             if (performanceLoggingEnabled) {
@@ -623,6 +653,30 @@ public class SchemaRegistryService {
         }
         int patch = Integer.parseInt(parts[2]) + 1;
         return parts[0] + "." + parts[1] + "." + patch;
+    }
+
+    /**
+     * Validate semver format (x.y.z)
+     */
+    private boolean isValidSemver(String version) {
+        if (version == null || version.trim().isEmpty()) {
+            return false;
+        }
+        String[] parts = version.split("\\.");
+        if (parts.length != 3) {
+            return false;
+        }
+        for (String part : parts) {
+            try {
+                int num = Integer.parseInt(part);
+                if (num < 0) {
+                    return false;
+                }
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

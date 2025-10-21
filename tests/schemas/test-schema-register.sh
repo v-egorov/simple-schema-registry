@@ -162,5 +162,95 @@ http_code=$(echo "$response" | tail -n1)
 
 assert_response "$http_code" 400 "Should reject schema with missing schema data"
 
+# Test 8: Register schema with specified version
+echo
+echo "Test 8: Register schema with specified version"
+subject8="test-specified-version-$timestamp"
+response=$(post_request "/api/schemas/$subject8" "{
+    \"subject\": \"$subject8\",
+    \"schema\": {
+        \"type\": \"object\",
+        \"properties\": {
+            \"id\": {\"type\": \"integer\"},
+            \"name\": {\"type\": \"string\"}
+        },
+        \"required\": [\"id\"]
+    },
+    \"compatibility\": \"BACKWARD\",
+    \"description\": \"Test schema with specified version\",
+    \"version\": \"2.1.0\"
+}")
+http_code=$(echo "$response" | tail -n1)
+response_body=$(echo "$response" | head -n -1)
+
+assert_response "$http_code" 201 "Schema registration with specified version should succeed"
+assert_json_field "$response_body" "subject" "$subject8"
+assert_json_field "$response_body" "version" "2.1.0"
+assert_json_field "$response_body" "description" "Test schema with specified version"
+
+# Test 9: Register next version with specified version (major bump)
+echo
+echo "Test 9: Register next version with major bump"
+response=$(post_request "/api/schemas/$subject8" "{
+    \"subject\": \"$subject8\",
+    \"schema\": {
+        \"type\": \"object\",
+        \"properties\": {
+            \"id\": {\"type\": \"integer\"},
+            \"name\": {\"type\": \"string\"},
+            \"email\": {\"type\": \"string\", \"format\": \"email\"}
+        },
+        \"required\": [\"id\"]
+    },
+    \"compatibility\": \"BACKWARD\",
+    \"description\": \"Test schema v3.0.0\",
+    \"version\": \"3.0.0\"
+}")
+http_code=$(echo "$response" | tail -n1)
+response_body=$(echo "$response" | head -n -1)
+
+assert_response "$http_code" 201 "Schema registration with major version bump should succeed"
+assert_json_field "$response_body" "subject" "$subject8"
+assert_json_field "$response_body" "version" "3.0.0"
+
+# Test 10: Try to register duplicate version
+echo
+echo "Test 10: Try to register duplicate version"
+response=$(post_request "/api/schemas/$subject8" "{
+    \"subject\": \"$subject8\",
+    \"schema\": {
+        \"type\": \"object\",
+        \"properties\": {
+            \"id\": {\"type\": \"integer\"}
+        }
+    },
+    \"compatibility\": \"BACKWARD\",
+    \"description\": \"Duplicate version test\",
+    \"version\": \"2.1.0\"
+}")
+http_code=$(echo "$response" | tail -n1)
+
+assert_response "$http_code" 400 "Should reject duplicate version registration"
+
+# Test 11: Register schema with invalid version format
+echo
+echo "Test 11: Register schema with invalid version format"
+subject11="test-invalid-version-$timestamp"
+response=$(post_request "/api/schemas/$subject11" "{
+    \"subject\": \"$subject11\",
+    \"schema\": {
+        \"type\": \"object\",
+        \"properties\": {
+            \"id\": {\"type\": \"integer\"}
+        }
+    },
+    \"compatibility\": \"BACKWARD\",
+    \"description\": \"Invalid version format test\",
+    \"version\": \"invalid-version\"
+}")
+http_code=$(echo "$response" | tail -n1)
+
+assert_response "$http_code" 400 "Should reject invalid version format"
+
 echo
 print_test_summary
