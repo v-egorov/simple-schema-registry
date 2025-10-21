@@ -182,7 +182,6 @@ Client Application                    TransformationController              Tran
         |                                           | 9. Return success response   |                              |
         |                                           |    {"transformedData": {...}}|                              |
 <---------------------------------------------------|                              |                              |
-```
 Client Application                    TransformationController              TransformationService              TransformationEngine
         |                                           |                              |                              |
         |  POST /api/consumers/{consumerId}/subjects/{subject}/transform           |                              |
