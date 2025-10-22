@@ -32,8 +32,12 @@ public class JsltFunctionConfiguration {
         functionRegistry.register("filter_additional_metadata_fields",
             builtInFunctions.createFilterAdditionalMetadataFieldsFunction());
 
-         // Register UUID generation function
-         functionRegistry.register("uuid",
-             builtInFunctions.createUuidFunction());
+        // Register UUID generation function
+        functionRegistry.register("uuid",
+            builtInFunctions.createUuidFunction());
+
+        // Register UUID generation function without dashes
+        functionRegistry.register("uuid-no-dashes",
+            builtInFunctions.createUuidNoDashesFunction());
     }
 }

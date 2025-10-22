@@ -1131,6 +1131,28 @@ The service supports multiple transformation engines for different use cases:
 - **Configuration**: Single JSLT expression string
 - **Example**: `{ "user_id": .id, "full_name": (.firstName + " " + .lastName) }`
 
+#### Built-in Functions
+
+The JSLT engine includes several built-in functions for common transformation needs:
+
+- **`uuid()`**: Generates a random UUID string with dashes (36 characters)
+  - **Example**: `uuid()` → `"550e8400-e29b-41d4-a716-446655440000"`
+
+- **`uuid-no-dashes()`**: Generates a random UUID string without dashes (32 characters)
+  - **Example**: `uuid-no-dashes()` → `"550e8400e29b41d4a716446655440000"`
+
+- **`extract_forecast_today(metadataFields)`**: Extracts forecast data from additionalMetadataFields array
+  - **Parameters**: Array of metadata field objects
+  - **Returns**: Object with `value` and `direction` properties, or `null` if not found
+  - **Example**: `extract_forecast_today(.details.additionalMetadataFields)`
+
+- **`filter_additional_metadata_fields(metadataFields, excludeIds)`**: Filters out specified IDs from additionalMetadataFields array
+  - **Parameters**: 
+    - `metadataFields`: Array of metadata field objects
+    - `excludeIds`: Array of IDs to exclude
+  - **Returns**: Filtered array of metadata fields
+  - **Example**: `filter_additional_metadata_fields(.details.additionalMetadataFields, ["id1", "id2"])`
+
 ### Router Engine (`router`)
 
 - **Purpose**: Intelligent routing based on input data characteristics

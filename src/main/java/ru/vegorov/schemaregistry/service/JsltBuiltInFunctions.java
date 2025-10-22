@@ -73,6 +73,18 @@ public class JsltBuiltInFunctions {
          return new UuidFunction();
      }
 
+     /**
+      * Create the uuid-no-dashes function.
+      * Generates a random UUID string with dashes removed.
+      *
+      * Usage in JSLT: uuid-no-dashes()
+      *
+      * @return Function implementation
+      */
+      public Function createUuidNoDashesFunction() {
+          return new UuidNoDashesFunction();
+      }
+
     /**
      * JSLT Function implementation for extracting forecast data.
      */
@@ -324,4 +336,50 @@ public class JsltBuiltInFunctions {
              return objectMapper.createObjectNode().textNode(uuid);
          }
      }
- }
+
+      /**
+       * JSLT Function implementation for generating UUIDs without dashes.
+       */
+      private class UuidNoDashesFunction implements Function {
+
+          @Override
+          public String getName() {
+              return "uuid-no-dashes";
+          }
+
+          @Override
+          public int getMinArguments() {
+              return 0;
+          }
+
+          @Override
+          public int getMaxArguments() {
+              return 0;
+          }
+
+          @Override
+          public JsonNode call(JsonNode input, JsonNode[] args) {
+              Instant start = performanceLoggingEnabled ? Instant.now() : null;
+
+              if (args.length != 0) {
+                  if (businessLoggingEnabled) {
+                      logger.error("uuid-no-dashes called with invalid arguments: expected 0, got {}", args.length);
+                  }
+                  throw new IllegalArgumentException("uuid-no-dashes expects exactly 0 arguments");
+              }
+
+              if (businessLoggingEnabled) {
+                  logger.debug("Generating UUID without dashes");
+              }
+
+              String uuid = UUID.randomUUID().toString().replace("-", "");
+
+              if (performanceLoggingEnabled) {
+                  long duration = Duration.between(start, Instant.now()).toMillis();
+                  logger.debug("uuid-no-dashes completed successfully: duration={}ms", duration);
+              }
+
+              return objectMapper.createObjectNode().textNode(uuid);
+          }
+      }
+  }

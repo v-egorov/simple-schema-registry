@@ -76,6 +76,7 @@ The system includes a sophisticated custom function system that extends JSLT tra
 The system provides several built-in JSLT functions:
 
 - **`uuid()`**: Generates RFC 4122 compliant UUIDs for unique identifier generation
+- **`uuid-no-dashes()`**: Generates RFC 4122 compliant UUIDs without dashes (compact format)
 - **`extract_forecast_today()`**: Extracts forecast data from complex metadata field arrays
 - **`filter_additional_metadata_fields()`**: Filters metadata field arrays by excluding specified field IDs
 
@@ -225,7 +226,7 @@ Function Registration → Expression Compilation → Function Execution
        ↓                        ↓                        ↓
 JsltFunctionConfiguration  JSLT Parser with Functions   Custom Functions
        ↓                        ↓                        ↓
-Built-in Functions     Expression.apply(input)     uuid(), extract_*, etc.
+Built-in Functions     Expression.apply(input)     uuid(), uuid-no-dashes(), extract_*, etc.
 ```
 
 #### Key Components
@@ -357,7 +358,7 @@ public interface TransformationEngine {
 - **Purpose**: Advanced JSON-to-JSON transformations using JSLT expressions with custom function support
 - **Use Case**: Declarative transformations, data normalization, field mapping, unique ID generation
 - **Custom Functions**: Integrates with JsltFunctionRegistry for extensible functionality
-- **Example Expression**: `{ "user_id": uuid(), "full_name": (.firstName + " " + .lastName), "forecast": extract_forecast_today(.metadata) }`
+- **Example Expression**: `{ "user_id": uuid(), "compact_id": uuid-no-dashes(), "full_name": (.firstName + " " + .lastName), "forecast": extract_forecast_today(.metadata) }`
 
 #### 2. Router Engine
 

@@ -482,6 +482,70 @@ public Function createUuidFunction()
 
 **Note**: Each call to `uuid()` generates a unique value, so multiple calls in the same transformation will produce different UUIDs.
 
+### UUID Generation Function (No Dashes)
+
+The `uuid-no-dashes()` function generates a random RFC 4122 compliant UUID string with dashes removed. This is useful when you need a compact UUID format for systems that don't support dashes.
+
+#### Function Signature
+
+```java
+public Function createUuidNoDashesFunction()
+```
+
+#### Usage in JSLT
+
+```jslt
+{
+  "id": uuid-no-dashes(),
+  "name": .name,
+  "email": .email,
+  "createdAt": .timestamp
+}
+```
+
+#### Parameters
+
+- **Arguments**: 0 (no arguments required)
+- **Returns**: String containing a UUID in the format `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` (32 characters)
+
+#### Example Transformation
+
+**Input JSON:**
+
+```json
+{
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "department": "Engineering"
+}
+```
+
+**JSLT Template:**
+
+```jslt
+{
+  "userId": uuid-no-dashes(),
+  "name": .name,
+  "email": .email,
+  "department": .department,
+  "createdAt": .timestamp
+}
+```
+
+**Output JSON:**
+
+```json
+{
+  "userId": "550e8400e29b41d4a716446655440000",
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "department": "Engineering",
+  "createdAt": "2025-10-21T09:00:00Z"
+}
+```
+
+**Note**: Like `uuid()`, each call to `uuid-no-dashes()` generates a unique value.
+
 ### Testing the Transformation
 
 You can test this transformation using the provided test files:

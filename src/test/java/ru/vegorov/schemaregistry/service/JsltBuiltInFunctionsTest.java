@@ -15,6 +15,7 @@ class JsltBuiltInFunctionsTest {
     private Function extractForecastTodayFunction;
     private Function filterAdditionalMetadataFieldsFunction;
     private Function uuidFunction;
+    private Function uuidNoDashesFunction;
 
     @BeforeEach
     void setUp() {
@@ -23,6 +24,7 @@ class JsltBuiltInFunctionsTest {
         extractForecastTodayFunction = functions.createExtractForecastTodayFunction();
         filterAdditionalMetadataFieldsFunction = functions.createFilterAdditionalMetadataFieldsFunction();
         uuidFunction = functions.createUuidFunction();
+        uuidNoDashesFunction = functions.createUuidNoDashesFunction();
     }
 
     @Test
@@ -240,5 +242,54 @@ class JsltBuiltInFunctionsTest {
             uuidFunction.call(input, args);
         });
         assertTrue(exception.getMessage().contains("uuid expects exactly 0 arguments"));
+    }
+
+    @Test
+    void testUuidNoDashesFunction_Success() {
+        JsonNode input = objectMapper.createObjectNode();
+        JsonNode[] args = new JsonNode[]{};
+
+        // Call the function
+        JsonNode result = uuidNoDashesFunction.call(input, args);
+
+        // Verify result
+        assertNotNull(result);
+        assertTrue(result.isTextual());
+        String uuidString = result.asText();
+
+        // Verify UUID format (should be 32 characters without dashes)
+        assertEquals(32, uuidString.length());
+        assertTrue(uuidString.matches("[0-9a-f]{32}"));
+    }
+
+    @Test
+    void testUuidNoDashesFunction_GeneratesUniqueValues() {
+        JsonNode input = objectMapper.createObjectNode();
+        JsonNode[] args = new JsonNode[]{};
+
+        // Call the function multiple times
+        JsonNode result1 = uuidNoDashesFunction.call(input, args);
+        JsonNode result2 = uuidNoDashesFunction.call(input, args);
+        JsonNode result3 = uuidNoDashesFunction.call(input, args);
+
+        // Verify all results are different
+        String uuid1 = result1.asText();
+        String uuid2 = result2.asText();
+        String uuid3 = result3.asText();
+
+        assertNotEquals(uuid1, uuid2);
+        assertNotEquals(uuid1, uuid3);
+        assertNotEquals(uuid2, uuid3);
+    }
+
+    @Test
+    void testUuidNoDashesFunction_WrongArgumentCount() {
+        JsonNode input = objectMapper.createObjectNode();
+        JsonNode[] args = new JsonNode[]{objectMapper.createObjectNode().put("test", "value")}; // 1 argument
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            uuidNoDashesFunction.call(input, args);
+        });
+        assertTrue(exception.getMessage().contains("uuid-no-dashes expects exactly 0 arguments"));
     }
 }
