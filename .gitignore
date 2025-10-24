@@ -97,3 +97,4 @@ schema_export*
 db_backup*.sql
 tests/examples/investment-research/publications/large-publication-*.json
 prompts/
+src/main/resources/db/backup
