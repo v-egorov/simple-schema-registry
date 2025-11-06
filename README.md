@@ -150,8 +150,10 @@ The service provides four main API groups with a clear separation between canoni
 
 The application uses Spring profiles for different environments:
 
-- **default**: Local development with H2 database
+- **default**: Local development with PostgreSQL
 - **docker**: Production deployment with PostgreSQL
+
+**Note**: The `test` profile uses H2 in-memory database for unit and integration testing.
 
 Key configuration properties in `application.properties`:
 
@@ -163,6 +165,7 @@ spring.datasource.password=schema_password
 
 # JPA
 spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.properties.hibernate.default_schema=registry
 spring.jpa.show-sql=false
 
 # OpenAPI
@@ -339,7 +342,9 @@ src/
 │   └── resources/
 │       ├── db/migration/   # Flyway migrations
 │       └── application.properties
-└── test/                   # Test classes
+└── test/                   # Test classes and resources
+    └── resources/
+        └── application-test.properties
 ```
 
 ## Documentation
