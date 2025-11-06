@@ -194,7 +194,7 @@ Retrieve all versions of a schema by subject.
 
 Retrieve a specific version of a schema.
 
-**Endpoint**: `GET /api/schemas/{subject}/{version}`
+**Endpoint**: `GET /api/schemas/{subject}/versions/{version}`
 
 **Response** (200 OK):
 
@@ -727,8 +727,15 @@ Create a new version of a transformation template for a consumer and subject.
   "subject": "user-profile",
   "version": "1.0.0",
   "engine": "jslt",
-  "inputSchema": 1,
-  "outputSchema": 2,
+  "inputSchema": {
+    "subject": "user-profile",
+    "version": "1.0.0"
+  },
+  "outputSchema": {
+    "subject": "user-profile",
+    "consumerId": "mobile-app",
+    "version": "1.0.0"
+  },
   "isActive": true,
   "templateExpression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
   "configuration": null,
@@ -906,8 +913,15 @@ Retrieve a specific version of a transformation template.
   "subject": "user-profile",
   "version": "1.0.0",
   "engine": "jslt",
-  "inputSchema": 1,
-  "outputSchema": 2,
+  "inputSchema": {
+    "subject": "user-profile",
+    "version": "1.0.0"
+  },
+  "outputSchema": {
+    "subject": "user-profile",
+    "consumerId": "mobile-app",
+    "version": "1.0.0"
+  },
   "isActive": true,
   "templateExpression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
   "configuration": null,
@@ -1014,8 +1028,15 @@ Deactivate a specific version of a transformation template.
   "subject": "user-profile",
   "version": "1.0.0",
   "engine": "jslt",
-  "inputSchema": 1,
-  "outputSchema": 2,
+  "inputSchema": {
+    "subject": "user-profile",
+    "version": "1.0.0"
+  },
+  "outputSchema": {
+    "subject": "user-profile",
+    "consumerId": "mobile-app",
+    "version": "1.0.0"
+  },
   "isActive": false,
   "templateExpression": ". | {id: .userId, name: .fullName, email: .emailAddress, registered: .registrationDate, status: .accountStatus}",
   "configuration": null,
