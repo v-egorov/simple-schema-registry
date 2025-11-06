@@ -1,0 +1,1 @@
+{"processed": true, "route": "generic", "type": .type, "id": .id, "name": (.name | "Unknown"), "normalized": true}

@@ -91,7 +91,7 @@ class PipelineTransformationEngineTest {
             "name", "John Doe"
         );
 
-        Map<String, Object> result = pipelineEngine.transform(input, config);
+        Map<String, Object> result = pipelineEngine.transform(input, config, "test-consumer", "test-subject");
 
         assertNotNull(result);
         assertEquals(true, result.get("validated"));
@@ -126,7 +126,7 @@ class PipelineTransformationEngineTest {
         Map<String, Object> input = Map.of("type", "test");
 
         // This should succeed because continueOnError is true
-        Map<String, Object> result = pipelineEngine.transform(input, config);
+        Map<String, Object> result = pipelineEngine.transform(input, config, "test-consumer", "test-subject");
 
         assertNotNull(result);
         assertEquals(true, result.get("validated"));
@@ -156,7 +156,7 @@ class PipelineTransformationEngineTest {
 
         // This should fail because continueOnError is false
         assertThrows(TransformationException.class, () ->
-            pipelineEngine.transform(input, config));
+            pipelineEngine.transform(input, config, "test-consumer", "test-subject"));
     }
 
     @Test

@@ -322,10 +322,14 @@ create_router_template() {
     local output_consumer_id="${5:-$consumer_id}"
     local version="${6:-1.0.0}"
 
+    # Add consumerId and subject to router config for template lookups
+    local enhanced_router_config=$(echo "$router_config" | jq --arg consumerId "$consumer_id" --arg subject "$subject" '. + {consumerId: $consumerId, subject: $subject}')
+    log_info "Enhanced router config: $enhanced_router_config"
+
     local response=$(post_request "/api/consumers/$consumer_id/subjects/$subject/templates" "{
         \"version\": \"$version\",
         \"engine\": \"router\",
-        \"routerConfig\": $router_config,
+        \"routerConfig\": $enhanced_router_config,
         \"inputSchema\": {
             \"subject\": \"$input_subject\"
         },
@@ -379,7 +383,28 @@ create_pipeline_template() {
         echo "$response_body"
     else
         log_error "Failed to create pipeline template for consumer: $consumer_id, subject: $subject (HTTP $http_code)"
-        echo ""
+        log_error "Response: $response_body"
+        exit 1
+    fi
+}
+
+activate_template() {
+    local consumer_id="$1"
+    local subject="$2"
+    local version="$3"
+
+    local response=$(put_request "/api/consumers/$consumer_id/subjects/$subject/templates/versions/$version/activate" "{}")
+
+    local http_code=$(echo "$response" | tail -n1)
+    local response_body=$(echo "$response" | head -n -1)
+
+    if [ "$http_code" -eq 200 ]; then
+        log_info "Activated template version $version for consumer: $consumer_id, subject: $subject"
+        echo "$response_body"
+    else
+        log_error "Failed to activate template version $version for consumer: $consumer_id, subject: $subject (HTTP $http_code)"
+        log_error "Response: $response_body"
+        exit 1
     fi
 }
 

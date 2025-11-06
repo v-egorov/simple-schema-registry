@@ -1,0 +1,6 @@
+{
+  "name": "data-enrichment-v1",
+  "type": "jslt",
+  "expression": ". + {\n  \"items\": [for (.items) . + { \"lineTotal\": (.quantity * .price) }],\n  \"orderTotal\": sum([for (.items) (.quantity * .price)]),\n  \"itemCount\": sum([for (.items) .quantity]),\n  \"processedAt\": now(),\n  \"validation\": (.validation + { \"enriched\": true })\n}",
+  "description": "Enriches data with computed fields and timestamps"
+}

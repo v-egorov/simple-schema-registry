@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "engine": "jslt",
+  "expression": "{processed: true, route: \"product\", type: .type, id: .id, name: .name, category: .category, price: .price, inStock: .inStock, enriched: true}",
+  "inputSchema": {
+    "subject": "router-example",
+    "version": "1.0.0"
+  },
+  "outputSchema": {
+    "subject": "router-example",
+    "consumerId": "mobile-app",
+    "version": "1.0.0"
+  },
+  "description": "Enrich product data with processing flags"
+}

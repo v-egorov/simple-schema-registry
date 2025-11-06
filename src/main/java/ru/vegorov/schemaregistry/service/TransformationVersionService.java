@@ -65,12 +65,13 @@ public class TransformationVersionService {
                 return mapToResponse(template);
             }
 
-            // Deactivate the currently active version (should be only one due to unique constraint)
-            Optional<TransformationTemplateEntity> currentlyActive = templateRepository
-                .findByConsumerIdAndSubjectAndIsActiveTrue(consumerId, subject);
-            if (currentlyActive.isPresent() && !currentlyActive.get().getVersion().equals(version)) {
-                currentlyActive.get().setIsActive(false);
-                templateRepository.saveAndFlush(currentlyActive.get());
+            // Deactivate all currently active versions except the one being activated
+            List<TransformationTemplateEntity> allTemplates = templateRepository.findByConsumerIdAndSubject(consumerId, subject);
+            for (TransformationTemplateEntity activeTemplate : allTemplates) {
+                if (activeTemplate.getIsActive() && !activeTemplate.getVersion().equals(version)) {
+                    activeTemplate.setIsActive(false);
+                    templateRepository.saveAndFlush(activeTemplate);
+                }
             }
 
             // Activate this version

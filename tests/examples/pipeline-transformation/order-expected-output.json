@@ -1,0 +1,30 @@
+{
+  "orderId": "ORD-2024-001",
+  "customerId": "CUST-12345",
+  "items": [
+    {
+      "productId": "PROD-001",
+      "name": "Wireless Headphones",
+      "quantity": 2,
+      "price": 99.99,
+      "lineTotal": 199.98
+    },
+    {
+      "productId": "PROD-002",
+      "name": "USB Cable",
+      "quantity": 1,
+      "price": 15.50,
+      "lineTotal": 15.50
+    }
+  ],
+  "orderDate": "2024-11-06T10:30:00Z",
+  "status": "confirmed",
+  "orderTotal": 215.48,
+  "itemCount": 3,
+  "processedAt": "2024-11-06T10:35:00Z",
+  "validation": {
+    "validated": true,
+    "normalized": true,
+    "enriched": true
+  }
+}

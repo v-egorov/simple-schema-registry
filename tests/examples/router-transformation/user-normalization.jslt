@@ -1,0 +1,1 @@
+{"processed": true, "route": "user", "type": .type, "id": .id, "name": .name, "email": .email, "registered": .registrationDate}

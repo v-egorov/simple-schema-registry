@@ -1,0 +1,23 @@
+{
+  "type": "pipeline",
+  "steps": [
+    {
+      "name": "validate-input",
+      "transformationId": "input-validation-v1",
+      "description": "Validate input data structure and add validation metadata"
+    },
+    {
+      "name": "normalize-data",
+      "transformationId": "data-normalization-v1",
+      "description": "Normalize data formats and clean inconsistencies"
+    },
+    {
+      "name": "enrich-data",
+      "transformationId": "data-enrichment-v1",
+      "description": "Add computed fields, totals, and processing metadata"
+    }
+  ],
+  "validation": {
+    "finalSchema": "order-processed-schema-v1"
+  }
+}

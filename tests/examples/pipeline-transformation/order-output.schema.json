@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Processed Order Output Schema",
+  "description": "Schema for processed order data after pipeline transformation",
+  "type": "object",
+  "properties": {
+    "orderId": {
+      "type": "string",
+      "description": "Unique order identifier"
+    },
+    "customerId": {
+      "type": "string",
+      "description": "Customer identifier"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0
+          },
+          "lineTotal": {
+            "type": "number",
+            "description": "Computed line total (quantity * price)"
+          }
+        },
+        "required": ["productId", "quantity", "price", "lineTotal"]
+      }
+    },
+    "orderDate": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "confirmed", "shipped", "delivered"]
+    },
+    "orderTotal": {
+      "type": "number",
+      "description": "Total order amount"
+    },
+    "itemCount": {
+      "type": "integer",
+      "description": "Total number of items"
+    },
+    "processedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Processing timestamp"
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "validated": {
+          "type": "boolean",
+          "const": true
+        },
+        "normalized": {
+          "type": "boolean",
+          "const": true
+        },
+        "enriched": {
+          "type": "boolean",
+          "const": true
+        }
+      },
+      "required": ["validated", "normalized", "enriched"]
+    }
+  },
+  "required": ["orderId", "customerId", "items", "orderDate", "status", "orderTotal", "itemCount", "processedAt", "validation"]
+}

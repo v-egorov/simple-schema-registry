@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "engine": "jslt",
+  "expression": "{processed: true, route: \"user\", type: .type, id: .id, name: .name, email: .email, registered: .registrationDate}",
+  "inputSchema": {
+    "subject": "router-example",
+    "version": "1.0.0"
+  },
+  "outputSchema": {
+    "subject": "router-example",
+    "consumerId": "mobile-app",
+    "version": "1.0.0"
+  },
+  "description": "Normalize user data for mobile app consumption"
+}

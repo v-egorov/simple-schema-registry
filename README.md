@@ -353,6 +353,7 @@ src/
 - [End-to-End Example](docs/end-to-end-example.md) - Complete workflow demonstration with investment publications
 - [Testing Guide](docs/testing.md) - Comprehensive testing strategy and execution order
 - [Advanced Transformations](docs/advanced-transformations.md) - Router and Pipeline engines implementation guide
+- [Router Engine Example](tests/examples/router-transformation/README.md) - Practical router transformation example
 - [API Reference](docs/api-reference.md) - Complete API documentation with examples
 - [Architecture](docs/architecture.md) - System design and components
 - [Logging Architecture](docs/logging-architecture.md) - Comprehensive logging system design and implementation guide

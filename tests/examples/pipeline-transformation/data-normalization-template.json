@@ -1,0 +1,6 @@
+{
+  "name": "data-normalization-v1",
+  "type": "jslt",
+  "expression": ". + { \"validation\": (.validation + { \"normalized\": true }) }",
+  "description": "Normalizes data formats and adds normalization metadata"
+}

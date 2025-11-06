@@ -8,9 +8,10 @@ The test suite covers all API endpoints and includes:
 - **Health checks** - Service availability and monitoring endpoints
 - **Consumer management** - Registration and retrieval of consumer applications
 - **Schema registry** - Schema registration, versioning, and compatibility checking
-- **Data transformation** - JSON transformation using JSLT templates
+- **Data transformation** - JSON transformation using JSLT, Router, and Pipeline engines
 - **Integration workflows** - End-to-end scenarios combining multiple APIs
 - **Error handling** - Validation of error responses and edge cases
+- **Examples** - Practical usage examples for advanced features like router transformations
 
 ## Directory Structure
 
@@ -18,6 +19,36 @@ The test suite covers all API endpoints and includes:
 tests/
 ├── README.md                    # This file
 ├── run-all.sh                   # Master test runner
+├── examples/
+│   ├── router-transformation/   # Router engine usage example
+│   │   ├── README.md            # Example documentation
+│   │   ├── run-router-example.sh # Executable example script
+│   │   ├── router-config.json   # Router configuration
+│   │   ├── canonical.schema.json # Input schema
+│   │   ├── consumer-output.schema.json # Output schema
+│   │   ├── user-input.json      # Sample user data
+│   │   ├── product-input.json   # Sample product data
+│   │   ├── order-input.json     # Sample order data
+│   │   ├── user-expected-output.json    # Expected user output
+│   │   ├── product-expected-output.json # Expected product output
+│   │   ├── order-expected-output.json   # Expected order output
+│   │   ├── user-normalization.jslt      # User processing JSLT expression
+│   │   ├── product-enrichment.jslt      # Product processing JSLT expression
+│   │   ├── generic-processing.jslt      # Default processing JSLT expression
+│   │   ├── user-normalization-template.json    # User template config (reference)
+│   │   ├── product-enrichment-template.json    # Product template config (reference)
+│   │   └── generic-processing-template.json    # Default template config (reference)
+│   └── pipeline-transformation/ # Pipeline engine usage example
+│       ├── README.md            # Example documentation
+│       ├── run-pipeline-example.sh # Executable example script
+│       ├── pipeline-config.json # Pipeline configuration
+│       ├── order-input.schema.json     # Input schema
+│       ├── order-output.schema.json    # Output schema
+│       ├── order-input.json            # Sample order data
+│       ├── order-expected-output.json  # Expected processed output
+│       ├── input-validation-template.json    # Validation template config
+│       ├── data-normalization-template.json  # Normalization template config
+│       └── data-enrichment-template.json     # Enrichment template config
 ├── utils/
 │   ├── common.sh               # Shared utilities and functions
 │   ├── setup.sh                # Test data setup helpers
@@ -48,7 +79,10 @@ tests/
 │   ├── test-transform-data.sh       # Data transformation
 │   ├── test-transform-template-get.sh    # Get templates
 │   ├── test-transform-template-create.sh # Create/update templates
-│   └── test-transform-engines.sh    # List engines
+│   ├── test-transform-engines.sh    # List engines
+│   ├── test-transform-router.sh     # Router engine tests
+│   ├── test-transform-pipeline.sh   # Pipeline engine tests
+│   └── test-transform-template-activate.sh # Template activation tests
 ├── workflows/
 │   ├── test-full-workflow.sh        # Complete integration test
 │   └── test-schema-evolution.sh     # Schema versioning workflow
@@ -57,6 +91,59 @@ tests/
     ├── test-errors-404.sh          # Not found tests
     └── test-errors-409.sh          # Conflict tests
 ```
+
+## Examples
+
+The `examples/` directory contains practical usage examples for advanced service features:
+
+### Router Engine Example
+
+The `router-transformation/` example demonstrates how to use the Router Engine to intelligently route different data types to appropriate transformation templates based on conditions.
+
+**Run the example**:
+```bash
+./tests/examples/router-transformation/run-router-example.sh
+```
+
+**What it demonstrates**:
+- Setting up schemas for input and output validation
+- Creating multiple JSLT transformation templates
+- Configuring a router with conditional routing rules
+- Testing routing for different data types (user, product, order)
+- Default route handling for unrecognized data types
+
+**Key files**:
+- `router-config.json` - Router configuration with routing conditions
+- `user-input.json`, `product-input.json`, `order-input.json` - Sample input data
+- `*-template.json` - JSLT templates for different data processing
+- `README.md` - Detailed explanation of the router concept and usage
+
+This example shows how the router engine enables content-based routing for multi-tenant applications or systems processing diverse data types.
+
+### Pipeline Engine Example
+
+The `pipeline-transformation/` example demonstrates how to use the Pipeline Engine to execute sequential multi-step transformations on order data.
+
+**Run the example**:
+```bash
+./tests/examples/pipeline-transformation/run-pipeline-example.sh
+```
+
+**What it demonstrates**:
+- Setting up schemas for input and output validation
+- Creating sequential JSLT transformation templates
+- Configuring a pipeline with ordered processing steps
+- Testing multi-stage data processing (validation → normalization → enrichment)
+- Error handling and intermediate result validation
+
+**Key files**:
+- `pipeline-config.json` - Pipeline configuration with sequential steps
+- `order-input.json` - Sample order data input
+- `order-expected-output.json` - Expected processed output
+- `*-template.json` - JSLT templates for each processing stage
+- `README.md` - Detailed explanation of the pipeline concept and usage
+
+This example shows how the pipeline engine enables complex, multi-stage data processing workflows with clear separation of concerns between processing steps.
 
 ## Quick Start
 

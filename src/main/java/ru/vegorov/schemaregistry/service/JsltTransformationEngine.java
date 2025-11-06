@@ -41,7 +41,7 @@ public class JsltTransformationEngine implements TransformationEngine {
     }
 
     @Override
-    public Map<String, Object> transform(Map<String, Object> inputJson, String expression)
+    public Map<String, Object> transform(Map<String, Object> inputJson, String expression, String consumerId, String subject)
         throws TransformationException {
         return transform(inputJson, expression, null);
     }

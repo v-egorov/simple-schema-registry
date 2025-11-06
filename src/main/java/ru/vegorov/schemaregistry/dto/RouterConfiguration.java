@@ -1,5 +1,6 @@
 package ru.vegorov.schemaregistry.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -13,6 +14,7 @@ public class RouterConfiguration {
     @NotNull
     private String type = "router";
 
+    @NotEmpty
     @Valid
     private List<Route> routes;
 
@@ -20,6 +22,12 @@ public class RouterConfiguration {
 
     @Valid
     private ValidationConfig validation;
+
+    // Added for template lookups
+    @JsonProperty("consumerId")
+    private String consumerId;
+    @JsonProperty("subject")  
+    private String subject;
 
     // Constructors
     public RouterConfiguration() {}
@@ -61,6 +69,22 @@ public class RouterConfiguration {
 
     public void setValidation(ValidationConfig validation) {
         this.validation = validation;
+    }
+
+    public String getConsumerId() {
+        return consumerId;
+    }
+
+    public void setConsumerId(String consumerId) {
+        this.consumerId = consumerId;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
     }
 
     /**

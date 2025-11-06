@@ -129,7 +129,9 @@ public class TransformationService {
                 }
                 transformedJson = engine.transform(
                     request.getCanonicalJson(),
-                    template.getTemplateExpression()
+                    template.getTemplateExpression(),
+                    consumerId,
+                    subject
                 );
             }
 

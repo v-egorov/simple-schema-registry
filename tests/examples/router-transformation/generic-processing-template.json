@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "engine": "jslt",
+  "expression": "{processed: true, route: \"generic\", type: .type, id: .id, name: .name | \"Unknown\", normalized: true}",
+  "inputSchema": {
+    "subject": "router-example",
+    "version": "1.0.0"
+  },
+  "outputSchema": {
+    "subject": "router-example",
+    "consumerId": "mobile-app",
+    "version": "1.0.0"
+  },
+  "description": "Generic processing for unrecognized data types"
+}

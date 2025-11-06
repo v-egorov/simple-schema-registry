@@ -1,0 +1,10 @@
+{
+  "type": "order",
+  "id": 789,
+  "customerId": 123,
+  "items": [
+    {"productId": 456, "quantity": 1, "price": 199.99}
+  ],
+  "total": 199.99,
+  "status": "pending"
+}

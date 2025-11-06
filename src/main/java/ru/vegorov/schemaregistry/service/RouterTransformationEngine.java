@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.vegorov.schemaregistry.dto.RouterConfiguration;
+import ru.vegorov.schemaregistry.entity.TransformationTemplateEntity;
+import ru.vegorov.schemaregistry.repository.TransformationTemplateRepository;
 import ru.vegorov.schemaregistry.service.ConfigurationValidator.ConfigurationValidationException;
 
 import java.time.Duration;
@@ -28,6 +30,9 @@ public class RouterTransformationEngine implements TransformationEngine {
 
     private final ObjectMapper objectMapper;
     private final ConfigurationValidator configValidator;
+    private final TransformationTemplateRepository templateRepository;
+    private final JsltTransformationEngine jsltEngine;
+    private final JsltFunctionRegistry functionRegistry;
 
     @Value("${app.logging.performance.enabled:true}")
     private boolean performanceLoggingEnabled;
@@ -36,9 +41,15 @@ public class RouterTransformationEngine implements TransformationEngine {
     private long slowThresholdMs;
 
     public RouterTransformationEngine(ObjectMapper objectMapper,
-                                     ConfigurationValidator configValidator) {
+                                      ConfigurationValidator configValidator,
+                                      TransformationTemplateRepository templateRepository,
+                                      JsltTransformationEngine jsltEngine,
+                                      JsltFunctionRegistry functionRegistry) {
         this.objectMapper = objectMapper;
         this.configValidator = configValidator;
+        this.templateRepository = templateRepository;
+        this.jsltEngine = jsltEngine;
+        this.functionRegistry = functionRegistry;
     }
 
     @Override
@@ -47,7 +58,7 @@ public class RouterTransformationEngine implements TransformationEngine {
     }
 
     @Override
-    public Map<String, Object> transform(Map<String, Object> inputJson, String expression)
+    public Map<String, Object> transform(Map<String, Object> inputJson, String expression, String consumerId, String subject)
         throws TransformationException {
         Instant start = performanceLoggingEnabled ? Instant.now() : null;
 
@@ -55,27 +66,38 @@ public class RouterTransformationEngine implements TransformationEngine {
             // Parse router configuration from expression (which contains JSON config)
             RouterConfiguration config = objectMapper.readValue(expression, RouterConfiguration.class);
 
+            logger.debug("Router config parsed: consumerId={}, subject={}, routes={}", consumerId, subject, config.getRoutes().size());
+
+            if (consumerId == null || subject == null) {
+                throw new TransformationException("Router transformation requires consumerId and subject context");
+            }
+
             // Convert input to JsonNode for condition evaluation
             JsonNode inputNode = objectMapper.valueToTree(inputJson);
 
             // Find matching route
-            String selectedTransformationId = findMatchingRoute(config, inputNode);
+            String selectedTransformationVersion = findMatchingRoute(config, inputNode);
 
-            if (selectedTransformationId == null) {
+            if (selectedTransformationVersion == null) {
                 throw new TransformationException("No matching route found for input data");
             }
 
-            // Apply the selected transformation using hardcoded Java logic
-            Map<String, Object> result = applyTransformation(selectedTransformationId, inputJson);
+            // Find and apply the transformation template
+            TransformationTemplateEntity template = templateRepository
+                .findByConsumerIdAndSubjectAndVersion(consumerId, subject, selectedTransformationVersion)
+                .orElseThrow(() -> new TransformationException("Transformation template not found: " + selectedTransformationVersion));
+
+            // Apply the transformation using the JSLT engine
+            Map<String, Object> result = jsltEngine.transform(inputJson, template.getTemplateExpression(), consumerId, subject);
 
             if (performanceLoggingEnabled) {
                 long duration = Duration.between(start, Instant.now()).toMillis();
                 if (duration > slowThresholdMs) {
                     logger.warn("Slow router transformation detected: inputSize={}, routes={}, selectedRoute={}, duration={}ms",
-                        inputJson.size(), config.getRoutes().size(), selectedTransformationId, duration);
+                        inputJson.size(), config.getRoutes().size(), selectedTransformationVersion, duration);
                 } else {
                     logger.debug("Router transformation performance: inputSize={}, routes={}, selectedRoute={}, duration={}ms",
-                        inputJson.size(), config.getRoutes().size(), selectedTransformationId, duration);
+                        inputJson.size(), config.getRoutes().size(), selectedTransformationVersion, duration);
                 }
             }
 
@@ -192,43 +214,5 @@ public class RouterTransformationEngine implements TransformationEngine {
         return current;
     }
 
-    /**
-     * Apply transformation by ID using hardcoded Java logic
-     * This implements edge case transformations that require custom logic
-     */
-    private Map<String, Object> applyTransformation(String transformationId, Map<String, Object> input) throws TransformationException {
-        switch (transformationId) {
-            case "user-normalization-v1":
-                return applyUserNormalization(input);
-            case "electronics-enrichment-v1":
-                return applyElectronicsEnrichment(input);
-            case "generic-transformation-v1":
-                return applyGenericTransformation(input);
-            default:
-                throw new TransformationException("Unknown transformation ID: " + transformationId);
-        }
-    }
 
-    private Map<String, Object> applyUserNormalization(Map<String, Object> input) {
-        Map<String, Object> result = new java.util.HashMap<>();
-        result.put("normalized_type", input.get("type"));
-        result.put("user_id", input.get("id"));
-        result.put("name", input.get("name"));
-        return result;
-    }
-
-    private Map<String, Object> applyElectronicsEnrichment(Map<String, Object> input) {
-        Map<String, Object> result = new java.util.HashMap<>();
-        result.put("product_type", input.get("type"));
-        result.put("electronics_category", input.get("category"));
-        result.put("price", input.get("price"));
-        result.put("specs", input.get("specifications"));
-        return result;
-    }
-
-    private Map<String, Object> applyGenericTransformation(Map<String, Object> input) {
-        Map<String, Object> result = new java.util.HashMap<>();
-        result.put("data", input);
-        return result;
-    }
 }

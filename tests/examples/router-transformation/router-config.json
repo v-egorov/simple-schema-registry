@@ -1,0 +1,20 @@
+{
+  "type": "router",
+  "routes": [
+    {
+      "condition": "$.type == 'user'",
+      "transformationId": "user-v1.0.0",
+      "description": "Normalize user data for mobile app"
+    },
+    {
+      "condition": "$.type == 'product'",
+      "transformationId": "product-v1.0.0",
+      "description": "Enrich product data with additional fields"
+    }
+  ],
+  "defaultTransformationId": "generic-v1.0.0",
+  "validation": {
+    "inputSchema": "canonical-data-schema-v1",
+    "outputSchema": "consumer-data-schema-v1"
+  }
+}

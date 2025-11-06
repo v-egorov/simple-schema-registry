@@ -17,10 +17,12 @@ public interface TransformationEngine {
      *
      * @param inputJson The input JSON data as a Map
      * @param expression The transformation expression (e.g., JSLT expression)
+     * @param consumerId The consumer ID context for template lookups
+     * @param subject The subject context for template lookups
      * @return The transformed JSON data as a Map
      * @throws TransformationException if transformation fails
      */
-    Map<String, Object> transform(Map<String, Object> inputJson, String expression)
+    Map<String, Object> transform(Map<String, Object> inputJson, String expression, String consumerId, String subject)
         throws TransformationException;
 
     /**

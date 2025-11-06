@@ -1,0 +1,6 @@
+{
+  "name": "input-validation-v1",
+  "type": "jslt",
+  "expression": ". + { \"validation\": { \"validated\": true } }",
+  "description": "Validates input data and adds validation metadata"
+}

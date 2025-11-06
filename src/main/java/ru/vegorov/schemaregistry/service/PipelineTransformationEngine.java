@@ -49,7 +49,7 @@ public class PipelineTransformationEngine implements TransformationEngine {
     }
 
     @Override
-    public Map<String, Object> transform(Map<String, Object> inputJson, String expression)
+    public Map<String, Object> transform(Map<String, Object> inputJson, String expression, String consumerId, String subject)
         throws TransformationException {
         Instant start = performanceLoggingEnabled ? Instant.now() : null;
 
@@ -70,7 +70,7 @@ public class PipelineTransformationEngine implements TransformationEngine {
                     String stepExpression = getTransformationExpression(step.getTransformationId());
 
                     // Apply transformation
-                    currentData = jsltEngine.transform(currentData, stepExpression);
+                    currentData = jsltEngine.transform(currentData, stepExpression, consumerId, subject);
 
                 } catch (TransformationException e) {
                     errors.add(new TransformationException(

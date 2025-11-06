@@ -31,7 +31,7 @@ class JsltTransformationEngineTest {
         String expression = "{ \"id\": .user_id, \"name\": .full_name }";
 
         // When
-        Map<String, Object> result = engine.transform(input, expression);
+        Map<String, Object> result = engine.transform(input, expression, "test-consumer", "test-subject");
 
         // Then
         assertThat(result).isNotNull();

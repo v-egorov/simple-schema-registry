@@ -1,0 +1,11 @@
+{
+  "processed": true,
+  "route": "product",
+  "type": "product",
+  "id": 456,
+  "name": "Wireless Headphones",
+  "category": "electronics",
+  "price": 199.99,
+  "inStock": true,
+  "enriched": true
+}

@@ -1,0 +1,1 @@
+{"processed": true, "route": "product", "type": .type, "id": .id, "name": .name, "category": .category, "price": .price, "inStock": .inStock, "enriched": true}
